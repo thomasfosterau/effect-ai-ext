@@ -6,8 +6,8 @@
  * dependency beyond `effect` itself (this barrel never imports `vite-plus` or
  * any workspace package — see
  * `docs/decisions/single-barrel-package-exports.md`). The package is slated
- * for eventual extraction into its own repository; this scaffold is the
- * foundation issue (#923) the runner, metrics, adapter, and CLI build on.
+ * for eventual extraction into its own repository; this is the foundation
+ * (#923) the runner, metrics, adapter, and CLI build on.
  *
  * - {@link Golden} / {@link EvalCase} — the static case and its
  *   run-enriched counterpart (DeepEval's golden/test-case split).
@@ -30,6 +30,8 @@
  *   {@link JsonValidity}, {@link SchemaMatch}, {@link EmbeddingSimilarity},
  *   {@link ToolCallCorrectness}) — judge-free, reproducible {@link Scorer}s
  *   built on the primitive above (#925).
+ * - {@link GEval} — the arbitrary-criteria LLM judge metric (single- and
+ *   multi-turn).
  *
  * The `vite-plus/test` adapter lives at the separate `./viteplus`
  * sub-export so this barrel stays free of it.
@@ -38,6 +40,7 @@
 export * as Cache from "./Cache";
 export * as Dataset from "./Dataset";
 export * as EvalCase from "./EvalCase";
+export * as GEval from "./metrics/GEval";
 export * as Golden from "./Golden";
 export * as Metadata from "./Metadata";
 export * as Metric from "./Metric";

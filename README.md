@@ -110,6 +110,52 @@ const result = await Effect.runPromise(
 
 `summary` is `null` when every trial for that metric errored (no scores to summarize). `taskFailures` is empty unless the task itself failed for some trial, in which case that trial contributes to no metric's `trials` array at all (there was no output to score).
 
+## G-Eval judge metric (#926)
+
+`GEval.gEval` builds a `Metric` that scores a case against an arbitrary natural-language criterion using an LLM judge (DeepEval's G-Eval), covering anything from translation quality to a bespoke house style — without writing a new metric per criterion. `GEval.gEvalConversational` is the multi-turn variant: the judge reads the full rendered turn history and scores the exchange holistically.
+
+```ts
+import { EvalCase, GEval, Golden, Metric, Threshold } from "@thomasfosterau/effect-evals";
+import { LanguageModel } from "effect/unstable/ai";
+
+const TranslationGolden = Golden.Golden(Schema.String, Schema.String);
+const TranslationCase = EvalCase.EvalCase(TranslationGolden, Schema.String);
+
+const translationQuality = GEval.gEval<typeof TranslationCase.Type>({
+  name: "translation-quality",
+  criteria: "Is this a faithful, fluent translation of the source?",
+  evaluationParams: ["input", "output"],
+  threshold: Threshold.minScore(0.7),
+});
+
+// The judge LanguageModel is provided the same way any other service is —
+// Layer.provide at the call site, swappable per metric or per environment.
+const result = await Effect.runPromise(
+  Metric.evaluate(translationQuality, evalCase).pipe(Effect.provide(anthropicLanguageModelLayer)),
+);
+```
+
+`gEval` accepts `criteria` **or** `evaluationSteps`, never both:
+
+- `criteria` — a natural-language description; the judge derives its own evaluation steps per run (convenient) and reports them back, so the steps actually used still land in `Score.metadata.evaluationSteps` even though they weren't authored ahead of time.
+- `evaluationSteps` — an explicit, ordered list you write yourself. No derivation call: the judge is told exactly what to check.
+
+`evaluationParams` names which fields of the case the judge is shown (`"input" | "output" | "expected" | "context" | "retrievedContext"`); asking for a field a given case doesn't have fails with the typed `GEval.MissingEvaluationParamError` rather than throwing or silently skipping it. `GEval.gEvalConversational` takes the same `criteria`/`evaluationSteps` shape over `"scenario" | "expectedOutcome" | "context"` (the turn history itself is always shown).
+
+An optional `rubric` (`GEval.makeRubric`) constrains the judge to non-overlapping score bands on whatever scale you write them in (DeepEval's convention is `0..10`); `gEval` clamps the judge's raw score to the rubric's range and normalises it to `Score`'s `0..1`. An overlapping or malformed rubric throws immediately at construction — it's a mistake in the metric definition, not a per-case condition.
+
+`template` overrides the judge's system/user prompt wording (see `GEval.defaultTemplate`) without forking the metric.
+
+### Determinism levers
+
+An LLM judge is inherently noisy; DeepEval and this package both lean on the same three levers rather than log-prob weighting (`generateObject` doesn't expose token log-probabilities, so that avenue is closed regardless):
+
+1. **Explicit `evaluationSteps`.** Skips the criteria-to-steps derivation call, so every run judges against literally the same instructions instead of a fresh (and possibly inconsistent) derivation each time.
+2. **A `rubric`.** Non-overlapping bands with descriptions narrow the judge's scoring range to discrete, justified buckets instead of an unconstrained continuous guess.
+3. **Trials.** Running a metric several times per case and aggregating (mean/variance, flakiness surfacing) is the runner's job (above), not this metric — `gEval` and `gEvalConversational` score a single run; the runner is what repeats that run and aggregates the results.
+
+Combine all three for the most reproducible signal: explicit steps and a rubric pin down _what_ is being judged, and trials reveal _how consistently_ the judge applies them.
+
 ## What's in the box
 
 | Module | Purpose |
@@ -125,6 +171,7 @@ const result = await Effect.runPromise(
 | [`Result`](src/Result.ts) | The typed suite → case → trial → metric result model; `summarize`. |
 | [`Cache`](src/Cache.ts) | `layerMemory` / `layerFileSystem`, `hashKey`. |
 | [`Reporter`](src/Reporter.ts) | `Reporter`, `terminal`, `json`, `formatTerminalTable`. |
+| [`GEval`](src/metrics/GEval.ts) | `gEval`, `gEvalConversational`, `makeRubric`, `defaultTemplate`. |
 
 ## Development
 
