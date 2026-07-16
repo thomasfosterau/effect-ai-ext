@@ -191,6 +191,34 @@ An LLM judge is inherently noisy; DeepEval and this package both lean on the sam
 
 Combine all three for the most reproducible signal: explicit steps and a rubric pin down _what_ is being judged, and trials reveal _how consistently_ the judge applies them.
 
+## CLI (#930)
+
+The `effect-evals` bin discovers and runs `*.eval.ts` suites standalone — no test framework involved. It's the surface CI invokes and the one that survives this package's eventual extraction to its own repository. It consumes the same `EvalFile` shape as the `./viteplus` adapter above (with or without the `defineEval` wrapper — a bare `import()` unwraps to the plain `{ suites, layer, options? }` object either way) and the same credential-gating semantic: a file whose `layer` fails to build with a `Config.ConfigError` is skipped, not failed.
+
+```sh
+# From this package's directory, or anywhere in the workspace once installed:
+vp exec effect-evals run                                    # default glob: **/evals/**/*.eval.ts
+vp exec effect-evals run packages/jobs/evals                # explicit glob(s)
+vp exec effect-evals run --trials 3 --filter translation     # flags before positional globs
+vp exec effect-evals run --reporter terminal                 # terminal only (default: both terminal and json)
+vp exec effect-evals run --force --out ./tmp/results.json    # bypass the cache, write elsewhere
+vp exec effect-evals --help                                  # full flag reference
+```
+
+| Flag | Effect |
+| --- | --- |
+| `[globs...]` (positional) | Glob patterns to match `*.eval.ts` files. Default: `**/evals/**/*.eval.ts` from cwd. |
+| `--trials <n>` | Overrides every matched suite's `trials` (and the eval file's own `options.trials`). |
+| `--concurrency <n>` | Overrides both `caseConcurrency` and `metricConcurrency`. |
+| `--force` | Bypasses the result cache for this run. |
+| `--reporter json\|terminal` | Repeatable. Which reporter(s) to produce; both run when omitted. |
+| `--filter <substring>` | Only runs suites whose name contains this substring. |
+| `--out <path>` | Where the JSON reporter writes its combined report. Default `.effect-evals/results.json`. |
+
+**Exit code** is non-zero iff any _executed_ suite misses its threshold — a suite skipped for missing credentials never fails the run, but is listed in both the terminal output (a `SKIP` line) and the JSON report's `skipped` array.
+
+**Loading strategy.** Eval files are plain TypeScript, loaded via Node's own dynamic `import()` under `--experimental-transform-types` plus this package's own extensionless-import resolution hook (`src/cli/loader.mjs`) — never tsx, consistent with [docs/decisions/run-the-toolchain-under-node.md](../../docs/decisions/run-the-toolchain-under-node.md). `bin/effect-evals.js` is a small, flagless launcher that re-execs `node` with those flags as literal argv (never `NODE_OPTIONS`) pointed at `src/cli/main.ts` — the only hop, so nothing downstream can drop them the way Alchemy's own CLI launcher does (see the decision doc).
+
 ## What's in the box
 
 | Module | Purpose |
@@ -209,6 +237,7 @@ Combine all three for the most reproducible signal: explicit steps and a rubric 
 | [`Reporter`](src/Reporter.ts) | `Reporter`, `terminal`, `json`, `formatTerminalTable`. |
 | [`GEval`](src/metrics/GEval.ts) | `gEval`, `gEvalConversational`, `makeRubric`, `defaultTemplate`. |
 | [`viteplus`](src/viteplus/index.ts) | The `vite-plus/test` adapter (separate sub-export): `defineEval`, `evaluateEvalFile`, `evaluateSuite`, `formatCaseFailure`, `caseLabel`. |
+| [`cli`](src/cli/) | The `effect-evals` bin — see [CLI](#cli-930) above. |
 
 ## Development
 

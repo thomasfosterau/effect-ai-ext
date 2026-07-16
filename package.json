@@ -2,6 +2,9 @@
   "name": "@thomasfosterau/effect-evals",
   "version": "0.0.0",
   "private": true,
+  "bin": {
+    "effect-evals": "./bin/effect-evals.js"
+  },
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
@@ -13,6 +16,7 @@
     "test:coverage": "vp test run tests --coverage"
   },
   "dependencies": {
+    "@effect/platform-node": "catalog:",
     "effect": "catalog:"
   },
   "devDependencies": {

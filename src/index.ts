@@ -40,6 +40,8 @@
  *   retrieval-augmented answers, built on the shared {@link RagCase} case
  *   shape and {@link ExtractThenClassify} extract → classify → ratio
  *   primitive (#927).
+ * - {@link EvalFile} — the `*.eval.ts` default-export contract shared by
+ *   both execution surfaces (the CLI, #930; the `./viteplus` adapter, #929).
  *
  * The `vite-plus/test` adapter lives at the separate `./viteplus`
  * sub-export so this barrel stays free of it.

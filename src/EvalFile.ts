@@ -37,6 +37,10 @@ export type AnySuite = Suite<any, any, any, any, any, any, any, any>;
  * type: when building `layer` fails with a `Config.ConfigError` (a required
  * provider credential is unset), the execution surface must skip the
  * suite(s) rather than fail them — see `viteplus/index.ts`'s module docs.
+ * `E` has no default narrower than `never` on purpose: a `Config.*`-backed
+ * `layer` needs its real error type (e.g. `Config.ConfigError`, or a union
+ * including it) named explicitly at the `satisfies EvalFile.EvalFile<R, E>`
+ * call site, or its construction can't type-check at all.
  */
 export interface EvalFile<R = never, E = never> {
   readonly suites: ReadonlyArray<AnySuite>;
