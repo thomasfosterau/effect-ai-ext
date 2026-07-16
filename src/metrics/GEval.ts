@@ -47,7 +47,11 @@ import type { Threshold } from "../Threshold";
  * A `gEval` metric asked to see a case field via `evaluationParams` that the
  * given case doesn't have (the underlying value was `undefined` or `null`) —
  * mirrors DeepEval's skip-on-missing-params behaviour, as a typed failure
- * rather than a throw or a silently-skipped field.
+ * rather than a throw or a silently-skipped field. Reused directly by
+ * `metrics/rag/RagCase.ts` for the same failure mode against the RAG case
+ * fields (`input`/`output`/`expected`/`retrievedContext`) — a case missing a
+ * field a metric asked for is the same failure regardless of which judge
+ * metric asked for it.
  */
 export class MissingEvaluationParamError extends Schema.TaggedErrorClass<MissingEvaluationParamError>()(
   "MissingEvaluationParamError",
@@ -60,7 +64,8 @@ export class MissingEvaluationParamError extends Schema.TaggedErrorClass<Missing
 /** The failure modes of a `gEval` / `gEvalConversational` scorer. */
 export type GEvalError = MissingEvaluationParamError | AiError.AiError;
 
-const isMissing = (value: unknown): boolean => value === undefined || value === null;
+/** Whether a case field counts as absent for a `MissingEvaluationParamError` check. Exported for reuse by `metrics/rag/RagCase.ts`. */
+export const isMissing = (value: unknown): boolean => value === undefined || value === null;
 
 // ── Rubric ───────────────────────────────────────────────────────────
 
@@ -288,7 +293,8 @@ const resolveCriteria = (
   return { criteria, evaluationSteps };
 };
 
-const renderValue = (value: unknown): string => {
+/** Renders an arbitrary case field (which may not be a string) as text for a judge prompt. Exported for reuse by `metrics/rag/RagCase.ts`. */
+export const renderValue = (value: unknown): string => {
   if (typeof value === "string") return value;
   if (Array.isArray(value)) {
     return value.map((item) => (typeof item === "string" ? item : JSON.stringify(item))).join("\n");

@@ -32,18 +32,31 @@
  *   built on the primitive above (#925).
  * - {@link GEval} — the arbitrary-criteria LLM judge metric (single- and
  *   multi-turn).
+ * - The RAG metric suite ({@link Faithfulness}, {@link AnswerRelevancy},
+ *   {@link ContextualPrecision}, {@link ContextualRecall},
+ *   {@link ContextualRelevancy}) — judge-based metrics for
+ *   retrieval-augmented answers, built on the shared {@link RagCase} case
+ *   shape and {@link ExtractThenClassify} extract → classify → ratio
+ *   primitive (#927).
  *
  * The `vite-plus/test` adapter lives at the separate `./viteplus`
  * sub-export so this barrel stays free of it.
  */
 
+export * as AnswerRelevancy from "./metrics/rag/AnswerRelevancy";
 export * as Cache from "./Cache";
+export * as ContextualPrecision from "./metrics/rag/ContextualPrecision";
+export * as ContextualRecall from "./metrics/rag/ContextualRecall";
+export * as ContextualRelevancy from "./metrics/rag/ContextualRelevancy";
 export * as Dataset from "./Dataset";
 export * as EvalCase from "./EvalCase";
+export * as ExtractThenClassify from "./metrics/rag/ExtractThenClassify";
+export * as Faithfulness from "./metrics/rag/Faithfulness";
 export * as GEval from "./metrics/GEval";
 export * as Golden from "./Golden";
 export * as Metadata from "./Metadata";
 export * as Metric from "./Metric";
+export * as RagCase from "./metrics/rag/RagCase";
 export * as Reporter from "./Reporter";
 export * as Result from "./Result";
 export * as Runner from "./Runner";
