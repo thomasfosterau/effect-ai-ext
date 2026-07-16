@@ -26,6 +26,10 @@
  *   `KeyValueStore`.
  * - {@link Reporter} — terminal and JSON sinks for a completed
  *   {@link Result.SuiteResult}.
+ * - The deterministic scorer catalog ({@link ExactMatch}, {@link Levenshtein},
+ *   {@link JsonValidity}, {@link SchemaMatch}, {@link EmbeddingSimilarity},
+ *   {@link ToolCallCorrectness}) — judge-free, reproducible {@link Scorer}s
+ *   built on the primitive above (#925).
  *
  * The `vite-plus/test` adapter lives at the separate `./viteplus`
  * sub-export so this barrel stays free of it.
@@ -43,3 +47,10 @@ export * as Runner from "./Runner";
 export * as Score from "./Score";
 export * as Scorer from "./Scorer";
 export * as Threshold from "./Threshold";
+
+export * as EmbeddingSimilarity from "./scorers/EmbeddingSimilarity";
+export * as ExactMatch from "./scorers/ExactMatch";
+export * as JsonValidity from "./scorers/JsonValidity";
+export * as Levenshtein from "./scorers/Levenshtein";
+export * as SchemaMatch from "./scorers/SchemaMatch";
+export * as ToolCallCorrectness from "./scorers/ToolCallCorrectness";
