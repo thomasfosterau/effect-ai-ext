@@ -50,3 +50,15 @@ export const passes = (policy: Threshold, score: number): boolean => {
       return score === 1;
   }
 };
+
+/** Renders a threshold policy as a short human-readable comparison, for reporters and failure messages. */
+export const describe = (policy: Threshold): string => {
+  switch (policy._tag) {
+    case "MinScore":
+      return `>= ${policy.threshold}`;
+    case "MaxScore":
+      return `<= ${policy.threshold}`;
+    case "Strict":
+      return "== 1 (strict)";
+  }
+};

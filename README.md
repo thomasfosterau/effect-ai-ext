@@ -110,6 +110,41 @@ const result = await Effect.runPromise(
 
 `summary` is `null` when every trial for that metric errored (no scores to summarize). `taskFailures` is empty unless the task itself failed for some trial, in which case that trial contributes to no metric's `trials` array at all (there was no output to score).
 
+## `viteplus` adapter (#929)
+
+`@thomasfosterau/effect-evals/viteplus` — a separate sub-export (the core `"."` barrel never imports `vite-plus/test`, see [the packaging amendment](../../docs/decisions/single-barrel-package-exports.md#second-deliberate-exception-effect-evalss-viteplus)) — runs `*.eval.ts` files under `vp test run`, evalite-style: one `describe` per suite, one `it` per case.
+
+An `*.eval.ts` file default-exports the shared `EvalFile` contract (`src/EvalFile.ts`) — the same shape the CLI (#930) will dynamically `import()` — and registers itself with `vite-plus/test` in one expression. `defineEval` only registers tests when actually running under `vite-plus/test` (`process.env.VITEST === "true"`); a bare `import()` of the file — the CLI's use case — gets back the plain `EvalFile` object with no side effect, so the same file is safe for both surfaces:
+
+```ts
+// packages/<pkg>/evals/translation-quality.eval.ts
+import { defineEval } from "@thomasfosterau/effect-evals/viteplus";
+import { Dataset, Runner } from "@thomasfosterau/effect-evals";
+import { anthropicLanguageModelLayer } from "./layers";
+
+export default defineEval({
+  suites: [
+    Runner.makeSuite({
+      name: "translation-quality",
+      dataset: Dataset.fromArray("greetings", [{ input: "Bonjour", expected: "Hello" }]),
+      task: Runner.makeTask({ id: "translate@v1", run: (golden) => translate(golden.input) }),
+      metrics: [translationQualityMetric],
+    }),
+  ],
+  // Everything the suites' combined `R` needs beyond platform services —
+  // judge/provider layers *and* the cache layer choice (`Cache.layerMemory`
+  // or `Cache.layerFileSystem`) both live here.
+  layer: anthropicLanguageModelLayer,
+  options: { trials: 3 },
+});
+```
+
+Point a package's own vitest config at `evals/**/*.eval.ts` (a glob `packageTest`'s `include: ["tests/**/*.test.ts"]` never matches — pinned by `tests/eval-glob-separation.test.ts` — so `vp run test:unit` neither runs eval files nor needs credentials) and run it with `vp test run evals`; a per-package `evals` script wrapping that command is the suggested convention until the CLI (#930) lands.
+
+**Credential gating.** `layer` is built exactly once, shared across every suite in the file. When that build fails with a `Config.ConfigError` (e.g. `CF_AIG_TOKEN` unset), every suite reports as **skipped** — one `it` per suite naming the missing config — never failed, so an eval file referencing a real provider is safe to leave in the tree in a credential-less checkout. A suite's own dataset/task/metric bug only fails that suite; it can't sabotage its siblings.
+
+A failing case's message names the metric, its score against the threshold, the judge's `reason`, and the trial spread (mean/stddev/min/max).
+
 ## G-Eval judge metric (#926)
 
 `GEval.gEval` builds a `Metric` that scores a case against an arbitrary natural-language criterion using an LLM judge (DeepEval's G-Eval), covering anything from translation quality to a bespoke house style — without writing a new metric per criterion. `GEval.gEvalConversational` is the multi-turn variant: the judge reads the full rendered turn history and scores the exchange holistically.
@@ -164,14 +199,16 @@ Combine all three for the most reproducible signal: explicit steps and a rubric 
 | [`EvalCase`](src/EvalCase.ts) | `EvalCase` — a golden enriched with run actuals; `ToolCall` / `Usage`. |
 | [`Score`](src/Score.ts) | `Score` — a scorer's `0..1` verdict + reason + metadata. |
 | [`Scorer`](src/Scorer.ts) | `Scorer`, `makeScorer`. |
-| [`Threshold`](src/Threshold.ts) | `minScore` / `maxScore` / `strict`, `passes`. |
+| [`Threshold`](src/Threshold.ts) | `minScore` / `maxScore` / `strict`, `passes`, `describe`. |
 | [`Metric`](src/Metric.ts) | `Metric`, `makeMetric`, `evaluate`. |
 | [`Dataset`](src/Dataset.ts) | `Dataset`, `makeDataset`, `fromArray`. |
+| [`EvalFile`](src/EvalFile.ts) | The `*.eval.ts` contract shared by every execution surface: `EvalFile`, `AnySuite`. |
 | [`Runner`](src/Runner.ts) | `Suite`, `makeSuite`, `TaskDefinition`, `makeTask`, `runSuite`. |
 | [`Result`](src/Result.ts) | The typed suite → case → trial → metric result model; `summarize`. |
 | [`Cache`](src/Cache.ts) | `layerMemory` / `layerFileSystem`, `hashKey`. |
 | [`Reporter`](src/Reporter.ts) | `Reporter`, `terminal`, `json`, `formatTerminalTable`. |
 | [`GEval`](src/metrics/GEval.ts) | `gEval`, `gEvalConversational`, `makeRubric`, `defaultTemplate`. |
+| [`viteplus`](src/viteplus/index.ts) | The `vite-plus/test` adapter (separate sub-export): `defineEval`, `evaluateEvalFile`, `evaluateSuite`, `formatCaseFailure`, `caseLabel`. |
 
 ## Development
 

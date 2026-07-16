@@ -17,6 +17,8 @@
  * - {@link Threshold} / {@link Metric} — the pass/fail policy and the
  *   scorer+policy+name unit a runner executes.
  * - {@link Dataset} — a named source of goldens.
+ * - {@link EvalFile} — the `*.eval.ts` contract shared by every execution
+ *   surface (the `./viteplus` adapter and the CLI).
  * - {@link Runner} — `runSuite`, the Effect program that runs a suite's
  *   goldens through its task and metrics: trials, bounded concurrency,
  *   retry, and caching (#924).
@@ -50,6 +52,7 @@ export * as ContextualRecall from "./metrics/rag/ContextualRecall";
 export * as ContextualRelevancy from "./metrics/rag/ContextualRelevancy";
 export * as Dataset from "./Dataset";
 export * as EvalCase from "./EvalCase";
+export * as EvalFile from "./EvalFile";
 export * as ExtractThenClassify from "./metrics/rag/ExtractThenClassify";
 export * as Faithfulness from "./metrics/rag/Faithfulness";
 export * as GEval from "./metrics/GEval";

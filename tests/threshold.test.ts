@@ -42,3 +42,17 @@ describe("Threshold.strict", () => {
     expect(Threshold.passes(Threshold.strict, 0)).toBe(false);
   });
 });
+
+describe("Threshold.describe", () => {
+  it("renders minScore as >=", () => {
+    expect(Threshold.describe(Threshold.minScore(0.7))).toBe(">= 0.7");
+  });
+
+  it("renders maxScore as <=", () => {
+    expect(Threshold.describe(Threshold.maxScore(0.3))).toBe("<= 0.3");
+  });
+
+  it("renders strict as == 1 (strict)", () => {
+    expect(Threshold.describe(Threshold.strict)).toBe("== 1 (strict)");
+  });
+});

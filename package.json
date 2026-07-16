@@ -17,6 +17,8 @@
   },
   "devDependencies": {
     "@effect/language-service": "catalog:",
-    "@thomasfosterau/test-config": "workspace:*"
+    "@thomasfosterau/test-config": "workspace:*",
+    "@types/node": "catalog:",
+    "vite-plus": "catalog:"
   }
 }
