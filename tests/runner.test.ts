@@ -1,0 +1,423 @@
+/**
+ * Unit tests for `Runner.runSuite`: end-to-end execution against a stubbed
+ * task/scorer, N-trial aggregation, retry-on-retryable-`AiError`,
+ * content-hash caching (zero model calls on a repeat run), and the
+ * ignore-vs-fail metric-error semantics.
+ *
+ * @module tests/runner
+ */
+
+import { describe, expect, it } from "vite-plus/test";
+import * as Effect from "effect/Effect";
+import * as Schedule from "effect/Schedule";
+import { AiError } from "effect/unstable/ai";
+import { Cache, Dataset, Metric, Runner, Scorer, Threshold } from "@thomasfosterau/effect-evals";
+import { runTest } from "@test-helpers/effect";
+
+class TaskError {
+  readonly _tag = "TaskError";
+  constructor(readonly message: string) {}
+}
+
+/** Immediate retries (no delay) so retry tests stay fast. */
+const fastSchedule = Schedule.recurs(5);
+
+const exactMatchMetric = Metric.makeMetric({
+  name: "exact-match",
+  scorer: Scorer.makeScorer<Runner.EvaluatedCase<string, string>>({
+    name: "exact-match",
+    evaluate: (evalCase) => Effect.succeed({ score: evalCase.golden === evalCase.output ? 1 : 0 }),
+  }),
+  threshold: Threshold.strict,
+});
+
+const echoTask = Runner.makeTask<string, string>({
+  id: "echo@v1",
+  run: (golden) => Effect.succeed(golden),
+});
+
+describe("Runner.runSuite — end to end", () => {
+  it("runs every golden through the task and every metric, bounded concurrency", async () => {
+    const suite = Runner.makeSuite({
+      name: "greetings",
+      dataset: Dataset.fromArray("greetings", ["Bonjour", "Ciao"]),
+      task: echoTask,
+      metrics: [exactMatchMetric],
+    });
+
+    const result = await runTest(Runner.runSuite(suite).pipe(Effect.provide(Cache.layerMemory)));
+
+    expect(result.suite).toBe("greetings");
+    expect(result.passed).toBe(true);
+    expect(result.cases).toHaveLength(2);
+    expect(result.cases[0]?.metrics[0]?.summary?.mean).toBe(1);
+    expect(result.cases[0]?.metrics[0]?.passed).toBe(true);
+  });
+
+  it("fails the case when the metric's score misses its threshold", async () => {
+    const suite = Runner.makeSuite({
+      name: "mismatches",
+      dataset: Dataset.fromArray("mismatches", ["Bonjour"]),
+      task: Runner.makeTask<string, string>({
+        id: "shout@v1",
+        run: (g) => Effect.succeed(g.toUpperCase()),
+      }),
+      metrics: [exactMatchMetric],
+    });
+
+    const result = await runTest(Runner.runSuite(suite).pipe(Effect.provide(Cache.layerMemory)));
+
+    expect(result.passed).toBe(false);
+    expect(result.cases[0]?.metrics[0]?.passed).toBe(false);
+    expect(result.cases[0]?.metrics[0]?.summary?.mean).toBe(0);
+  });
+
+  it("propagates a dataset failure rather than swallowing it", async () => {
+    class DatasetError {
+      readonly _tag = "DatasetError";
+    }
+    const suite = Runner.makeSuite({
+      name: "broken",
+      dataset: Dataset.makeDataset({ name: "broken", goldens: Effect.fail(new DatasetError()) }),
+      task: echoTask,
+      metrics: [exactMatchMetric],
+    });
+
+    await expect(
+      runTest(Runner.runSuite(suite).pipe(Effect.provide(Cache.layerMemory))),
+    ).rejects.toThrow();
+  });
+});
+
+describe("Runner.runSuite — trials", () => {
+  it("aggregates mean/variance/min/max and exposes every per-trial score", async () => {
+    const scores = [0.6, 0.8, 1];
+    let call = 0;
+    const varyingMetric = Metric.makeMetric({
+      name: "varying",
+      scorer: Scorer.makeScorer<Runner.EvaluatedCase<string, string>>({
+        name: "varying",
+        evaluate: () => Effect.sync(() => ({ score: scores[call++] ?? 1 })),
+      }),
+      threshold: Threshold.minScore(0.5),
+    });
+
+    const suite = Runner.makeSuite({
+      name: "trials",
+      dataset: Dataset.fromArray("trials", ["Bonjour"]),
+      task: echoTask,
+      metrics: [varyingMetric],
+    });
+
+    const result = await runTest(
+      Runner.runSuite(suite, { trials: 3 }).pipe(Effect.provide(Cache.layerMemory)),
+    );
+
+    const metric = result.cases[0]?.metrics[0];
+    expect(metric?.trials).toHaveLength(3);
+    expect(metric?.summary?.mean).toBeCloseTo(0.8);
+    expect(metric?.summary?.min).toBe(0.6);
+    expect(metric?.summary?.max).toBe(1);
+    expect(metric?.passed).toBe(true);
+  });
+
+  it("clamps a non-positive trials option to 1 instead of running zero trials", async () => {
+    let taskCalls = 0;
+    const suite = Runner.makeSuite({
+      name: "clamped",
+      dataset: Dataset.fromArray("clamped", ["Bonjour"]),
+      task: Runner.makeTask<string, string>({
+        id: "counting@v1",
+        run: (golden) =>
+          Effect.sync(() => {
+            taskCalls++;
+            return golden;
+          }),
+      }),
+      metrics: [exactMatchMetric],
+    });
+
+    const result = await runTest(
+      Runner.runSuite(suite, { trials: 0 }).pipe(Effect.provide(Cache.layerMemory)),
+    );
+
+    // trials: 0 doesn't mean "skip the case" — it's clamped to the minimum
+    // meaningful value (1), and the reported trial count matches what ran.
+    expect(taskCalls).toBe(1);
+    expect(result.cases[0]?.trials).toBe(1);
+    expect(result.cases[0]?.metrics[0]?.trials).toHaveLength(1);
+  });
+});
+
+describe("Runner.runSuite — retry", () => {
+  it("retries a retryable AiError and eventually succeeds", async () => {
+    let attempts = 0;
+    const flakyMetric = Metric.makeMetric({
+      name: "flaky",
+      scorer: Scorer.makeScorer<Runner.EvaluatedCase<string, string>>({
+        name: "flaky",
+        evaluate: () =>
+          Effect.gen(function* () {
+            attempts++;
+            if (attempts < 3) {
+              return yield* AiError.make({
+                module: "test",
+                method: "flaky",
+                reason: new AiError.RateLimitError({}),
+              });
+            }
+            return { score: 1 };
+          }),
+      }),
+      threshold: Threshold.strict,
+    });
+
+    const suite = Runner.makeSuite({
+      name: "retry",
+      dataset: Dataset.fromArray("retry", ["Bonjour"]),
+      task: echoTask,
+      metrics: [flakyMetric],
+    });
+
+    const result = await runTest(
+      Runner.runSuite(suite, { metricRetrySchedule: fastSchedule }).pipe(
+        Effect.provide(Cache.layerMemory),
+      ),
+    );
+
+    expect(attempts).toBe(3);
+    expect(result.cases[0]?.metrics[0]?.trials[0]).toMatchObject({ _tag: "Scored" });
+    expect(result.cases[0]?.metrics[0]?.passed).toBe(true);
+  });
+
+  it("does not retry a non-retryable AiError, surfacing it as an Errored trial", async () => {
+    let attempts = 0;
+    const authFailingMetric = Metric.makeMetric({
+      name: "auth-failing",
+      scorer: Scorer.makeScorer<Runner.EvaluatedCase<string, string>>({
+        name: "auth-failing",
+        evaluate: () =>
+          Effect.gen(function* () {
+            attempts++;
+            return yield* AiError.make({
+              module: "test",
+              method: "authFailing",
+              reason: new AiError.AuthenticationError({ kind: "InvalidKey" }),
+            });
+          }),
+      }),
+      threshold: Threshold.strict,
+    });
+
+    const suite = Runner.makeSuite({
+      name: "no-retry",
+      dataset: Dataset.fromArray("no-retry", ["Bonjour"]),
+      task: echoTask,
+      metrics: [authFailingMetric],
+    });
+
+    const result = await runTest(
+      Runner.runSuite(suite, { metricRetrySchedule: fastSchedule }).pipe(
+        Effect.provide(Cache.layerMemory),
+      ),
+    );
+
+    expect(attempts).toBe(1);
+    expect(result.cases[0]?.metrics[0]?.trials[0]).toMatchObject({ _tag: "Errored" });
+    expect(result.cases[0]?.metrics[0]?.errorCount).toBe(1);
+  });
+
+  it("does not retry the task when its error is not an AiError", async () => {
+    let attempts = 0;
+    const suite = Runner.makeSuite({
+      name: "task-error",
+      dataset: Dataset.fromArray("task-error", ["Bonjour"]),
+      task: Runner.makeTask<string, string, TaskError>({
+        id: "always-fails@v1",
+        run: () =>
+          Effect.sync(() => {
+            attempts++;
+          }).pipe(Effect.flatMap(() => Effect.fail(new TaskError("boom")))),
+      }),
+      metrics: [exactMatchMetric],
+    });
+
+    const result = await runTest(
+      Runner.runSuite(suite, { taskRetrySchedule: fastSchedule }).pipe(
+        Effect.provide(Cache.layerMemory),
+      ),
+    );
+
+    expect(attempts).toBe(1);
+    expect(result.cases[0]?.taskFailures).toHaveLength(1);
+    expect(result.cases[0]?.metrics[0]?.trials).toHaveLength(0);
+    expect(result.cases[0]?.passed).toBe(false);
+  });
+});
+
+describe("Runner.runSuite — ignore vs fail metric errors", () => {
+  const makeFlakyOnceMetric = () => {
+    let call = 0;
+    return Metric.makeMetric({
+      name: "flaky-once",
+      scorer: Scorer.makeScorer<Runner.EvaluatedCase<string, string>>({
+        name: "flaky-once",
+        evaluate: () =>
+          Effect.gen(function* () {
+            call++;
+            if (call === 1) return yield* Effect.fail(new TaskError("first trial fails"));
+            return { score: 1 };
+          }),
+      }),
+      threshold: Threshold.strict,
+    });
+  };
+
+  it("fails the case on any metric error by default (ignoreErrors: false)", async () => {
+    const suite = Runner.makeSuite({
+      name: "strict-errors",
+      dataset: Dataset.fromArray("strict-errors", ["Bonjour"]),
+      task: echoTask,
+      metrics: [makeFlakyOnceMetric()],
+    });
+
+    const result = await runTest(
+      Runner.runSuite(suite, { trials: 3 }).pipe(Effect.provide(Cache.layerMemory)),
+    );
+
+    expect(result.cases[0]?.metrics[0]?.errorCount).toBe(1);
+    expect(result.cases[0]?.metrics[0]?.passed).toBe(false);
+    expect(result.cases[0]?.passed).toBe(false);
+  });
+
+  it("excludes errored trials from the aggregate when ignoreErrors: true", async () => {
+    const suite = Runner.makeSuite({
+      name: "ignored-errors",
+      dataset: Dataset.fromArray("ignored-errors", ["Bonjour"]),
+      task: echoTask,
+      metrics: [makeFlakyOnceMetric()],
+    });
+
+    const result = await runTest(
+      Runner.runSuite(suite, { trials: 3, ignoreErrors: true }).pipe(
+        Effect.provide(Cache.layerMemory),
+      ),
+    );
+
+    const metric = result.cases[0]?.metrics[0];
+    expect(metric?.errorCount).toBe(1);
+    expect(metric?.summary?.mean).toBe(1);
+    expect(metric?.passed).toBe(true);
+    expect(result.cases[0]?.passed).toBe(true);
+  });
+});
+
+describe("Runner.runSuite — caching", () => {
+  it("makes zero further scorer/task calls on a repeat run against the same cache", async () => {
+    let taskCalls = 0;
+    let metricCalls = 0;
+
+    const countingTask = Runner.makeTask<string, string>({
+      id: "counting@v1",
+      run: (golden) =>
+        Effect.sync(() => {
+          taskCalls++;
+          return golden;
+        }),
+    });
+    const countingMetric = Metric.makeMetric({
+      name: "counting",
+      scorer: Scorer.makeScorer<Runner.EvaluatedCase<string, string>>({
+        name: "counting",
+        evaluate: () =>
+          Effect.sync(() => {
+            metricCalls++;
+            return { score: 1 };
+          }),
+      }),
+      threshold: Threshold.strict,
+    });
+
+    const suite = Runner.makeSuite({
+      name: "cached",
+      dataset: Dataset.fromArray("cached", ["Bonjour"]),
+      task: countingTask,
+      metrics: [countingMetric],
+    });
+
+    const [first, second] = await runTest(
+      Effect.gen(function* () {
+        const r1 = yield* Runner.runSuite(suite);
+        const r2 = yield* Runner.runSuite(suite);
+        return [r1, r2] as const;
+      }).pipe(Effect.provide(Cache.layerMemory)),
+    );
+
+    expect(taskCalls).toBe(1);
+    expect(metricCalls).toBe(1);
+    expect(first?.cases[0]?.metrics[0]?.trials[0]).toMatchObject({ cached: false });
+    expect(second?.cases[0]?.metrics[0]?.trials[0]).toMatchObject({ cached: true });
+    expect(second?.passed).toBe(true);
+  });
+
+  it("bypassCache: true skips the cache, making a fresh call on every run", async () => {
+    let metricCalls = 0;
+    const countingMetric = Metric.makeMetric({
+      name: "counting",
+      scorer: Scorer.makeScorer<Runner.EvaluatedCase<string, string>>({
+        name: "counting",
+        evaluate: () =>
+          Effect.sync(() => {
+            metricCalls++;
+            return { score: 1 };
+          }),
+      }),
+      threshold: Threshold.strict,
+    });
+
+    const suite = Runner.makeSuite({
+      name: "bypassed",
+      dataset: Dataset.fromArray("bypassed", ["Bonjour"]),
+      task: echoTask,
+      metrics: [countingMetric],
+    });
+
+    await runTest(
+      Effect.gen(function* () {
+        yield* Runner.runSuite(suite, { bypassCache: true });
+        yield* Runner.runSuite(suite, { bypassCache: true });
+      }).pipe(Effect.provide(Cache.layerMemory)),
+    );
+
+    expect(metricCalls).toBe(2);
+  });
+});
+
+describe("Runner.runSuite — reporters", () => {
+  it("invokes every reporter exactly once with the final result", async () => {
+    const reports: Array<string> = [];
+    const suite = Runner.makeSuite({
+      name: "reported",
+      dataset: Dataset.fromArray("reported", ["Bonjour"]),
+      task: echoTask,
+      metrics: [exactMatchMetric],
+    });
+
+    await runTest(
+      Runner.runSuite(suite, {
+        reporters: [
+          {
+            name: "spy-a",
+            report: (result) => Effect.sync(() => void reports.push(`a:${result.suite}`)),
+          },
+          {
+            name: "spy-b",
+            report: (result) => Effect.sync(() => void reports.push(`b:${result.suite}`)),
+          },
+        ],
+      }).pipe(Effect.provide(Cache.layerMemory)),
+    );
+
+    expect(reports.sort()).toEqual(["a:reported", "b:reported"]);
+  });
+});
