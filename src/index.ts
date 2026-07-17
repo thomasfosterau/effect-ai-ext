@@ -13,9 +13,11 @@
  *   run-enriched counterpart (DeepEval's golden/test-case split).
  * - {@link Score} — a scorer's `0..1` verdict.
  * - {@link Scorer} — a named, Effect-returning function from an
- *   `EvalCase` to a `Score`.
+ *   `EvalCase` to a `Score`; `contramap` adapts one to a differently-shaped
+ *   case.
  * - {@link Threshold} / {@link Metric} — the pass/fail policy and the
- *   scorer+policy+name unit a runner executes.
+ *   scorer+policy+name unit a runner executes; {@link Metric.contramap} is
+ *   `Scorer.contramap`'s counterpart at the `Metric` level.
  * - {@link Dataset} — a named source of goldens.
  * - {@link EvalFile} — the `*.eval.ts` contract shared by every execution
  *   surface (the `./viteplus` adapter and the CLI).

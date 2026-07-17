@@ -80,7 +80,41 @@ export interface Suite<
   readonly metrics: ReadonlyArray<Metric.Metric<EvaluatedCase<Golden, Output>, MetricE, MetricR>>;
 }
 
-/** Constructs a {@link Suite} from its name, dataset, task, and metrics. */
+/** Any {@link Metric.Metric} over a given case, `E`/`R` left open — the constraint `makeSuite`'s heterogeneous `metrics` tuple parameter is bounded by. */
+type AnyMetric<Case> = Metric.Metric<Case, any, any>;
+
+/**
+ * Unions a heterogeneous `metrics` tuple's per-element `E` into `MetricE`
+ * instead of `makeSuite` fixing it from the first element — the same
+ * `T[number] extends ... ? ... : never` pattern `effect`'s own
+ * `Effect.All.ReturnTuple` uses for the equivalent problem (an array of
+ * `Effect`s with different `E`/`R`). Requires `Metrics` to be inferred as a
+ * literal tuple rather than widened to `AnyMetric<Case>[]` — see `makeSuite`'s
+ * `const Metrics` type parameter.
+ */
+type MetricErrorOf<Metrics extends ReadonlyArray<AnyMetric<any>>> = Metrics[number] extends never
+  ? never
+  : Metrics[number] extends Metric.Metric<any, infer E, any>
+    ? E
+    : never;
+
+/** The `R` counterpart of {@link MetricErrorOf}. */
+type MetricRequirementOf<Metrics extends ReadonlyArray<AnyMetric<any>>> =
+  Metrics[number] extends never
+    ? never
+    : Metrics[number] extends Metric.Metric<any, any, infer R>
+      ? R
+      : never;
+
+/**
+ * Constructs a {@link Suite} from its name, dataset, task, and metrics. The
+ * `metrics` array may freely mix metrics with different `E`/`R` — a G-Eval
+ * judge (`GEvalError`/`LanguageModel`) alongside an `embeddingSimilarity`
+ * metric (`AiError`/`EmbeddingModel`), say — without an explicit array type
+ * annotation at the call site: `Metrics` is inferred as a literal tuple (the
+ * `const` type parameter modifier) so `MetricE`/`MetricR` are unioned across
+ * its elements instead of fixed from the first one.
+ */
 export const makeSuite = <
   Golden,
   Output,
@@ -88,11 +122,24 @@ export const makeSuite = <
   GoldenR = never,
   TaskE = never,
   TaskR = never,
-  MetricE = never,
-  MetricR = never,
->(
-  options: Suite<Golden, Output, GoldenE, GoldenR, TaskE, TaskR, MetricE, MetricR>,
-): Suite<Golden, Output, GoldenE, GoldenR, TaskE, TaskR, MetricE, MetricR> => options;
+  const Metrics extends ReadonlyArray<AnyMetric<EvaluatedCase<Golden, Output>>> = ReadonlyArray<
+    Metric.Metric<EvaluatedCase<Golden, Output>, never, never>
+  >,
+>(options: {
+  readonly name: string;
+  readonly dataset: Dataset.Dataset<Golden, GoldenE, GoldenR>;
+  readonly task: TaskDefinition<Golden, Output, TaskE, TaskR>;
+  readonly metrics: Metrics;
+}): Suite<
+  Golden,
+  Output,
+  GoldenE,
+  GoldenR,
+  TaskE,
+  TaskR,
+  MetricErrorOf<Metrics>,
+  MetricRequirementOf<Metrics>
+> => options;
 
 /** Runner configuration; every field has a sensible default. */
 export interface RunnerOptions<ReporterR = never> {

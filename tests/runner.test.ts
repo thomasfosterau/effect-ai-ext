@@ -8,7 +8,9 @@
  */
 
 import { describe, expect, it } from "vite-plus/test";
+import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
 import * as Schedule from "effect/Schedule";
 import { AiError } from "effect/unstable/ai";
 import { Cache, Dataset, Metric, Runner, Scorer, Threshold } from "@thomasfosterau/effect-evals";
@@ -390,6 +392,76 @@ describe("Runner.runSuite — caching", () => {
     );
 
     expect(metricCalls).toBe(2);
+  });
+});
+
+describe("Runner.makeSuite — heterogeneous metrics", () => {
+  class ErrorA {
+    readonly _tag = "ErrorA";
+  }
+  class ErrorB {
+    readonly _tag = "ErrorB";
+  }
+  class ServiceA extends Context.Service<
+    ServiceA,
+    { readonly rate: () => Effect.Effect<number, ErrorA> }
+  >()("tests/Runner/ServiceA") {}
+  class ServiceB extends Context.Service<
+    ServiceB,
+    { readonly rate: () => Effect.Effect<number, ErrorB> }
+  >()("tests/Runner/ServiceB") {}
+
+  const metricA = Metric.makeMetric({
+    name: "metric-a",
+    scorer: Scorer.makeScorer<Runner.EvaluatedCase<string, string>, ErrorA, ServiceA>({
+      name: "metric-a",
+      evaluate: () =>
+        Effect.gen(function* () {
+          const service = yield* ServiceA;
+          return { score: yield* service.rate() };
+        }),
+    }),
+    threshold: Threshold.strict,
+  });
+
+  const metricB = Metric.makeMetric({
+    name: "metric-b",
+    scorer: Scorer.makeScorer<Runner.EvaluatedCase<string, string>, ErrorB, ServiceB>({
+      name: "metric-b",
+      evaluate: () =>
+        Effect.gen(function* () {
+          const service = yield* ServiceB;
+          return { score: yield* service.rate() };
+        }),
+    }),
+    threshold: Threshold.strict,
+  });
+
+  it("infers the union of E/R across metrics with different E/R, no explicit array annotation", async () => {
+    // No explicit `ReadonlyArray<Metric.Metric<..., ErrorA | ErrorB, ServiceA | ServiceB>>` annotation
+    // here — `makeSuite`'s `const Metrics` type parameter infers the tuple and unions MetricE/MetricR
+    // from `metricA`/`metricB` directly; a regression here would fail `vp run check`, not this assertion.
+    const suite = Runner.makeSuite({
+      name: "heterogeneous",
+      dataset: Dataset.fromArray("heterogeneous", ["Bonjour"]),
+      task: echoTask,
+      metrics: [metricA, metricB],
+    });
+
+    const layer = Layer.mergeAll(
+      Layer.succeed(ServiceA, { rate: () => Effect.succeed(1) }),
+      Layer.succeed(ServiceB, { rate: () => Effect.succeed(1) }),
+    );
+
+    const result = await runTest(
+      Runner.runSuite(suite).pipe(Effect.provide(Cache.layerMemory), Effect.provide(layer)),
+    );
+
+    expect(result.passed).toBe(true);
+    expect(result.cases[0]?.metrics.map((metric) => metric.metric).sort()).toEqual([
+      "metric-a",
+      "metric-b",
+    ]);
   });
 });
 

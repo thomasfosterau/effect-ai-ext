@@ -97,3 +97,88 @@ describe("Scorer + Metric — judge-backed scorer", () => {
     );
   });
 });
+
+/** A differently-shaped case a `TranslationCase`-scoped scorer/metric can be `contramap`ped from, into. */
+interface RatingCase {
+  readonly text: string;
+  readonly reference: string;
+}
+
+const toRatingCase = (evalCase: TranslationCase): RatingCase => ({
+  text: evalCase.output,
+  reference: evalCase.golden.expected ?? "",
+});
+
+const ratingScorer: Scorer.Scorer<RatingCase, JudgeError, Judge> = Scorer.makeScorer({
+  name: "rating",
+  evaluate: (ratingCase) =>
+    Effect.gen(function* () {
+      const judge = yield* Judge;
+      const score = yield* judge.rate(ratingCase.text, ratingCase.reference);
+      return { score };
+    }),
+});
+
+describe("Scorer.contramap", () => {
+  const adapted: Scorer.Scorer<TranslationCase, JudgeError, Judge> = Scorer.contramap(
+    ratingScorer,
+    toRatingCase,
+  );
+
+  it("preserves the underlying scorer's name", () => {
+    expect(adapted.name).toBe("rating");
+  });
+
+  it("maps the input case through `from` before delegating to the underlying scorer", async () => {
+    const layer = Layer.succeed(Judge, { rate: () => Effect.succeed(0.8) });
+
+    const score = await runTest(adapted.evaluate(matchingCase).pipe(Effect.provide(layer)));
+    expect(score.score).toBe(0.8);
+  });
+
+  it("surfaces the underlying scorer's typed failure rather than throwing", async () => {
+    const layer = Layer.succeed(Judge, { rate: () => Effect.fail(new JudgeError("timeout")) });
+
+    await expectFailureInstanceOf(
+      adapted.evaluate(matchingCase).pipe(Effect.provide(layer), Effect.asVoid),
+      JudgeError,
+    );
+  });
+});
+
+describe("Metric.contramap", () => {
+  const ratingMetric = Metric.makeMetric({
+    name: "rating",
+    scorer: ratingScorer,
+    threshold: Threshold.minScore(0.5),
+  });
+
+  const adaptedMetric: Metric.Metric<TranslationCase, JudgeError, Judge> = Metric.contramap(
+    ratingMetric,
+    toRatingCase,
+  );
+
+  it("preserves the underlying metric's name and threshold", () => {
+    expect(adaptedMetric.name).toBe("rating");
+    expect(adaptedMetric.threshold).toBe(ratingMetric.threshold);
+  });
+
+  it("adapts the scorer, applying the (unchanged) threshold to the mapped case's score", async () => {
+    const layer = Layer.succeed(Judge, { rate: () => Effect.succeed(0.8) });
+
+    const result = await runTest(
+      Metric.evaluate(adaptedMetric, matchingCase).pipe(Effect.provide(layer)),
+    );
+    expect(result.score.score).toBe(0.8);
+    expect(result.passed).toBe(true);
+  });
+
+  it("surfaces the underlying metric's typed failure rather than throwing", async () => {
+    const layer = Layer.succeed(Judge, { rate: () => Effect.fail(new JudgeError("timeout")) });
+
+    await expectFailureInstanceOf(
+      Metric.evaluate(adaptedMetric, matchingCase).pipe(Effect.provide(layer), Effect.asVoid),
+      JudgeError,
+    );
+  });
+});

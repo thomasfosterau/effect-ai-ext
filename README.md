@@ -7,8 +7,8 @@ Effect-native LLM evaluation: goldens, scorers, thresholds, and a runner with tr
 - **`Golden` / `ConversationalGolden`** — the static, hand-authored description of one case: an input, an optional expected output, and whatever context a scorer needs to judge a run.
 - **`EvalCase`** — a golden enriched with the actuals a run produced (`output`, `retrievedContext`, `toolCalls`, `usage`). Scorers read an `EvalCase`, never a bare `Golden` (DeepEval's golden/test-case split).
 - **`Score`** — a scorer's `0..1` verdict, plus an optional `reason` and free-form `metadata`.
-- **`Scorer`** — a named, Effect-returning function from an `EvalCase` to a `Score`. Judge/embedding dependencies live in `R`; failures are typed in `E`.
-- **`Threshold` / `Metric`** — the pass/fail policy (`minScore` / `maxScore` / `strict`) and the `{ name, scorer, threshold }` unit a runner executes.
+- **`Scorer`** — a named, Effect-returning function from an `EvalCase` to a `Score`. Judge/embedding dependencies live in `R`; failures are typed in `E`. `Scorer.contramap(scorer, from)` adapts a scorer built for one case shape to a differently-shaped case, reusing its name/`E`/`R` unchanged — exactly the variance `Scorer`'s `Case` type parameter is already declared with (`in Case`).
+- **`Threshold` / `Metric`** — the pass/fail policy (`minScore` / `maxScore` / `strict`) and the `{ name, scorer, threshold }` unit a runner executes. `Metric.contramap(metric, from)` is `Scorer.contramap`'s counterpart for a metric (scorer + threshold together) — reuse a package metric like `GEval.gEval` or `EmbeddingSimilarity.embeddingSimilarity` against a case shape it wasn't written for.
 - **`Dataset`** — a named, effectfully-produced source of goldens.
 
 ## Runner (#924)
@@ -55,6 +55,7 @@ const result = await Effect.runPromise(
 );
 ```
 
+- **Heterogeneous `metrics`.** `makeSuite`'s `metrics` array can freely mix metrics with different `E`/`R` — a G-Eval judge (`GEvalError`/`LanguageModel`) alongside an `embeddingSimilarity` metric (`AiError`/`EmbeddingModel`), say — with no explicit array type annotation at the call site: the `metrics` array literal is inferred as a literal tuple (a `const` type parameter) and `MetricE`/`MetricR` are unioned across its elements, rather than fixed from the first one.
 - **Concurrency** is bounded independently at the case level (`caseConcurrency`, default `5`) and the metric level (`metricConcurrency`, default `5`) via `Effect.forEach({ concurrency })`.
 - **Trials**: each case runs `trials` times (default `1`) end to end — task and every metric. A metric's aggregate reports `mean`/`variance`/`stddev`/`min`/`max` across its trials, with every per-trial score kept so flakiness is visible; pass/fail applies the metric's `Threshold` to the mean.
 - **Retries**: the task and each metric evaluation are retried independently (`taskRetrySchedule` / `metricRetrySchedule`, default a jittered exponential backoff capped at 3 attempts) — but only when the failure is an `AiError` (`effect/unstable/ai`) with `isRetryable`. Any other failure, or a non-retryable `AiError`, surfaces immediately as a typed trial error.
@@ -226,9 +227,9 @@ vp exec effect-evals --help                                  # full flag referen
 | [`Golden`](src/Golden.ts) | `Golden` / `ConversationalGolden` — the static case shape. |
 | [`EvalCase`](src/EvalCase.ts) | `EvalCase` — a golden enriched with run actuals; `ToolCall` / `Usage`. |
 | [`Score`](src/Score.ts) | `Score` — a scorer's `0..1` verdict + reason + metadata. |
-| [`Scorer`](src/Scorer.ts) | `Scorer`, `makeScorer`. |
+| [`Scorer`](src/Scorer.ts) | `Scorer`, `makeScorer`, `contramap`. |
 | [`Threshold`](src/Threshold.ts) | `minScore` / `maxScore` / `strict`, `passes`, `describe`. |
-| [`Metric`](src/Metric.ts) | `Metric`, `makeMetric`, `evaluate`. |
+| [`Metric`](src/Metric.ts) | `Metric`, `makeMetric`, `evaluate`, `contramap`. |
 | [`Dataset`](src/Dataset.ts) | `Dataset`, `makeDataset`, `fromArray`. |
 | [`EvalFile`](src/EvalFile.ts) | The `*.eval.ts` contract shared by every execution surface: `EvalFile`, `AnySuite`. |
 | [`Runner`](src/Runner.ts) | `Suite`, `makeSuite`, `TaskDefinition`, `makeTask`, `runSuite`. |

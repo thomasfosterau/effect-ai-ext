@@ -12,7 +12,7 @@
 
 import * as Effect from "effect/Effect";
 import type { Score } from "./Score";
-import type { Scorer } from "./Scorer";
+import { contramap as contramapScorer, type Scorer } from "./Scorer";
 import { passes, type Threshold } from "./Threshold";
 
 /** The outcome of evaluating one {@link Metric} against one case. */
@@ -44,3 +44,21 @@ export const evaluate = <Case, E, R>(
     score,
     passed: passes(metric.threshold, score.score),
   }));
+
+/**
+ * Adapts a {@link Metric} over `CaseB` into one over `CaseA` by transforming
+ * the input case through `from` before evaluating — the same name, threshold,
+ * and (adapted) scorer. Mirrors {@link Scorer.contramap} at the `Metric`
+ * level for a consumer who already has a `Metric` (scorer + threshold
+ * together, e.g. a package `GEval` judge or `EmbeddingSimilarity` metric) that
+ * needs adapting to a differently-shaped case, rather than reconstructing the
+ * scorer and threshold by hand.
+ */
+export const contramap = <CaseA, CaseB, E, R>(
+  metric: Metric<CaseB, E, R>,
+  from: (evalCase: CaseA) => CaseB,
+): Metric<CaseA, E, R> => ({
+  name: metric.name,
+  scorer: contramapScorer(metric.scorer, from),
+  threshold: metric.threshold,
+});
