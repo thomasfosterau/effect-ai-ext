@@ -167,10 +167,10 @@ const DEFAULT_TRIALS = 1;
 const DEFAULT_CASE_CONCURRENCY = 5;
 const DEFAULT_METRIC_CONCURRENCY = 5;
 
-const defaultRetrySchedule = Schedule.both(
+const defaultRetrySchedule = Schedule.max([
   Schedule.exponential(Duration.millis(200)),
   Schedule.recurs(3),
-).pipe(Schedule.jittered);
+]).pipe(Schedule.jittered);
 
 type ResolvedConfig = Required<Omit<RunnerOptions<never>, "reporters" | "judgeModelId">> & {
   readonly judgeModelId: string | undefined;
