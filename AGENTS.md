@@ -66,8 +66,25 @@ so published packages share the consumer's singleton copies.
 
 Packages develop with `exports` → `./src/index.ts` (zero-build workspace
 consumption); `publishConfig` rewrites `exports`/`main`/`types` → `dist` on
-publish. Never publish by hand — the `Publish` workflow is the only path, and
-the initial publish is owner-gated on their npm auth.
+publish.
+
+### Versioning & releases (Changesets)
+
+Versions and changelogs are managed by [Changesets](https://github.com/changesets/changesets).
+
+- **Every PR that changes a published package includes a changeset:** run
+  `pnpm changeset`, pick the packages and the semver bump (patch/minor/major),
+  and describe the change. The generated `.changeset/*.md` file is committed
+  with the PR. (Pure-infra PRs that touch no published package need none.)
+- **Releasing is automated.** The `Release` workflow (`.github/workflows/release.yml`)
+  watches `main`: it opens/updates a **"Version Packages"** PR that applies the
+  pending changesets (bumping versions, writing `CHANGELOG.md`); merging that PR
+  publishes the bumped packages to npm with OIDC provenance. With no pending
+  changesets, any package whose version isn't yet on npm is published (this is
+  how the initial `0.1.0` release goes out).
+- **Never publish by hand.** The `Release` workflow is the only path, and it is
+  owner-gated: its publish step runs only once an `NPM_TOKEN` repository secret
+  exists.
 
 ## Dependency conventions
 

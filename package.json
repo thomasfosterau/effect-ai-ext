@@ -17,9 +17,13 @@
     "test": "pnpm -r run test",
     "test:coverage": "pnpm -r run test:coverage",
     "build": "pnpm -r run build",
-    "ci": "pnpm run check && pnpm run test && pnpm run build"
+    "ci": "pnpm run check && pnpm run test && pnpm run build",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "changeset:publish": "pnpm run build && changeset publish"
   },
   "devDependencies": {
+    "@changesets/cli": "catalog:",
     "@effect/language-service": "catalog:",
     "@effect/tsgo": "catalog:",
     "@types/node": "catalog:",
