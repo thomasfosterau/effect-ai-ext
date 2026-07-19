@@ -6,11 +6,21 @@ name: Release
 # This workflow then opens/updates a "Version Packages" PR that bumps versions
 # and writes changelogs; merging THAT PR publishes the bumped packages to npm.
 # With no pending changesets, any package whose version is not yet on the
-# registry is published (this is how the initial 0.1.0 release goes out).
+# registry is published.
 #
-# Owner-gated: the changesets step only runs once an `NPM_TOKEN` repository
-# secret (automation token for the @thomasfosterau scope) exists — until then
-# this workflow is a clean no-op. Provenance is emitted via OIDC.
+# Provenance: every publish here carries npm provenance, generated from the
+# GitHub OIDC token (`id-token: write`) with `NPM_CONFIG_PROVENANCE=true`. This
+# is why provenance lives here and NOT in each package's `publishConfig` — a
+# by-hand `changeset publish` (no OIDC provider) would otherwise fail with
+# `EUSAGE: Automatic provenance generation not supported`. Provenance requires
+# the package to be published with public access (it is) from GitHub-hosted
+# runners; a public source repo is the simplest case.
+#
+# Auth: `actions/setup-node` with `registry-url` writes an `.npmrc` that reads
+# `NODE_AUTH_TOKEN` at publish time, so the token is passed under that name (an
+# automation "Publish" token for the @thomasfosterau scope, stored as the
+# `NPM_TOKEN` repository secret). The changesets step is gated on that secret,
+# so the workflow is a clean no-op until it exists.
 
 on:
   push:
@@ -24,9 +34,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
-      contents: write
-      pull-requests: write
-      id-token: write
+      contents: write # create the Version Packages PR / tags
+      pull-requests: write # open/update the Version Packages PR
+      id-token: write # mint the OIDC token npm uses for provenance
     env:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
@@ -50,5 +60,7 @@ jobs:
           title: "chore: version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # Matches the `.npmrc` written by setup-node's `registry-url`.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # Emit npm provenance from the OIDC token minted above.
           NPM_CONFIG_PROVENANCE: "true"
