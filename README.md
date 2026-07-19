@@ -13,9 +13,9 @@ This is the monorepo home of the `@thomasfosterau/effect-ai-*` family.
 | [`@thomasfosterau/effect-ai-ext`](packages/effect-ai-ext) | Provider-neutral AI service abstractions upstream Effect lacks (reranker, classifier, TTS, STT, image, moderation, voice conversion) | published-ready |
 | [`@thomasfosterau/effect-ai-mistral`](packages/effect-ai-mistral) | First-party Mistral provider (`LanguageModel` over chat completions) | published-ready |
 | [`@thomasfosterau/effect-ai-gateway`](packages/effect-ai-gateway) | Route Effect AI providers through a Cloudflare AI Gateway Worker binding (BYOK) | published-ready |
-| [`@thomasfosterau/effect-ai-cohere`](packages/effect-ai-cohere) | First-party Cohere provider (embed, rerank, classify, chat) | planned (#3) |
-| [`@thomasfosterau/effect-ai-voyage`](packages/effect-ai-voyage) | First-party Voyage AI provider (embed, rerank) | planned (#4) |
-| [`@thomasfosterau/effect-ai-elevenlabs`](packages/effect-ai-elevenlabs) | First-party ElevenLabs provider (TTS, STT, voice conversion) | planned (#5) |
+| [`@thomasfosterau/effect-ai-cohere`](packages/effect-ai-cohere) | First-party Cohere provider (embed, rerank, classify, chat) | published-ready |
+| [`@thomasfosterau/effect-ai-voyage`](packages/effect-ai-voyage) | First-party Voyage AI provider (embed, rerank) | published-ready |
+| [`@thomasfosterau/effect-ai-elevenlabs`](packages/effect-ai-elevenlabs) | First-party ElevenLabs provider (TTS, STT, voice conversion) | published-ready |
 
 ## Design
 
