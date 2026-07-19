@@ -1,26 +1,26 @@
 name: Release
 
-# Changesets-driven release for the @thomasfosterau/effect-ai-* packages.
+# Changesets-driven release for the @thomasfosterau/effect-ai-* packages,
+# publishing to npm via **Trusted Publishing** (tokenless OIDC).
 #
 # Flow: merge PRs that include a changeset (`pnpm changeset`) into `main`.
 # This workflow then opens/updates a "Version Packages" PR that bumps versions
-# and writes changelogs; merging THAT PR publishes the bumped packages to npm.
-# With no pending changesets, any package whose version is not yet on the
-# registry is published.
+# and writes changelogs; merging THAT PR publishes the bumped packages. With no
+# pending changesets, any package whose version is not yet on the registry is
+# published (packages already on the registry are skipped, so a no-op run is
+# green).
 #
-# Provenance: every publish here carries npm provenance, generated from the
-# GitHub OIDC token (`id-token: write`) with `NPM_CONFIG_PROVENANCE=true`. This
-# is why provenance lives here and NOT in each package's `publishConfig` — a
-# by-hand `changeset publish` (no OIDC provider) would otherwise fail with
-# `EUSAGE: Automatic provenance generation not supported`. Provenance requires
-# the package to be published with public access (it is) from GitHub-hosted
-# runners; a public source repo is the simplest case.
-#
-# Auth: `actions/setup-node` with `registry-url` writes an `.npmrc` that reads
-# `NODE_AUTH_TOKEN` at publish time, so the token is passed under that name (an
-# automation "Publish" token for the @thomasfosterau scope, stored as the
-# `NPM_TOKEN` repository secret). The changesets step is gated on that secret,
-# so the workflow is a clean no-op until it exists.
+# Auth & provenance — no NPM_TOKEN:
+#   npm exchanges this job's GitHub OIDC token (`id-token: write`) for
+#   short-lived publish credentials, so there is no long-lived token to store or
+#   rotate. Provenance is generated automatically by trusted publishing (no
+#   `NPM_CONFIG_PROVENANCE` needed). This requires:
+#     1. npm CLI >= 11.5.1 at publish time (installed below), and
+#     2. a Trusted Publisher configured on npmjs.com for EACH package, pointing
+#        at `thomasfosterau/effect-ai-ext` + this workflow file (`release.yml`).
+#   Until (2) is done for a package, its publish step fails auth — configure the
+#   trusted publishers before cutting a versioned release. See the repo's
+#   release docs.
 
 on:
   push:
@@ -36,9 +36,7 @@ jobs:
     permissions:
       contents: write # create the Version Packages PR / tags
       pull-requests: write # open/update the Version Packages PR
-      id-token: write # mint the OIDC token npm uses for provenance
-    env:
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      id-token: write # mint the OIDC token npm exchanges for publish creds
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -46,12 +44,14 @@ jobs:
         with:
           node-version-file: .node-version
           cache: pnpm
-          registry-url: "https://registry.npmjs.org"
+      # Trusted publishing (tokenless OIDC + automatic provenance) needs a recent
+      # npm CLI; the runner's bundled npm predates it. `changeset publish` shells
+      # out to this `npm publish`, which detects the Actions OIDC environment.
+      - run: npm install -g npm@latest
       - run: pnpm install --frozen-lockfile
       - run: pnpm run check
       - run: pnpm run test
       - name: Create Release PR or publish
-        if: ${{ env.NPM_TOKEN != '' }}
         uses: changesets/action@v1
         with:
           version: pnpm run changeset:version
@@ -60,7 +60,3 @@ jobs:
           title: "chore: version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Matches the `.npmrc` written by setup-node's `registry-url`.
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          # Emit npm provenance from the OIDC token minted above.
-          NPM_CONFIG_PROVENANCE: "true"
