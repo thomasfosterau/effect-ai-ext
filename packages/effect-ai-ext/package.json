@@ -1,6 +1,6 @@
 {
   "name": "@thomasfosterau/effect-ai-ext",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Provider-neutral AI service abstractions upstream Effect lacks — reranker, classifier, TTS, STT, image, moderation, voice conversion — each shaped like effect/unstable/ai.",
   "keywords": [
     "effect",
@@ -20,7 +20,9 @@
     "url": "git+https://github.com/thomasfosterau/effect-ai-ext.git",
     "directory": "packages/effect-ai-ext"
   },
-  "bugs": { "url": "https://github.com/thomasfosterau/effect-ai-ext/issues" },
+  "bugs": {
+    "url": "https://github.com/thomasfosterau/effect-ai-ext/issues"
+  },
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -33,7 +35,11 @@
     "./ModerationModel": "./src/ModerationModel.ts",
     "./VoiceConversionModel": "./src/VoiceConversionModel.ts"
   },
-  "files": ["dist", "src", "README.md"],
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
   "publishConfig": {
     "access": "public",
     "main": "./dist/index.js",
