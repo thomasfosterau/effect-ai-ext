@@ -1,0 +1,85 @@
+/**
+ * Unit tests for the config-driven gateway HTTPS-endpoint resolution
+ * (`src/Url.ts`).
+ *
+ * @module tests/unit/url
+ */
+
+import { describe, expect, it } from "vitest";
+import * as ConfigProvider from "effect/ConfigProvider";
+import * as Effect from "effect/Effect";
+import * as Redacted from "effect/Redacted";
+import {
+  cfAigAuthorizationHeader,
+  gatewayBaseUrl,
+  gatewayUrlConfig,
+} from "@thomasfosterau/effect-ai-gateway";
+import { runTestExit } from "./helpers/effect";
+
+const withConfig = (values: Record<string, string>) =>
+  gatewayUrlConfig.pipe(Effect.provide(ConfigProvider.layer(ConfigProvider.fromUnknown(values))));
+
+describe("gatewayUrlConfig", () => {
+  it("resolves accountId, gatewayId, and token from the environment", async () => {
+    const exit = await runTestExit(
+      withConfig({
+        CF_ACCOUNT_ID: "acct",
+        CF_AIG_GATEWAY_ID: "custom-gateway",
+        CF_AIG_TOKEN: "secret",
+      }),
+    );
+
+    expect(exit._tag).toBe("Success");
+    if (exit._tag !== "Success") return;
+    expect(exit.value.accountId).toBe("acct");
+    expect(exit.value.gatewayId).toBe("custom-gateway");
+    expect(Redacted.value(exit.value.token)).toBe("secret");
+  });
+
+  it("defaults gatewayId to website when CF_AIG_GATEWAY_ID is unset", async () => {
+    // "website" mirrors @thomasfosterau/bindings's AI_GATEWAY_ID by
+    // convention — Url.ts deliberately doesn't import that package (it
+    // pulls in alchemy), so this default is a hand-kept literal; keep it in
+    // sync if AI_GATEWAY_ID ever changes.
+    const exit = await runTestExit(withConfig({ CF_ACCOUNT_ID: "acct", CF_AIG_TOKEN: "secret" }));
+
+    expect(exit._tag).toBe("Success");
+    if (exit._tag !== "Success") return;
+    expect(exit.value.gatewayId).toBe("website");
+  });
+
+  it("fails with a typed ConfigError when CF_ACCOUNT_ID is missing", async () => {
+    const exit = await runTestExit(withConfig({ CF_AIG_TOKEN: "secret" }));
+
+    expect(exit._tag).toBe("Failure");
+  });
+
+  it("fails with a typed ConfigError when CF_AIG_TOKEN is missing", async () => {
+    const exit = await runTestExit(withConfig({ CF_ACCOUNT_ID: "acct" }));
+
+    expect(exit._tag).toBe("Failure");
+  });
+});
+
+describe("gatewayBaseUrl", () => {
+  it("builds the gateway's public HTTPS base URL for a provider", () => {
+    const url = gatewayBaseUrl(
+      { accountId: "acct", gatewayId: "website", token: Redacted.make("secret") },
+      "anthropic",
+    );
+
+    expect(url).toBe("https://gateway.ai.cloudflare.com/v1/acct/website/anthropic");
+  });
+});
+
+describe("cfAigAuthorizationHeader", () => {
+  it("builds a Bearer cf-aig-authorization header from the token", () => {
+    const header = cfAigAuthorizationHeader({
+      accountId: "acct",
+      gatewayId: "website",
+      token: Redacted.make("secret"),
+    });
+
+    expect(header).toEqual({ "cf-aig-authorization": "Bearer secret" });
+  });
+});
