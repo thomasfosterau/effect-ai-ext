@@ -1,0 +1,54 @@
+name: Release
+
+# Changesets-driven release for the @thomasfosterau/effect-ai-* packages.
+#
+# Flow: merge PRs that include a changeset (`pnpm changeset`) into `main`.
+# This workflow then opens/updates a "Version Packages" PR that bumps versions
+# and writes changelogs; merging THAT PR publishes the bumped packages to npm.
+# With no pending changesets, any package whose version is not yet on the
+# registry is published (this is how the initial 0.1.0 release goes out).
+#
+# Owner-gated: the changesets step only runs once an `NPM_TOKEN` repository
+# secret (automation token for the @thomasfosterau scope) exists — until then
+# this workflow is a clean no-op. Provenance is emitted via OIDC.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+          registry-url: "https://registry.npmjs.org"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run check
+      - run: pnpm run test
+      - name: Create Release PR or publish
+        if: ${{ env.NPM_TOKEN != '' }}
+        uses: changesets/action@v1
+        with:
+          version: pnpm run changeset:version
+          publish: pnpm run changeset:publish
+          commit: "chore: version packages"
+          title: "chore: version packages"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
