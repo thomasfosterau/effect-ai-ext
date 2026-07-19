@@ -10,7 +10,7 @@ This is the monorepo home of the `@thomasfosterau/effect-ai-*` family.
 
 | Package | What it is | Status |
 | --- | --- | --- |
-| [`@thomasfosterau/effect-ai-ext`](packages/effect-ai-ext) | Provider-neutral AI service abstractions upstream Effect lacks (reranker, classifier, TTS, STT, image, moderation, voice conversion) | planned (#2) |
+| [`@thomasfosterau/effect-ai-ext`](packages/effect-ai-ext) | Provider-neutral AI service abstractions upstream Effect lacks (reranker, classifier, TTS, STT, image, moderation, voice conversion) | published-ready |
 | [`@thomasfosterau/effect-ai-mistral`](packages/effect-ai-mistral) | First-party Mistral provider (`LanguageModel` over chat completions) | published-ready |
 | [`@thomasfosterau/effect-ai-gateway`](packages/effect-ai-gateway) | Route Effect AI providers through a Cloudflare AI Gateway Worker binding (BYOK) | published-ready |
 | [`@thomasfosterau/effect-ai-cohere`](packages/effect-ai-cohere) | First-party Cohere provider (embed, rerank, classify, chat) | planned (#3) |
