@@ -72,10 +72,15 @@ publish.
 
 Versions and changelogs are managed by [Changesets](https://github.com/changesets/changesets).
 
-- **Every PR that changes a published package includes a changeset:** run
-  `pnpm changeset`, pick the packages and the semver bump (patch/minor/major),
-  and describe the change. The generated `.changeset/*.md` file is committed
-  with the PR. (Pure-infra PRs that touch no published package need none.)
+- **Every PR that changes an already-published package includes a changeset:**
+  run `pnpm changeset`, pick the packages and the semver bump
+  (patch/minor/major), and describe the change. The generated `.changeset/*.md`
+  file is committed with the PR. (Pure-infra PRs that touch no published package
+  need none.)
+- **A package's first release takes its version straight from `package.json`**
+  (all start at `0.1.0`) — no changeset for the pre-first-publish state, since
+  `changeset publish` ships any version not yet on the registry. Changesets
+  begin once a package has a published version to bump from.
 - **Releasing is automated.** The `Release` workflow (`.github/workflows/release.yml`)
   watches `main`: it opens/updates a **"Version Packages"** PR that applies the
   pending changesets (bumping versions, writing `CHANGELOG.md`); merging that PR
