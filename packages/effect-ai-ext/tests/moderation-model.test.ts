@@ -1,0 +1,177 @@
+/**
+ * Unit tests for the `ModerationModel` abstraction (`src/ModerationModel.ts`)
+ * and its `fromLanguageModel` adapter.
+ *
+ * @module tests/unit/moderation-model
+ */
+
+import { describe, expect, it } from "vitest";
+import * as Effect from "effect/Effect";
+import { AiError } from "effect/unstable/ai";
+import {
+  fromLanguageModel,
+  make,
+  type ProviderOptions,
+  type ProviderResponse,
+  type Service,
+} from "@thomasfosterau/effect-ai-ext/ModerationModel";
+import { expectFailureInstanceOf, runTest } from "./helpers/effect";
+import { failingLanguageModel, stubLanguageModel } from "./helpers/language-model";
+
+const noUsage = { inputTokens: undefined } as const;
+
+const expectAiError = async <A>(program: Effect.Effect<A, AiError.AiError>): Promise<string> => {
+  const failure = await expectFailureInstanceOf(program, AiError.AiError);
+  return String(failure.message);
+};
+
+const makeStub = (
+  behaviour:
+    | { readonly respond: (options: ProviderOptions) => ProviderResponse }
+    | { readonly fail: true },
+): Effect.Effect<{ readonly model: Service; readonly calls: ProviderOptions[] }> =>
+  Effect.gen(function* () {
+    const calls: ProviderOptions[] = [];
+    const model = yield* make({
+      moderate: (options) =>
+        Effect.gen(function* () {
+          if ("fail" in behaviour) {
+            return yield* AiError.make({
+              module: "test",
+              method: "moderate",
+              reason: new AiError.UnknownError({ description: "stubbed failure" }),
+            });
+          }
+          calls.push(options);
+          return behaviour.respond(options);
+        }),
+    });
+    return { model, calls };
+  });
+
+describe("ModerationModel", () => {
+  it("returns per-input results with usage propagated", async () => {
+    const response = await runTest(
+      Effect.gen(function* () {
+        const { model } = yield* makeStub({
+          respond: () => ({
+            results: [{ flagged: true, categories: { hate: 0.9, violence: 0.1 } }],
+            usage: { inputTokens: 7 },
+          }),
+        });
+        return yield* model.moderate({ inputs: ["nasty"] });
+      }),
+    );
+
+    expect(response.results[0].flagged).toBe(true);
+    expect(response.results[0].categories.hate).toBe(0.9);
+    expect(response.usage.inputTokens).toBe(7);
+  });
+
+  it("returns an empty response for empty inputs without calling the provider", async () => {
+    const { response, callCount } = await runTest(
+      Effect.gen(function* () {
+        const { model, calls } = yield* makeStub({
+          respond: () => ({ results: [{ flagged: false, categories: {} }], usage: noUsage }),
+        });
+        const result = yield* model.moderate({ inputs: [] });
+        return { response: result, callCount: calls.length };
+      }),
+    );
+
+    expect(response.results).toEqual([]);
+    expect(response.usage.inputTokens).toBeUndefined();
+    expect(callCount).toBe(0);
+  });
+
+  it("fails with AiError when the result count does not match the input count", async () => {
+    const message = await expectAiError(
+      Effect.gen(function* () {
+        const { model } = yield* makeStub({
+          respond: () => ({ results: [], usage: noUsage }),
+        });
+        return yield* model.moderate({ inputs: ["one"] });
+      }),
+    );
+
+    expect(message).toContain("expected 1");
+  });
+
+  it("fails with AiError when a category score is out of the [0, 1] range", async () => {
+    const message = await expectAiError(
+      Effect.gen(function* () {
+        const { model } = yield* makeStub({
+          respond: () => ({
+            results: [{ flagged: true, categories: { hate: 1.5 } }],
+            usage: noUsage,
+          }),
+        });
+        return yield* model.moderate({ inputs: ["x"] });
+      }),
+    );
+
+    expect(message).toContain("category 'hate'");
+  });
+
+  it("propagates provider failures as AiError", async () => {
+    const message = await expectAiError(
+      Effect.gen(function* () {
+        const { model } = yield* makeStub({ fail: true });
+        return yield* model.moderate({ inputs: ["x"] });
+      }),
+    );
+
+    expect(message).toContain("stubbed failure");
+  });
+
+  describe("fromLanguageModel", () => {
+    it("moderates via structured output and reuses the validation path", async () => {
+      let captured: { readonly prompt: unknown; readonly objectName: unknown } | undefined;
+      const response = await runTest(
+        Effect.gen(function* () {
+          const model = yield* fromLanguageModel;
+          return yield* model.moderate({ inputs: ["some text"] });
+        }).pipe(
+          Effect.provide(
+            stubLanguageModel(
+              { results: [{ flagged: false, categories: { hate: 0.01 } }] },
+              (request) => {
+                captured = request;
+              },
+            ),
+          ),
+        ),
+      );
+
+      expect(response.results[0].flagged).toBe(false);
+      expect(response.results[0].categories.hate).toBe(0.01);
+      expect(captured?.objectName).toBe("moderation");
+    });
+
+    it("surfaces a language-model failure as AiError", async () => {
+      const message = await expectAiError(
+        Effect.gen(function* () {
+          const model = yield* fromLanguageModel;
+          return yield* model.moderate({ inputs: ["x"] });
+        }).pipe(Effect.provide(failingLanguageModel())),
+      );
+
+      expect(message).toContain("stubbed failure");
+    });
+
+    it("validates language-model category scores", async () => {
+      const message = await expectAiError(
+        Effect.gen(function* () {
+          const model = yield* fromLanguageModel;
+          return yield* model.moderate({ inputs: ["x"] });
+        }).pipe(
+          Effect.provide(
+            stubLanguageModel({ results: [{ flagged: true, categories: { hate: 2 } }] }),
+          ),
+        ),
+      );
+
+      expect(message).toContain("category 'hate'");
+    });
+  });
+});

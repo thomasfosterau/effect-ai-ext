@@ -45,6 +45,9 @@
   "peerDependenciesMeta": {
     "@cloudflare/workers-types": { "optional": true }
   },
+  "dependencies": {
+    "@thomasfosterau/effect-ai-ext": "workspace:*"
+  },
   "devDependencies": {
     "@cloudflare/workers-types": "catalog:",
     "@effect/ai-anthropic": "catalog:",

@@ -1,18 +1,9 @@
 /**
  * Unit tests for the `RerankerModel` abstraction (`src/RerankerModel.ts`).
  *
- * The provider is stubbed at the `make` seam — the stub's `rerank`
- * hook returns canned provider results, so the tests exercise the real
- * validation and normalisation path while never reaching the network.
- *
- * Covered:
- * - Results come back sorted by descending relevance regardless of
- *   provider ordering, with usage propagated.
- * - Query, documents, and topN pass through to the provider verbatim.
- * - An empty documents array short-circuits without a provider call.
- * - Out-of-range, non-integer, and duplicate indices, and a result
- *   count above the requested limit, fail with `AiError`.
- * - Provider failures propagate as `AiError`.
+ * The provider is stubbed at the `make` seam — the stub's `rerank` hook returns
+ * canned provider results, so the tests exercise the real validation and
+ * normalisation path while never reaching the network.
  *
  * @module tests/unit/reranker-model
  */
@@ -20,24 +11,18 @@
 import { describe, expect, it } from "vitest";
 import * as Effect from "effect/Effect";
 import { AiError } from "effect/unstable/ai";
-import { RerankedDocument } from "@thomasfosterau/effect-ai-gateway";
+import { RerankedDocument } from "@thomasfosterau/effect-ai-ext/RerankerModel";
 import { expectFailureInstanceOf, runTest } from "./helpers/effect";
 import { makeStubReranker as makeStubModel } from "./helpers/reranker";
 
 const noUsage = { inputTokens: undefined } as const;
 
-/**
- * Run a rerank program expected to fail with `AiError`; returns the
- * failure so callers can assert on its description.
- */
 const expectAiError = async <A>(program: Effect.Effect<A, AiError.AiError>): Promise<string> => {
   const failure = await expectFailureInstanceOf(program, AiError.AiError);
   return String(failure.message);
 };
 
 const documents = ["alpha document", "bravo document", "charlie document"];
-
-// ── Tests ────────────────────────────────────────────────────────────
 
 describe("RerankerModel", () => {
   it("returns results sorted by descending relevance with usage propagated", async () => {

@@ -1,0 +1,95 @@
+{
+  "name": "@thomasfosterau/effect-ai-ext",
+  "version": "0.1.0",
+  "description": "Provider-neutral AI service abstractions upstream Effect lacks — reranker, classifier, TTS, STT, image, moderation, voice conversion — each shaped like effect/unstable/ai.",
+  "keywords": [
+    "effect",
+    "ai",
+    "reranker",
+    "classifier",
+    "tts",
+    "stt",
+    "moderation",
+    "image-generation"
+  ],
+  "license": "MIT",
+  "author": "Thomas Foster <me@thomasfoster.au>",
+  "homepage": "https://github.com/thomasfosterau/effect-ai-ext/tree/main/packages/effect-ai-ext#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thomasfosterau/effect-ai-ext.git",
+    "directory": "packages/effect-ai-ext"
+  },
+  "bugs": { "url": "https://github.com/thomasfosterau/effect-ai-ext/issues" },
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./RerankerModel": "./src/RerankerModel.ts",
+    "./ClassifierModel": "./src/ClassifierModel.ts",
+    "./SpeechModel": "./src/SpeechModel.ts",
+    "./TranscriptionModel": "./src/TranscriptionModel.ts",
+    "./ImageModel": "./src/ImageModel.ts",
+    "./ModerationModel": "./src/ModerationModel.ts",
+    "./VoiceConversionModel": "./src/VoiceConversionModel.ts"
+  },
+  "files": ["dist", "src", "README.md"],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      },
+      "./RerankerModel": {
+        "types": "./dist/RerankerModel.d.ts",
+        "import": "./dist/RerankerModel.js"
+      },
+      "./ClassifierModel": {
+        "types": "./dist/ClassifierModel.d.ts",
+        "import": "./dist/ClassifierModel.js"
+      },
+      "./SpeechModel": {
+        "types": "./dist/SpeechModel.d.ts",
+        "import": "./dist/SpeechModel.js"
+      },
+      "./TranscriptionModel": {
+        "types": "./dist/TranscriptionModel.d.ts",
+        "import": "./dist/TranscriptionModel.js"
+      },
+      "./ImageModel": {
+        "types": "./dist/ImageModel.d.ts",
+        "import": "./dist/ImageModel.js"
+      },
+      "./ModerationModel": {
+        "types": "./dist/ModerationModel.d.ts",
+        "import": "./dist/ModerationModel.js"
+      },
+      "./VoiceConversionModel": {
+        "types": "./dist/VoiceConversionModel.d.ts",
+        "import": "./dist/VoiceConversionModel.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "check": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "peerDependencies": {
+    "effect": "4.0.0-beta.99"
+  },
+  "devDependencies": {
+    "@effect/language-service": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "effect": "catalog:",
+    "tsup": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
