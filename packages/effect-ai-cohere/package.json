@@ -1,8 +1,17 @@
 {
   "name": "@thomasfosterau/effect-ai-cohere",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Effect AI provider for Cohere — LanguageModel (Command chat), EmbeddingModel, RerankerModel, and ClassifierModel over Cohere's v2 API.",
-  "keywords": ["effect", "ai", "cohere", "llm", "language-model", "embedding", "reranker", "classifier"],
+  "keywords": [
+    "effect",
+    "ai",
+    "cohere",
+    "llm",
+    "language-model",
+    "embedding",
+    "reranker",
+    "classifier"
+  ],
   "license": "MIT",
   "author": "Thomas Foster <me@thomasfoster.au>",
   "homepage": "https://github.com/thomasfosterau/effect-ai-ext/tree/main/packages/effect-ai-cohere#readme",
@@ -11,13 +20,19 @@
     "url": "git+https://github.com/thomasfosterau/effect-ai-ext.git",
     "directory": "packages/effect-ai-cohere"
   },
-  "bugs": { "url": "https://github.com/thomasfosterau/effect-ai-ext/issues" },
+  "bugs": {
+    "url": "https://github.com/thomasfosterau/effect-ai-ext/issues"
+  },
   "type": "module",
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts"
   },
-  "files": ["dist", "src", "README.md"],
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
   "publishConfig": {
     "access": "public",
     "main": "./dist/index.js",
