@@ -30,6 +30,23 @@ pnpm add @thomasfosterau/effect-ai-ext effect
 
 `effect` is a peer dependency (it must stay a singleton).
 
+## A superset of `effect/unstable/ai`
+
+The package barrel re-exports **every upstream `effect/unstable/ai` module**
+(`LanguageModel`, `EmbeddingModel`, `AiError`, `Tool`/`Toolkit`, `Chat`,
+`Prompt`/`Response`, `Model`, `Tokenizer`, `Telemetry`, `IdGenerator`, …)
+alongside the abstractions below, so one import reaches the whole AI service
+surface — upstream and extension:
+
+```ts
+import { LanguageModel, EmbeddingModel, RerankerModel } from "@thomasfosterau/effect-ai-ext"
+```
+
+The re-exports are the **same identities** as `effect/unstable/ai` (`effect` is
+the singleton peer), so mixing the two import styles is safe — nothing is
+wrapped or shadowed. Prefer importing straight from `effect/unstable/ai` when
+you only need upstream modules.
+
 ## Modules & their upstream-merge story
 
 Each module is also available as a per-module subpath (mirroring how `effect`
