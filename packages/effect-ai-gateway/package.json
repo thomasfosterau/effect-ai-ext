@@ -1,0 +1,58 @@
+{
+  "name": "@thomasfosterau/effect-ai-gateway",
+  "version": "0.1.0",
+  "description": "Route Effect AI providers (Anthropic, Cohere) through a Cloudflare AI Gateway Worker binding, BYOK.",
+  "keywords": ["effect", "ai", "cloudflare", "ai-gateway", "byok", "anthropic", "cohere"],
+  "license": "MIT",
+  "author": "Thomas Foster <me@thomasfoster.au>",
+  "homepage": "https://github.com/thomasfosterau/effect-ai-ext/tree/main/packages/effect-ai-gateway#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thomasfosterau/effect-ai-ext.git",
+    "directory": "packages/effect-ai-gateway"
+  },
+  "bugs": { "url": "https://github.com/thomasfosterau/effect-ai-ext/issues" },
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": ["dist", "src", "README.md"],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "check": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "peerDependencies": {
+    "@cloudflare/workers-types": ">=4",
+    "@effect/ai-anthropic": "4.0.0-beta.99",
+    "effect": "4.0.0-beta.99"
+  },
+  "peerDependenciesMeta": {
+    "@cloudflare/workers-types": { "optional": true }
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "catalog:",
+    "@effect/ai-anthropic": "catalog:",
+    "@effect/language-service": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "effect": "catalog:",
+    "tsup": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

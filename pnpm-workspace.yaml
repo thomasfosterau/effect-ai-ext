@@ -1,0 +1,30 @@
+# pnpm workspace for the @thomasfosterau/effect-ai-* package family.
+#
+# The `catalog:` protocol pins the versions that MUST be singletons across the
+# workspace. `effect` especially: two copies break Context / Layer / Schema
+# identity at runtime, so every package references `catalog:` (as a
+# peerDependency for published packages, a devDependency for building/testing).
+# On `pnpm publish`, pnpm rewrites `catalog:` / `workspace:*` to concrete
+# ranges, so published consumers get ordinary version specs.
+#
+# TypeScript is the 6/7 side-by-side split (see AGENTS.md → Toolchain):
+#   - `@typescript/native` (real `typescript@7`) provides the fast native `tsc`
+#     used for type-checking (`pnpm -r check`), patched by `@effect/tsgo`.
+#   - `typescript` (aliased to `@typescript/typescript6`) provides the TS6
+#     JS-API compiler (bin `tsc6`) that `@effect/language-service` and tsup's
+#     declaration bundler need.
+packages:
+  - packages/*
+
+catalog:
+  "@cloudflare/workers-types": ^5.20260717.1
+  "@effect/ai-anthropic": 4.0.0-beta.99
+  "@effect/language-service": ^0.87.0
+  "@effect/tsgo": 0.24.1
+  "@types/node": ^26.1.1
+  "@typescript/native": "npm:typescript@7.0.2"
+  "@vitest/coverage-v8": ^4.1.10
+  effect: 4.0.0-beta.99
+  tsup: ^8.5.1
+  typescript: "npm:@typescript/typescript6@6.0.2"
+  vitest: ^4.1.10

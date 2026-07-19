@@ -1,0 +1,51 @@
+name: Publish
+
+# Owner-gated npm publish for the @thomasfosterau/effect-ai-* packages.
+#
+# The initial publish of each package requires the owner's npm auth: add an
+# `NPM_TOKEN` repository secret (an automation token for the @thomasfosterau
+# scope) and then either publish a GitHub Release or run this workflow
+# manually. Provenance is emitted via OIDC (`id-token: write`), so published
+# tarballs are traceable to this workflow. Agents never publish and never
+# improvise a token — this pipeline is the only publish path.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Run `pnpm publish` with --dry-run (no upload)"
+        type: boolean
+        default: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+          registry-url: "https://registry.npmjs.org"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run check
+      - run: pnpm run test
+      - run: pnpm run build
+      - name: Publish (dry-run)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run }}
+        run: pnpm -r publish --access public --no-git-checks --dry-run
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish
+        if: ${{ github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && !inputs.dry-run) }}
+        run: pnpm -r publish --access public --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"

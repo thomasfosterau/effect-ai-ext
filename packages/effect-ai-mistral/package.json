@@ -1,0 +1,51 @@
+{
+  "name": "@thomasfosterau/effect-ai-mistral",
+  "version": "0.1.0",
+  "description": "Effect AI provider for Mistral — a LanguageModel implementation over Mistral's chat completions API.",
+  "keywords": ["effect", "ai", "mistral", "llm", "language-model"],
+  "license": "MIT",
+  "author": "Thomas Foster <me@thomasfoster.au>",
+  "homepage": "https://github.com/thomasfosterau/effect-ai-ext/tree/main/packages/effect-ai-mistral#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thomasfosterau/effect-ai-ext.git",
+    "directory": "packages/effect-ai-mistral"
+  },
+  "bugs": { "url": "https://github.com/thomasfosterau/effect-ai-ext/issues" },
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": ["dist", "src", "README.md"],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "check": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "peerDependencies": {
+    "effect": "4.0.0-beta.99"
+  },
+  "devDependencies": {
+    "@effect/language-service": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "effect": "catalog:",
+    "tsup": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
