@@ -84,12 +84,16 @@ Versions and changelogs are managed by [Changesets](https://github.com/changeset
 - **Releasing is automated.** The `Release` workflow (`.github/workflows/release.yml`)
   watches `main`: it opens/updates a **"Version Packages"** PR that applies the
   pending changesets (bumping versions, writing `CHANGELOG.md`); merging that PR
-  publishes the bumped packages to npm with OIDC provenance. With no pending
-  changesets, any package whose version isn't yet on npm is published (this is
-  how the initial `0.1.0` release goes out).
-- **Never publish by hand.** The `Release` workflow is the only path, and it is
-  owner-gated: its publish step runs only once an `NPM_TOKEN` repository secret
-  exists.
+  publishes the bumped packages. With no pending changesets, any package whose
+  version isn't yet on npm is published (packages already on the registry are
+  skipped, so a no-op run is green).
+- **Publishing is tokenless (npm Trusted Publishing).** The workflow publishes
+  via GitHub OIDC (`id-token: write`) — no `NPM_TOKEN` — and provenance is
+  emitted automatically. This needs npm ≥ 11.5.1 (the workflow upgrades it) and
+  a **Trusted Publisher** configured on npmjs.com for each package, pointing at
+  `thomasfosterau/effect-ai-ext` + `release.yml`. Never publish by hand:
+  provenance requires the CI OIDC provider, so a local `changeset publish`
+  fails.
 
 ## Dependency conventions
 
