@@ -31,10 +31,10 @@ import * as Cause from "effect/Cause";
 import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
-import type * as EvalFile from "../EvalFile";
-import type * as Result from "../Result";
-import * as Runner from "../Runner";
-import * as Threshold from "../Threshold";
+import type * as EvalFile from "../EvalFile.ts";
+import type * as Result from "../Result.ts";
+import * as Runner from "../Runner.ts";
+import * as Threshold from "../Threshold.ts";
 
 // ── Suite execution ──────────────────────────────────────────────────
 

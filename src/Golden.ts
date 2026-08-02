@@ -17,7 +17,7 @@
 
 import * as Schema from "effect/Schema";
 import * as Prompt from "effect/unstable/ai/Prompt";
-import { Metadata } from "./Metadata";
+import { Metadata } from "./Metadata.ts";
 
 /**
  * A single-turn golden, parameterised by the schema of its `input` and

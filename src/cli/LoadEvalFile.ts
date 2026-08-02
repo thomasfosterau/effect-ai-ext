@@ -4,7 +4,7 @@
  * Loads one `*.eval.ts` file's default export and validates it against the
  * {@link EvalFile.EvalFile} contract. The dynamic `import()` is a plain
  * Node/V8 one — under the real CLI (`bin/effect-evals.js`), Node's
- * `--experimental-transform-types` plus this package's `./loader.mjs`
+ * Node's default type stripping plus this package's `./loader.mjs`
  * resolution hook are already active process-wide by the time this runs, so
  * the file's own TypeScript and extensionless imports resolve the same way
  * this package's own source does. Under a test runner (vitest/vite-plus),
@@ -19,7 +19,7 @@ import { pathToFileURL } from "node:url";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Schema from "effect/Schema";
-import type * as EvalFile from "../EvalFile";
+import type * as EvalFile from "../EvalFile.ts";
 
 /** The dynamic `import()` of an eval file threw (syntax error, missing file, a throwing top-level side effect, …). */
 export class EvalFileImportError extends Schema.TaggedErrorClass<EvalFileImportError>()(

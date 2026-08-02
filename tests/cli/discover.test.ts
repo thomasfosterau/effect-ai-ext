@@ -12,7 +12,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
-import { findEvalFiles, GlobError } from "../../src/cli/Discover";
+import { findEvalFiles, GlobError } from "../../src/cli/Discover.ts";
 import { expectFailureInstanceOf, runTest } from "@test-helpers/effect";
 
 let dir: string;

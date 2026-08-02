@@ -11,7 +11,7 @@
  * @module Result
  */
 
-import type { Score } from "./Score";
+import type { Score } from "./Score.ts";
 
 /** One trial's outcome for a metric: a score, or the scorer's Effect failed. */
 export type MetricTrialOutcome =

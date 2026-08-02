@@ -14,7 +14,7 @@
  */
 
 import type * as Effect from "effect/Effect";
-import type { Score } from "./Score";
+import type { Score } from "./Score.ts";
 
 /**
  * A named scorer over cases of type `Case`. `evaluate` may depend on

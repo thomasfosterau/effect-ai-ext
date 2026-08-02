@@ -35,12 +35,12 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as EffectResult from "effect/Result";
-import * as Cache from "../Cache";
-import type * as EvalFile from "../EvalFile";
-import * as Runner from "../Runner";
-import { findEvalFiles, GlobError } from "./Discover";
-import { EvalFileImportError, InvalidEvalFileError, loadEvalFile } from "./LoadEvalFile";
-import type { CliReport, FailedFile, FileResult, SkippedFile } from "./Report";
+import * as Cache from "../Cache.ts";
+import type * as EvalFile from "../EvalFile.ts";
+import * as Runner from "../Runner.ts";
+import { findEvalFiles, GlobError } from "./Discover.ts";
+import { EvalFileImportError, InvalidEvalFileError, loadEvalFile } from "./LoadEvalFile.ts";
+import type { CliReport, FailedFile, FileResult, SkippedFile } from "./Report.ts";
 
 /** The default glob when no `globs` argument is given. */
 export const DEFAULT_GLOB = "**/evals/**/*.eval.ts";

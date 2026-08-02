@@ -13,7 +13,7 @@ import * as Stream from "effect/Stream";
 import { AiError, LanguageModel } from "effect/unstable/ai";
 import { ExtractThenClassify } from "@thomasfosterau/effect-evals";
 import { expectFailureInstanceOf, runTest } from "@test-helpers/effect";
-import { makeJudgeStub, provideJudge } from "./helpers";
+import { makeJudgeStub, provideJudge } from "./helpers.ts";
 
 describe("ExtractThenClassify.ratioScore", () => {
   it("scores the fraction of yes verdicts", () => {

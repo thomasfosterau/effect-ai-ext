@@ -14,7 +14,7 @@ import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
 import { Command } from "effect/unstable/cli";
 import { NodeServices } from "@effect/platform-node";
-import * as Flags from "../../src/cli/Flags";
+import * as Flags from "../../src/cli/Flags.ts";
 import { runTest } from "@test-helpers/effect";
 
 interface Captured {

@@ -12,8 +12,8 @@
  */
 
 import * as Effect from "effect/Effect";
-import { makeScorer, type Scorer } from "../Scorer";
-import type { StringCase } from "./StringCase";
+import { makeScorer, type Scorer } from "../Scorer.ts";
+import type { StringCase } from "./StringCase.ts";
 
 /** Options for {@link normalizedMatch}: which normalisations to apply to both sides before comparing. */
 export interface NormalizedMatchOptions {

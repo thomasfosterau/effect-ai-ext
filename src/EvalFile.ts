@@ -13,7 +13,7 @@
  */
 
 import type * as Layer from "effect/Layer";
-import type { RunnerOptions, Suite } from "./Runner";
+import type { RunnerOptions, Suite } from "./Runner.ts";
 
 /**
  * A {@link Suite} with its type parameters erased. An eval file's `suites`

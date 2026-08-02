@@ -14,7 +14,7 @@
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as Path from "effect/Path";
-import type * as Result from "../Result";
+import type * as Result from "../Result.ts";
 
 /** The default `--out` path, gitignored alongside the filesystem cache (`.effect-evals/`). */
 export const DEFAULT_OUT_PATH = ".effect-evals/results.json";

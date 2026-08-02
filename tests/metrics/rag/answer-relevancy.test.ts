@@ -17,7 +17,7 @@ import {
   Threshold,
 } from "@thomasfosterau/effect-evals";
 import { expectFailureInstanceOf, runTest } from "@test-helpers/effect";
-import { deadJudge, makeJudgeStub, provideJudge } from "./helpers";
+import { deadJudge, makeJudgeStub, provideJudge } from "./helpers.ts";
 
 const RagGolden = Golden.Golden(Schema.String, Schema.String);
 const RagTestCase = EvalCase.EvalCase(RagGolden, Schema.String);

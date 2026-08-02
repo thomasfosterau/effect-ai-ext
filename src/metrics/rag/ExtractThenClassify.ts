@@ -23,7 +23,7 @@ import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import { AiError, LanguageModel } from "effect/unstable/ai";
 import type * as Prompt from "effect/unstable/ai/Prompt";
-import type { Score } from "../../Score";
+import type { Score } from "../../Score.ts";
 
 // ── Structured-output schemas ────────────────────────────────────────
 
@@ -60,8 +60,8 @@ export interface Verdict {
 export class VerdictCountMismatchError extends Schema.TaggedErrorClass<VerdictCountMismatchError>()(
   "VerdictCountMismatchError",
   {
-    expected: Schema.Number,
-    actual: Schema.Number,
+    expected: Schema.Finite,
+    actual: Schema.Finite,
   },
 ) {}
 

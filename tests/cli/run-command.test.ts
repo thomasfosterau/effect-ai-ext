@@ -15,7 +15,7 @@ import * as FileSystem from "effect/FileSystem";
 import { Command } from "effect/unstable/cli";
 import { NodeServices } from "@effect/platform-node";
 import { Cache } from "@thomasfosterau/effect-evals";
-import { runCommand } from "../../src/cli/RunCommand";
+import { runCommand } from "../../src/cli/RunCommand.ts";
 
 const FIXTURES = new URL("../fixtures/", import.meta.url);
 const fixture = (name: string): string => new URL(name, FIXTURES).pathname;

@@ -37,13 +37,13 @@ import * as Effect from "effect/Effect";
 import * as EffectResult from "effect/Result";
 import * as Schedule from "effect/Schedule";
 import { AiError } from "effect/unstable/ai";
-import * as Cache from "./Cache";
-import * as Dataset from "./Dataset";
-import * as Metric from "./Metric";
-import * as Reporter from "./Reporter";
-import * as Result from "./Result";
-import type { Score } from "./Score";
-import * as Threshold from "./Threshold";
+import * as Cache from "./Cache.ts";
+import * as Dataset from "./Dataset.ts";
+import * as Metric from "./Metric.ts";
+import * as Reporter from "./Reporter.ts";
+import * as Result from "./Result.ts";
+import type { Score } from "./Score.ts";
+import * as Threshold from "./Threshold.ts";
 
 /** A named, effectful task (the system-under-test) with a stable id for cache keys. */
 export interface TaskDefinition<Golden, Output, E = never, R = never> {

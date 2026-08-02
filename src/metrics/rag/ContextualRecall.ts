@@ -11,10 +11,10 @@
 
 import * as Effect from "effect/Effect";
 import { LanguageModel } from "effect/unstable/ai";
-import { makeMetric, type Metric } from "../../Metric";
-import { makeScorer } from "../../Scorer";
-import type { Threshold } from "../../Threshold";
-import { extractThenClassifyRatio } from "./ExtractThenClassify";
+import { makeMetric, type Metric } from "../../Metric.ts";
+import { makeScorer } from "../../Scorer.ts";
+import type { Threshold } from "../../Threshold.ts";
+import { extractThenClassifyRatio } from "./ExtractThenClassify.ts";
 import {
   renderContext,
   renderValue,
@@ -22,7 +22,7 @@ import {
   requireRetrievedContext,
   type RagCase,
   type RagMetricError,
-} from "./RagCase";
+} from "./RagCase.ts";
 
 const EXTRACT_INSTRUCTIONS =
   "Extract every atomic statement made in the given expected output. Each statement should be a standalone, verifiable claim, free of pronouns and other context-dependent phrasing.";

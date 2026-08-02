@@ -218,7 +218,7 @@ vp exec effect-evals --help                                  # full flag referen
 
 **Exit code** is non-zero iff any _executed_ suite misses its threshold — a suite skipped for missing credentials never fails the run, but is listed in both the terminal output (a `SKIP` line) and the JSON report's `skipped` array.
 
-**Loading strategy.** Eval files are plain TypeScript, loaded via Node's own dynamic `import()` under `--experimental-transform-types` plus this package's own extensionless-import resolution hook (`src/cli/loader.mjs`) — never tsx, consistent with [docs/decisions/run-the-toolchain-under-node.md](../../docs/decisions/run-the-toolchain-under-node.md). `bin/effect-evals.js` is a small, flagless launcher that re-execs `node` with those flags as literal argv (never `NODE_OPTIONS`) pointed at `src/cli/main.ts` — the only hop, so nothing downstream can drop them the way Alchemy's own CLI launcher does (see the decision doc).
+**Loading strategy.** Eval files are plain TypeScript, loaded via Node's own dynamic `import()` (type stripping is on by default; eval files must be erasable-syntax-only) plus this package's own extensionless-import resolution hook (`src/cli/loader.mjs`) — never tsx, consistent with [docs/decisions/run-the-toolchain-under-node.md](../../docs/decisions/run-the-toolchain-under-node.md). `bin/effect-evals.js` is a small, flagless launcher that re-execs `node` with those flags as literal argv (never `NODE_OPTIONS`) pointed at `src/cli/main.ts` — the only hop, so nothing downstream can drop them the way Alchemy's own CLI launcher does (see the decision doc).
 
 ## What's in the box
 

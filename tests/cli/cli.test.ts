@@ -11,7 +11,7 @@ import { Command } from "effect/unstable/cli";
 import { NodeServices } from "@effect/platform-node";
 import packageJson from "../../package.json" with { type: "json" };
 import { Cache } from "@thomasfosterau/effect-evals";
-import { cli, version } from "../../src/cli/Cli";
+import { cli, version } from "../../src/cli/Cli.ts";
 
 describe("cli/Cli", () => {
   it("version matches package.json", () => {

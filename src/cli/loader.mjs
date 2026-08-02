@@ -5,7 +5,7 @@
  * TypeScript under Node: its own source (which uses this repo's
  * extensionless-import house style, e.g. `import * as Cache from "../Cache"`)
  * and every `*.eval.ts` file it discovers, wherever in a workspace those
- * live. `bin/effect-evals.js` invokes Node with `--experimental-transform-types`
+ * live. `bin/effect-evals.js` invokes Node
  * (type-stripping) and `--import ./loader.mjs` (this file, self-loaded — see
  * the `register()` call at the bottom) as literal argv on a single `node`
  * invocation, per docs/decisions/run-the-toolchain-under-node.md. Node's
@@ -15,7 +15,8 @@
  * untouched.
  *
  * This is a small, self-contained copy of the same strategy
- * `scripts/stack-loader.mjs` uses for the Alchemy stack, kept local to this
+ * the Alchemy stack once used (since retired — that graph's imports are all
+ * extension-bearing now), kept local to this
  * package (no `$lib`-style alias support, which that one needs and this one
  * doesn't) so `effect-evals` stays extractable to its own repository with no
  * dependency on this repo's root tooling.

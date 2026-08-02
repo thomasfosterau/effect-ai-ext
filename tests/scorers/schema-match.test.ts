@@ -9,7 +9,7 @@ import * as Schema from "effect/Schema";
 import { SchemaMatch } from "@thomasfosterau/effect-evals";
 import { runTest } from "@test-helpers/effect";
 
-const Person = Schema.Struct({ name: Schema.String, age: Schema.Number });
+const Person = Schema.Struct({ name: Schema.String, age: Schema.Finite });
 
 describe("SchemaMatch.schemaMatch", () => {
   it("scores 1 when output decodes against the schema", async () => {

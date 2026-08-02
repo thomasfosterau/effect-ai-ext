@@ -33,8 +33,8 @@ export type ToolCall = typeof ToolCall.Type;
 
 /** Token/latency accounting observed during a run. */
 export const Usage = Schema.Struct({
-  inputTokens: Schema.optional(Schema.Number),
-  outputTokens: Schema.optional(Schema.Number),
+  inputTokens: Schema.optional(Schema.Finite),
+  outputTokens: Schema.optional(Schema.Finite),
 });
 
 /** The decoded type of {@link Usage}. */
@@ -54,7 +54,7 @@ export const EvalCase = <GoldenSchema extends Schema.Top, OutputSchema extends S
     output,
     retrievedContext: Schema.optional(Schema.Array(Schema.String)),
     toolCalls: Schema.optional(Schema.Array(ToolCall)),
-    durationMillis: Schema.optional(Schema.Number),
+    durationMillis: Schema.optional(Schema.Finite),
     usage: Schema.optional(Usage),
   });
 

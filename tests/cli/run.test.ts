@@ -13,7 +13,7 @@ import { describe, expect, it } from "vite-plus/test";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
 import { Cache } from "@thomasfosterau/effect-evals";
-import { runEvals } from "../../src/cli/Run";
+import { runEvals } from "../../src/cli/Run.ts";
 import { runTest } from "@test-helpers/effect";
 
 const FIXTURES = new URL("../fixtures/", import.meta.url);

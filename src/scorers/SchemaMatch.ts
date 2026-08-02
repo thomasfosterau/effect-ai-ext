@@ -15,9 +15,9 @@
 
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
-import { makeScorer, type Scorer } from "../Scorer";
-import type { Score } from "../Score";
-import type { JsonCase } from "./JsonValidity";
+import { makeScorer, type Scorer } from "../Scorer.ts";
+import type { Score } from "../Score.ts";
+import type { JsonCase } from "./JsonValidity.ts";
 
 /** Scores `1` when `decoded` succeeds, `0` with the decode error's message as `reason` when it doesn't — shared by {@link schemaMatch} and {@link schemaMatchValue}. */
 const scoreDecodeResult = <A, E extends { readonly message: string }, R>(

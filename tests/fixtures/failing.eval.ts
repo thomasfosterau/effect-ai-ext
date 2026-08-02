@@ -11,7 +11,7 @@
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import { Dataset, EvalFile, Runner } from "@thomasfosterau/effect-evals";
-import { exactMatchMetric } from "./_shared";
+import { exactMatchMetric } from "./_shared.ts";
 
 const alwaysWrongTask = Runner.makeTask<string, string>({
   id: "always-wrong@fixture",

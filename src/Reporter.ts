@@ -47,7 +47,7 @@
 
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
-import type { SuiteResult } from "./Result";
+import type { SuiteResult } from "./Result.ts";
 
 /** A named sink that consumes a completed suite's result; never fails. */
 export interface Reporter<R = never> {

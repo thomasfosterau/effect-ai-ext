@@ -3,7 +3,7 @@
  * @copyright Thomas Foster
  *
  * The `effect-evals` bin. A plain, flagless `node` launcher that re-execs
- * itself as `node --experimental-transform-types --no-warnings=ExperimentalWarning
+ * itself as `node --no-warnings=ExperimentalWarning
  * --import <loader.mjs> <cli/main.ts> …argv` — Node's native type-stripping
  * plus this package's own extensionless-import resolution hook, never tsx,
  * per docs/decisions/run-the-toolchain-under-node.md. Flags and the loader
@@ -26,14 +26,7 @@ const entry = path.join(dir, "..", "src", "cli", "main.ts");
 
 const result = spawnSync(
   process.execPath,
-  [
-    "--experimental-transform-types",
-    "--no-warnings=ExperimentalWarning",
-    "--import",
-    loader,
-    entry,
-    ...process.argv.slice(2),
-  ],
+  ["--no-warnings=ExperimentalWarning", "--import", loader, entry, ...process.argv.slice(2)],
   { stdio: "inherit" },
 );
 

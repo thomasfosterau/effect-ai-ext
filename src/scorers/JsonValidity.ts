@@ -11,7 +11,7 @@
  */
 
 import * as Effect from "effect/Effect";
-import { makeScorer, type Scorer } from "../Scorer";
+import { makeScorer, type Scorer } from "../Scorer.ts";
 
 /** The shape `jsonValidity` needs from a case: a string `output` to attempt to parse. */
 export interface JsonCase {

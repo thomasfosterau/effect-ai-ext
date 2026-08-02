@@ -3,7 +3,7 @@
  *
  * Glob discovery of `*.eval.ts` files for the `run` command. Uses Node's own
  * `fs.promises.glob` (stable as of the pinned Node version — see
- * `.node-version`) rather than a dependency: this module is CLI-only and
+ * the `engines.node` floor) rather than a dependency: this module is CLI-only and
  * already Node-coupled (dynamic `import()`, process argv), so pulling in a
  * userland glob package would buy nothing.
  *

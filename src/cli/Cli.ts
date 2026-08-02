@@ -9,7 +9,7 @@
 
 import { Command } from "effect/unstable/cli";
 import packageJson from "../../package.json" with { type: "json" };
-import { runCommand } from "./RunCommand";
+import { runCommand } from "./RunCommand.ts";
 
 export const version: string = packageJson.version;
 

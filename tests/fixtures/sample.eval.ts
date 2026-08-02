@@ -16,7 +16,7 @@ import * as Layer from "effect/Layer";
 import * as Stream from "effect/Stream";
 import { LanguageModel } from "effect/unstable/ai";
 import { Dataset, EvalFile, Runner } from "@thomasfosterau/effect-evals";
-import { exactMatchMetric, languageModelTask } from "./_shared";
+import { exactMatchMetric, languageModelTask } from "./_shared.ts";
 
 const fixtureSuite = Runner.makeSuite({
   name: "fixture-greetings",

@@ -10,11 +10,11 @@
  */
 
 import * as Schema from "effect/Schema";
-import { Metadata } from "./Metadata";
+import { Metadata } from "./Metadata.ts";
 
 /** A score in `[0, 1]`, `0` worst and `1` best regardless of the metric's polarity. */
 export const Score = Schema.Struct({
-  score: Schema.Number.pipe(Schema.check(Schema.isBetween({ minimum: 0, maximum: 1 }))),
+  score: Schema.Finite.pipe(Schema.check(Schema.isBetween({ minimum: 0, maximum: 1 }))),
   reason: Schema.optional(Schema.String),
   metadata: Schema.optional(Metadata),
 });

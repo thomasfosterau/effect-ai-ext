@@ -15,7 +15,7 @@ import {
   InvalidEvalFileError,
   loadEvalFile,
   validateEvalFile,
-} from "../../src/cli/LoadEvalFile";
+} from "../../src/cli/LoadEvalFile.ts";
 import { expectFailureInstanceOf, runTest } from "@test-helpers/effect";
 
 const validSuite = { name: "s", dataset: {}, task: {}, metrics: [] };

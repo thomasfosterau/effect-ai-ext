@@ -36,10 +36,10 @@ import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import { AiError, LanguageModel } from "effect/unstable/ai";
 import * as Prompt from "effect/unstable/ai/Prompt";
-import { makeMetric, type Metric } from "../Metric";
-import { makeScorer } from "../Scorer";
-import type { Score } from "../Score";
-import type { Threshold } from "../Threshold";
+import { makeMetric, type Metric } from "../Metric.ts";
+import { makeScorer } from "../Scorer.ts";
+import type { Score } from "../Score.ts";
+import type { Threshold } from "../Threshold.ts";
 
 // ── Errors ───────────────────────────────────────────────────────────
 
@@ -178,13 +178,13 @@ export const defaultTemplate: GEvalTemplate = { system: defaultSystem, user: def
 // ── Judge call (shared with future structured-judge metrics, e.g. #927) ──
 
 const ScoreAndReason = Schema.Struct({
-  score: Schema.Number,
+  score: Schema.Finite,
   reason: Schema.String,
 });
 
 const StepsScoreAndReason = Schema.Struct({
   steps: Schema.Array(Schema.String),
-  score: Schema.Number,
+  score: Schema.Finite,
   reason: Schema.String,
 });
 

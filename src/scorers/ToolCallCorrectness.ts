@@ -25,8 +25,8 @@
 
 import * as Effect from "effect/Effect";
 import * as Equal from "effect/Equal";
-import type { ToolCall } from "../EvalCase";
-import { makeScorer, type Scorer } from "../Scorer";
+import type { ToolCall } from "../EvalCase.ts";
+import { makeScorer, type Scorer } from "../Scorer.ts";
 
 /** One tool call a golden expects, mirroring `EvalCase.ToolCall`'s `name`/`params` shape without an actual `result` (nothing has run yet). */
 export interface ExpectedToolCall {

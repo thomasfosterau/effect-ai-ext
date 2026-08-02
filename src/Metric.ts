@@ -11,9 +11,9 @@
  */
 
 import * as Effect from "effect/Effect";
-import type { Score } from "./Score";
-import { contramap as contramapScorer, type Scorer } from "./Scorer";
-import { passes, type Threshold } from "./Threshold";
+import type { Score } from "./Score.ts";
+import { contramap as contramapScorer, type Scorer } from "./Scorer.ts";
+import { passes, type Threshold } from "./Threshold.ts";
 
 /** The outcome of evaluating one {@link Metric} against one case. */
 export interface MetricResult {

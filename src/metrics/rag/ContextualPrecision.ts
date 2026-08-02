@@ -26,18 +26,18 @@
 
 import * as Effect from "effect/Effect";
 import { LanguageModel } from "effect/unstable/ai";
-import { makeMetric, type Metric } from "../../Metric";
-import { makeScorer } from "../../Scorer";
-import type { Score } from "../../Score";
-import type { Threshold } from "../../Threshold";
-import { classifyStatements, type Verdict } from "./ExtractThenClassify";
+import { makeMetric, type Metric } from "../../Metric.ts";
+import { makeScorer } from "../../Scorer.ts";
+import type { Score } from "../../Score.ts";
+import type { Threshold } from "../../Threshold.ts";
+import { classifyStatements, type Verdict } from "./ExtractThenClassify.ts";
 import {
   renderValue,
   requireExpected,
   requireRetrievedContext,
   type RagCase,
   type RagMetricError,
-} from "./RagCase";
+} from "./RagCase.ts";
 
 const CLASSIFY_INSTRUCTIONS =
   'For each retrieved context chunk, decide whether it is relevant to producing the given expected output. Answer "yes" if the chunk is relevant, "no" if it is not.';

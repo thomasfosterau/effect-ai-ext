@@ -15,8 +15,8 @@
 
 import * as Effect from "effect/Effect";
 import { AiError } from "effect/unstable/ai";
-import { isMissing, MissingEvaluationParamError, renderValue } from "../GEval";
-import type { VerdictCountMismatchError } from "./ExtractThenClassify";
+import { isMissing, MissingEvaluationParamError, renderValue } from "../GEval.ts";
+import type { VerdictCountMismatchError } from "./ExtractThenClassify.ts";
 
 /** The failure modes of any RAG metric in `metrics/rag/`. */
 export type RagMetricError =

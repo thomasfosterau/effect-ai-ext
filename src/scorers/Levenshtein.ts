@@ -10,8 +10,8 @@
  */
 
 import * as Effect from "effect/Effect";
-import { makeScorer, type Scorer } from "../Scorer";
-import type { StringCase } from "./StringCase";
+import { makeScorer, type Scorer } from "../Scorer.ts";
+import type { StringCase } from "./StringCase.ts";
 
 /**
  * The classic edit-distance DP, single-row-optimised: `O(a.length * b.length)`

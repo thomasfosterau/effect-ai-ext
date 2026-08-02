@@ -13,8 +13,8 @@ import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as Path from "effect/Path";
 import * as PlatformError from "effect/PlatformError";
-import type { CliReport } from "../../src/cli/Report";
-import { writeJsonReport } from "../../src/cli/Report";
+import type { CliReport } from "../../src/cli/Report.ts";
+import { writeJsonReport } from "../../src/cli/Report.ts";
 import { runTest } from "@test-helpers/effect";
 
 const passingReport: CliReport = {

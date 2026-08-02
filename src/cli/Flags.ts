@@ -9,8 +9,8 @@
  */
 
 import { Argument, Flag } from "effect/unstable/cli";
-import { DEFAULT_OUT_PATH } from "./Report";
-import { DEFAULT_GLOB } from "./Run";
+import { DEFAULT_OUT_PATH } from "./Report.ts";
+import { DEFAULT_GLOB } from "./Run.ts";
 
 /** Glob patterns to match `*.eval.ts` files; defaults to {@link DEFAULT_GLOB} when none are given. */
 export const globs = Argument.string("globs").pipe(

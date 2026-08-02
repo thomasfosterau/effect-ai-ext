@@ -15,8 +15,8 @@
 import * as Effect from "effect/Effect";
 import * as Number from "effect/Number";
 import { AiError, EmbeddingModel } from "effect/unstable/ai";
-import { makeScorer, type Scorer } from "../Scorer";
-import type { StringCase } from "./StringCase";
+import { makeScorer, type Scorer } from "../Scorer.ts";
+import type { StringCase } from "./StringCase.ts";
 
 /** Dot-product cosine similarity, `[-1, 1]`; `0` when either vector is the zero vector. */
 const cosineSimilarity = (a: ReadonlyArray<number>, b: ReadonlyArray<number>): number => {
