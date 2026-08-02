@@ -47,12 +47,12 @@
 
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
-import type { SuiteResult } from "./Result.ts";
+import * as Result from "./Result.ts";
 
 /** A named sink that consumes a completed suite's result; never fails. */
 export interface Reporter<R = never> {
   readonly name: string;
-  readonly report: (result: SuiteResult) => Effect.Effect<void, never, R>;
+  readonly report: (result: Result.SuiteResult) => Effect.Effect<void, never, R>;
 }
 
 /** Constructs a {@link Reporter} from its name and report function. */
@@ -60,27 +60,8 @@ export const makeReporter = <R = never>(options: Reporter<R>): Reporter<R> => op
 
 const passFail = (passed: boolean): string => (passed ? "PASS" : "FAIL");
 
-const formatSummary = (
-  summary: SuiteResult["cases"][number]["metrics"][number]["summary"],
-): string =>
-  summary === undefined
-    ? "—"
-    : `μ=${summary.mean.toFixed(3)} σ=${summary.stddev.toFixed(3)} [${summary.min.toFixed(3)}, ${summary.max.toFixed(3)}]`;
-
-const formatReason = (metric: SuiteResult["cases"][number]["metrics"][number]): string => {
-  let lastErrorReason: string | undefined;
-  for (let i = metric.trials.length - 1; i >= 0; i--) {
-    const trial = metric.trials[i];
-    if (trial?._tag === "Scored") return trial.score.reason ?? "";
-    if (trial?._tag === "Errored" && lastErrorReason === undefined) {
-      lastErrorReason = `error: ${String(trial.error)}`;
-    }
-  }
-  return lastErrorReason ?? "";
-};
-
 /** Renders a {@link Result.SuiteResult} as a plain-text table: metric, score, pass/fail, reason, spread. */
-export const formatTerminalTable = (result: SuiteResult): string => {
+export const formatTerminalTable = (result: Result.SuiteResult): string => {
   const lines: Array<string> = [
     `Suite: ${result.suite} — ${passFail(result.passed)} (${result.durationMillis}ms, ${result.cases.length} case${result.cases.length === 1 ? "" : "s"})`,
   ];
@@ -93,7 +74,7 @@ export const formatTerminalTable = (result: SuiteResult): string => {
     }
     for (const metric of caseResult.metrics) {
       lines.push(
-        `      ${metric.metric.padEnd(24)} ${passFail(metric.passed).padEnd(4)} ${formatSummary(metric.summary).padEnd(40)} ${formatReason(metric)}`,
+        `      ${metric.metric.padEnd(24)} ${passFail(metric.passed).padEnd(4)} ${Result.formatSpread(metric.summary).padEnd(40)} ${Result.lastReason(metric)}`,
       );
     }
   }

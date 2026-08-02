@@ -8,6 +8,7 @@
  */
 
 import { describe, expect, it } from "vite-plus/test";
+import * as Config from "effect/Config";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -491,5 +492,20 @@ describe("Runner.runSuite — reporters", () => {
     );
 
     expect(reports.sort()).toEqual(["a:reported", "b:reported"]);
+  });
+});
+
+describe("Runner.isConfigError", () => {
+  it("identifies a real Config.ConfigError", async () => {
+    const error = await runTest(
+      Config.string("EFFECT_EVALS_RUNNER_TEST_MISSING_CONFIG").pipe(Effect.flip),
+    );
+    expect(Runner.isConfigError(error)).toBe(true);
+  });
+
+  it("rejects errors that aren't a Config.ConfigError", () => {
+    expect(Runner.isConfigError(new Error("boom"))).toBe(false);
+    expect(Runner.isConfigError("boom")).toBe(false);
+    expect(Runner.isConfigError(undefined)).toBe(false);
   });
 });

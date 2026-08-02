@@ -30,7 +30,6 @@
  * @module cli/Run
  */
 
-import { ConfigError } from "effect/Config";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
@@ -106,7 +105,7 @@ const runFile = <R>(
 
       if (EffectResult.isFailure(built)) {
         const error = built.failure;
-        return error instanceof ConfigError
+        return Runner.isConfigError(error)
           ? {
               _tag: "Skipped" as const,
               result: {

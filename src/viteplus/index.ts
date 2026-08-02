@@ -32,7 +32,7 @@ import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
 import type * as EvalFile from "../EvalFile.ts";
-import type * as Result from "../Result.ts";
+import * as Result from "../Result.ts";
 import * as Runner from "../Runner.ts";
 import * as Threshold from "../Threshold.ts";
 
@@ -44,19 +44,18 @@ export type SuiteOutcome =
   | { readonly _tag: "Errored"; readonly suite: string; readonly message: string }
   | { readonly _tag: "Ran"; readonly suite: string; readonly result: Result.SuiteResult };
 
-const isConfigError = (error: unknown): error is Config.ConfigError =>
-  error instanceof Config.ConfigError;
-
 /**
  * The first `Config.ConfigError` anywhere among a cause's (flat, per this
  * effect version's `Cause`) failure reasons — not just the first reason
  * overall, so a `ConfigError` racing another failure (e.g. the layer build
  * and a suite's own dataset load both failing) is still found rather than
- * silently misclassified as a plain `Errored`.
+ * silently misclassified as a plain `Errored`. The `ConfigError` predicate
+ * itself is {@link Runner.isConfigError} — shared with the CLI's own
+ * classification in `../cli/Run.ts`.
  */
 const configErrorIn = (cause: Cause.Cause<unknown>): Config.ConfigError | undefined => {
   for (const reason of cause.reasons) {
-    if (Cause.isFailReason(reason) && isConfigError(reason.error)) return reason.error;
+    if (Cause.isFailReason(reason) && Runner.isConfigError(reason.error)) return reason.error;
   }
   return undefined;
 };
@@ -119,24 +118,10 @@ export const evaluateSuite = (
   Effect.map(evaluateEvalFile({ ...evalFile, suites: [suite] }), (outcomes) => outcomes[0]!);
 
 // ── Failure message formatting ───────────────────────────────────────
-
-/** The most recent scored trial's reason, or the most recent errored trial's error, for a failure message. */
-const formatMetricReason = (metric: Result.MetricAggregate): string => {
-  for (let i = metric.trials.length - 1; i >= 0; i--) {
-    const trial = metric.trials[i];
-    if (trial?._tag === "Scored") return trial.score.reason ?? "(no reason given)";
-  }
-  for (let i = metric.trials.length - 1; i >= 0; i--) {
-    const trial = metric.trials[i];
-    if (trial?._tag === "Errored") return `error: ${String(trial.error)}`;
-  }
-  return "(no trials recorded)";
-};
-
-const formatSpread = (summary: Result.Summary | undefined): string =>
-  summary === undefined
-    ? "no scored trials"
-    : `mean=${summary.mean.toFixed(3)} stddev=${summary.stddev.toFixed(3)} [${summary.min.toFixed(3)}, ${summary.max.toFixed(3)}]`;
+//
+// Trial-reason and score-spread rendering is the shared seam in
+// `Result.ts` (`lastReason` / `formatSpread`) — this module only adds
+// presentation (the "reason: " prefix, the surrounding sentence).
 
 /**
  * Builds a failing case's assertion message: any task-trial failures, then
@@ -163,9 +148,9 @@ export const formatCaseFailure = (
         ? ` (${metric.errorCount} errored trial${metric.errorCount === 1 ? "" : "s"})`
         : "";
     lines.push(
-      `metric "${metric.metric}" failed — score ${formatSpread(metric.summary)} vs threshold ${
+      `metric "${metric.metric}" failed — score ${Result.formatSpread(metric.summary)} vs threshold ${
         threshold ? Threshold.describe(threshold) : "?"
-      }${errorSuffix}; reason: ${formatMetricReason(metric)}`,
+      }${errorSuffix}; reason: ${Result.lastReason(metric)}`,
     );
   }
 

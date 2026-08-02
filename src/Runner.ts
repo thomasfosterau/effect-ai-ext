@@ -32,6 +32,7 @@
  */
 
 import * as Arr from "effect/Array";
+import { ConfigError } from "effect/Config";
 import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as EffectResult from "effect/Result";
@@ -44,6 +45,17 @@ import * as Reporter from "./Reporter.ts";
 import * as Result from "./Result.ts";
 import type { Score } from "./Score.ts";
 import * as Threshold from "./Threshold.ts";
+
+/**
+ * Whether a `layer` build failure is a `Config.ConfigError` — the
+ * credential-gating signal both execution surfaces (the `./viteplus`
+ * adapter and the CLI) key off to skip rather than fail when a required
+ * provider credential is unset. Each builds and classifies `layer` with its
+ * own combinator (`Effect.exit`+`Cause` for per-suite isolation, `Effect.result`
+ * for per-file batching — see `../viteplus/index.ts` and `./cli/Run.ts`), so
+ * this predicate is the one piece of that classification actually shared.
+ */
+export const isConfigError = (error: unknown): error is ConfigError => error instanceof ConfigError;
 
 /** A named, effectful task (the system-under-test) with a stable id for cache keys. */
 export interface TaskDefinition<Golden, Output, E = never, R = never> {

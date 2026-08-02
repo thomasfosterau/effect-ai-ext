@@ -59,6 +59,44 @@ export interface MetricAggregate {
   readonly passed: boolean;
 }
 
+// ── Outcome-explaining / rendering seam ──────────────────────────────
+//
+// `Reporter.ts` (the single-suite terminal table), `viteplus/index.ts` (a
+// failing case's assertion message), and the CLI (which renders through
+// `Reporter.formatTerminalTable`) all need to say *which trial explains a
+// metric's outcome* and *how spread out its scores were*. Both pieces of
+// logic — and their fallback text for the "nothing to explain" cases — are
+// canonical here so every caller renders identically instead of
+// re-deriving (and drifting from) its own copy.
+
+const NO_REASON_GIVEN = "(no reason given)";
+const NO_TRIALS_RECORDED = "(no trials recorded)";
+const NO_SCORED_TRIALS = "no scored trials";
+
+/**
+ * The trial that explains a metric's aggregate outcome, display-ready: the
+ * most recent `Scored` trial's reason (or a placeholder when the scorer
+ * gave none), falling back to the most recent `Errored` trial's error when
+ * no trial scored, and a placeholder when there are no trials at all.
+ */
+export const lastReason = (metric: MetricAggregate): string => {
+  for (let i = metric.trials.length - 1; i >= 0; i--) {
+    const trial = metric.trials[i];
+    if (trial?._tag === "Scored") return trial.score.reason ?? NO_REASON_GIVEN;
+  }
+  for (let i = metric.trials.length - 1; i >= 0; i--) {
+    const trial = metric.trials[i];
+    if (trial?._tag === "Errored") return `error: ${String(trial.error)}`;
+  }
+  return NO_TRIALS_RECORDED;
+};
+
+/** Renders a {@link Summary} as `mean=… stddev=… [min, max]`, or a placeholder when every trial errored. */
+export const formatSpread = (summary: Summary | undefined): string =>
+  summary === undefined
+    ? NO_SCORED_TRIALS
+    : `mean=${summary.mean.toFixed(3)} stddev=${summary.stddev.toFixed(3)} [${summary.min.toFixed(3)}, ${summary.max.toFixed(3)}]`;
+
 /** A task (system-under-test) trial that failed to produce an output. */
 export interface TaskTrialFailure {
   readonly trial: number;
