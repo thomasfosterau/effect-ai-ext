@@ -113,7 +113,7 @@ const result = await Effect.runPromise(
 
 ## `viteplus` adapter (#929)
 
-`@thomasfosterau/effect-evals/viteplus` — a separate sub-export (the core `"."` barrel never imports `vite-plus/test`, see [the packaging amendment](../../docs/decisions/single-barrel-package-exports.md#second-deliberate-exception-effect-evalss-viteplus)) — runs `*.eval.ts` files under `vp test run`, evalite-style: one `describe` per suite, one `it` per case.
+`@thomasfosterau/effect-evals/viteplus` — a separate sub-export (the core `"."` barrel never imports `vite-plus/test`, see [the packaging amendment](../../docs/decisions/single-barrel-package-exports.md#deliberate-exceptions)) — runs `*.eval.ts` files under `vp test run`, evalite-style: one `describe` per suite, one `it` per case.
 
 An `*.eval.ts` file default-exports the shared `EvalFile` contract (`src/EvalFile.ts`) — the same shape the CLI (#930) will dynamically `import()` — and registers itself with `vite-plus/test` in one expression. `defineEval` only registers tests when actually running under `vite-plus/test` (`process.env.VITEST === "true"`); a bare `import()` of the file — the CLI's use case — gets back the plain `EvalFile` object with no side effect, so the same file is safe for both surfaces:
 
