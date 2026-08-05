@@ -124,10 +124,10 @@ describe("ContextualPrecision.contextualPrecision", () => {
       ]),
     );
 
-    const failure = await expectFailureInstanceOf(
+    const failure = (await expectFailureInstanceOf(
       Metric.evaluate(metric, ragCase).pipe(Effect.provide(provideJudge(model)), Effect.asVoid),
       ExtractThenClassify.VerdictCountMismatchError,
-    );
+    )) as ExtractThenClassify.VerdictCountMismatchError;
 
     expect(failure.expected).toBe(3);
     expect(failure.actual).toBe(2);
@@ -164,13 +164,13 @@ describe("ContextualPrecision.contextualPrecision", () => {
 
     const model = await deadJudge();
 
-    const failure = await expectFailureInstanceOf(
+    const failure = (await expectFailureInstanceOf(
       Metric.evaluate(metric, caseWithoutExpected).pipe(
         Effect.provide(provideJudge(model)),
         Effect.asVoid,
       ),
       GEval.MissingEvaluationParamError,
-    );
+    )) as GEval.MissingEvaluationParamError;
 
     expect(failure.param).toBe("expected");
     expect(failure.metric).toBe("contextual-precision");

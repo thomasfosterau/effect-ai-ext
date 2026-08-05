@@ -72,13 +72,13 @@ describe("ContextualRelevancy.contextualRelevancy", () => {
 
     const model = await deadJudge();
 
-    const failure = await expectFailureInstanceOf(
+    const failure = (await expectFailureInstanceOf(
       Metric.evaluate(metric, caseWithoutContext).pipe(
         Effect.provide(provideJudge(model)),
         Effect.asVoid,
       ),
       GEval.MissingEvaluationParamError,
-    );
+    )) as GEval.MissingEvaluationParamError;
 
     expect(failure.param).toBe("retrievedContext");
     expect(failure.metric).toBe("contextual-relevancy");

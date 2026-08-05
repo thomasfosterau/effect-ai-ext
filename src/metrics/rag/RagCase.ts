@@ -38,7 +38,7 @@ export interface RagCase {
     readonly expected?: unknown;
   };
   readonly output: unknown;
-  readonly retrievedContext?: ReadonlyArray<string>;
+  readonly retrievedContext?: ReadonlyArray<string> | undefined;
 }
 
 /** Fails with the typed error when `evalCase.golden.input` is absent. */

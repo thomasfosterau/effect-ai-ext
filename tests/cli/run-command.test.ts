@@ -12,6 +12,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
+import * as Layer from "effect/Layer";
 import { Command } from "effect/unstable/cli";
 import { NodeServices } from "@effect/platform-node";
 import { Cache } from "@thomasfosterau/effect-evals";
@@ -52,8 +53,7 @@ const runCli = (
       // pipe, so this test double for `FileSystem` has to be supplied ahead of the real
       // Node one or the real one wins and the JSON report hits actual disk.
       Effect.provideService(FileSystem.FileSystem, testFs),
-      Effect.provide(NodeServices.layer),
-      Effect.provide(Cache.layerMemory),
+      Effect.provide(Layer.merge(NodeServices.layer, Cache.layerMemory)),
     ),
   );
 };

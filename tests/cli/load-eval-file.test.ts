@@ -41,10 +41,10 @@ describe("LoadEvalFile.loadEvalFile", () => {
   });
 
   it("fails with InvalidEvalFileError when the default export doesn't satisfy the contract", async () => {
-    const error = await expectFailureInstanceOf(
+    const error = (await expectFailureInstanceOf(
       loadEvalFile(fixture("invalid.eval.ts")),
       InvalidEvalFileError,
-    );
+    )) as InvalidEvalFileError;
     expect(error.reason).toContain("layer");
   });
 });

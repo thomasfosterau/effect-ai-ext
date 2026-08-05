@@ -114,7 +114,7 @@ describe("viteplus.evaluateSuite", () => {
     }
     const brokenSuite = Runner.makeSuite({
       name: "viteplus adapter — broken dataset",
-      dataset: Dataset.makeDataset({
+      dataset: Dataset.makeDataset<string, BrokenDatasetError>({
         name: "broken",
         goldens: Effect.fail(new BrokenDatasetError()),
       }),

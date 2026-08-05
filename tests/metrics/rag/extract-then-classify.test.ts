@@ -108,7 +108,7 @@ describe("ExtractThenClassify.classifyStatements", () => {
       makeJudgeStub([() => ({ verdicts: [{ statement: "a", verdict: "yes" }] })]),
     );
 
-    const failure = await expectFailureInstanceOf(
+    const failure = (await expectFailureInstanceOf(
       ExtractThenClassify.classifyStatements({
         instructions: "classify",
         statements: ["a", "b", "c"],
@@ -116,7 +116,7 @@ describe("ExtractThenClassify.classifyStatements", () => {
         referenceText: "the context text",
       }).pipe(Effect.provide(provideJudge(model)), Effect.asVoid),
       ExtractThenClassify.VerdictCountMismatchError,
-    );
+    )) as ExtractThenClassify.VerdictCountMismatchError;
 
     expect(failure.expected).toBe(3);
     expect(failure.actual).toBe(1);
@@ -134,7 +134,7 @@ describe("ExtractThenClassify.classifyStatements", () => {
       ]),
     );
 
-    const failure = await expectFailureInstanceOf(
+    const failure = (await expectFailureInstanceOf(
       ExtractThenClassify.classifyStatements({
         instructions: "classify",
         statements: ["a"],
@@ -142,7 +142,7 @@ describe("ExtractThenClassify.classifyStatements", () => {
         referenceText: "the context text",
       }).pipe(Effect.provide(provideJudge(model)), Effect.asVoid),
       ExtractThenClassify.VerdictCountMismatchError,
-    );
+    )) as ExtractThenClassify.VerdictCountMismatchError;
 
     expect(failure.expected).toBe(1);
     expect(failure.actual).toBe(2);
@@ -213,11 +213,13 @@ describe("ExtractThenClassify.extractThenClassifyRatio", () => {
     const model = await runTest(
       LanguageModel.make({
         generateText: () =>
-          new AiError.UnknownError({
-            module: "test",
-            method: "generateText",
-            description: "stubbed failure",
-          }),
+          Effect.fail(
+            AiError.make({
+              module: "test",
+              method: "generateText",
+              reason: new AiError.UnknownError({ description: "stubbed failure" }),
+            }),
+          ),
         streamText: () => Stream.die("not used"),
       }),
     );
@@ -231,7 +233,7 @@ describe("ExtractThenClassify.extractThenClassifyRatio", () => {
           referenceText: "the context text",
         },
       }).pipe(Effect.provide(provideJudge(model)), Effect.asVoid),
-      AiError.UnknownError,
+      AiError.AiError,
     );
   });
 });

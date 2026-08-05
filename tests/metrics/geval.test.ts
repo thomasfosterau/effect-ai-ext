@@ -385,13 +385,13 @@ describe("gEval — missing evaluation params", () => {
 
     const model = await deadJudge();
 
-    const failure = await expectFailureInstanceOf(
+    const failure = (await expectFailureInstanceOf(
       Metric.evaluate(metric, caseWithoutExpected).pipe(
         Effect.provide(provideJudge(model)),
         Effect.asVoid,
       ),
       GEval.MissingEvaluationParamError,
-    );
+    )) as GEval.MissingEvaluationParamError;
 
     expect(failure.param).toBe("expected");
     expect(failure.metric).toBe("translation-quality");
@@ -412,13 +412,13 @@ describe("gEval — missing evaluation params", () => {
 
     const model = await deadJudge();
 
-    const failure = await expectFailureInstanceOf(
+    const failure = (await expectFailureInstanceOf(
       Metric.evaluate(metric, caseWithNullExpected).pipe(
         Effect.provide(provideJudge(model)),
         Effect.asVoid,
       ),
       GEval.MissingEvaluationParamError,
-    );
+    )) as GEval.MissingEvaluationParamError;
 
     expect(failure.param).toBe("expected");
   });

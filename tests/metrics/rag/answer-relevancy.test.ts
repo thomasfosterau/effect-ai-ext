@@ -70,13 +70,13 @@ describe("AnswerRelevancy.answerRelevancy", () => {
 
     const model = await deadJudge();
 
-    const failure = await expectFailureInstanceOf(
+    const failure = (await expectFailureInstanceOf(
       Metric.evaluate(metric, caseWithoutOutput).pipe(
         Effect.provide(provideJudge(model)),
         Effect.asVoid,
       ),
       GEval.MissingEvaluationParamError,
-    );
+    )) as GEval.MissingEvaluationParamError;
 
     expect(failure.param).toBe("output");
     expect(failure.metric).toBe("answer-relevancy");

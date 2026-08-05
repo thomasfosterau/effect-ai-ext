@@ -11,6 +11,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
+import * as Layer from "effect/Layer";
 import * as Path from "effect/Path";
 import * as PlatformError from "effect/PlatformError";
 import type { CliReport } from "../../src/cli/Report.ts";
@@ -60,8 +61,7 @@ describe("Report.writeJsonReport", () => {
 
     await runTest(
       writeJsonReport(".effect-evals/results.json", passingReport).pipe(
-        Effect.provide(testFs),
-        Effect.provide(Path.layer),
+        Effect.provide(Layer.merge(testFs, Path.layer)),
       ),
     );
 
@@ -87,8 +87,7 @@ describe("Report.writeJsonReport", () => {
 
     await runTest(
       writeJsonReport("results.json", passingReport).pipe(
-        Effect.provide(testFs),
-        Effect.provide(Path.layer),
+        Effect.provide(Layer.merge(testFs, Path.layer)),
       ),
     );
 
@@ -112,8 +111,7 @@ describe("Report.writeJsonReport", () => {
     // Should not throw — writeJsonReport's error channel is `never`.
     await runTest(
       writeJsonReport("out.json", passingReport).pipe(
-        Effect.provide(testFs),
-        Effect.provide(Path.layer),
+        Effect.provide(Layer.merge(testFs, Path.layer)),
       ),
     );
   });

@@ -54,7 +54,10 @@ describe("Scorer + Metric — dependency-free scorer", () => {
 
 class JudgeError {
   readonly _tag = "JudgeError";
-  constructor(readonly message: string) {}
+  readonly message: string;
+  constructor(message: string) {
+    this.message = message;
+  }
 }
 
 interface JudgeService {

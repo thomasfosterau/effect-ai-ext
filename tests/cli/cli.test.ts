@@ -6,7 +6,7 @@
  */
 
 import { describe, expect, it, vi } from "vite-plus/test";
-import { Effect } from "effect";
+import { Effect, Layer } from "effect";
 import { Command } from "effect/unstable/cli";
 import { NodeServices } from "@effect/platform-node";
 import packageJson from "../../package.json" with { type: "json" };
@@ -25,8 +25,7 @@ describe("cli/Cli", () => {
     // type system still requires every subcommand's R statically satisfied.
     await Effect.runPromise(
       Command.runWith(cli, { version })(["--help"]).pipe(
-        Effect.provide(Cache.layerMemory),
-        Effect.provide(NodeServices.layer),
+        Effect.provide(Layer.merge(Cache.layerMemory, NodeServices.layer)),
       ),
     );
 

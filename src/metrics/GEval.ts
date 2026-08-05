@@ -347,10 +347,10 @@ export interface GEvalCase {
   readonly golden: {
     readonly input: unknown;
     readonly expected?: unknown;
-    readonly context?: ReadonlyArray<string>;
+    readonly context?: ReadonlyArray<string> | undefined;
   };
   readonly output: unknown;
-  readonly retrievedContext?: ReadonlyArray<string>;
+  readonly retrievedContext?: ReadonlyArray<string> | undefined;
 }
 
 const extractParam = (evalCase: GEvalCase, param: EvaluationParam): unknown => {
@@ -423,9 +423,9 @@ export type ConversationalEvaluationParam = "scenario" | "expectedOutcome" | "co
  */
 export interface GEvalConversationalCase {
   readonly turns: Prompt.Prompt;
-  readonly scenario?: string;
+  readonly scenario?: string | undefined;
   readonly expectedOutcome?: unknown;
-  readonly context?: ReadonlyArray<string>;
+  readonly context?: ReadonlyArray<string> | undefined;
 }
 
 const renderMessageContent = (message: Prompt.Message): string => {

@@ -19,7 +19,10 @@ import { runTest } from "@test-helpers/effect";
 
 class TaskError {
   readonly _tag = "TaskError";
-  constructor(readonly message: string) {}
+  readonly message: string;
+  constructor(message: string) {
+    this.message = message;
+  }
 }
 
 /** Immediate retries (no delay) so retry tests stay fast. */
@@ -81,7 +84,10 @@ describe("Runner.runSuite — end to end", () => {
     }
     const suite = Runner.makeSuite({
       name: "broken",
-      dataset: Dataset.makeDataset({ name: "broken", goldens: Effect.fail(new DatasetError()) }),
+      dataset: Dataset.makeDataset<string, DatasetError>({
+        name: "broken",
+        goldens: Effect.fail(new DatasetError()),
+      }),
       task: echoTask,
       metrics: [exactMatchMetric],
     });
@@ -157,7 +163,7 @@ describe("Runner.runSuite — retry", () => {
     let attempts = 0;
     const flakyMetric = Metric.makeMetric({
       name: "flaky",
-      scorer: Scorer.makeScorer<Runner.EvaluatedCase<string, string>>({
+      scorer: Scorer.makeScorer<Runner.EvaluatedCase<string, string>, AiError.AiError>({
         name: "flaky",
         evaluate: () =>
           Effect.gen(function* () {
@@ -197,7 +203,7 @@ describe("Runner.runSuite — retry", () => {
     let attempts = 0;
     const authFailingMetric = Metric.makeMetric({
       name: "auth-failing",
-      scorer: Scorer.makeScorer<Runner.EvaluatedCase<string, string>>({
+      scorer: Scorer.makeScorer<Runner.EvaluatedCase<string, string>, AiError.AiError>({
         name: "auth-failing",
         evaluate: () =>
           Effect.gen(function* () {
@@ -263,7 +269,7 @@ describe("Runner.runSuite — ignore vs fail metric errors", () => {
     let call = 0;
     return Metric.makeMetric({
       name: "flaky-once",
-      scorer: Scorer.makeScorer<Runner.EvaluatedCase<string, string>>({
+      scorer: Scorer.makeScorer<Runner.EvaluatedCase<string, string>, TaskError>({
         name: "flaky-once",
         evaluate: () =>
           Effect.gen(function* () {
@@ -455,7 +461,7 @@ describe("Runner.makeSuite — heterogeneous metrics", () => {
     );
 
     const result = await runTest(
-      Runner.runSuite(suite).pipe(Effect.provide(Cache.layerMemory), Effect.provide(layer)),
+      Runner.runSuite(suite).pipe(Effect.provide(Layer.merge(Cache.layerMemory, layer))),
     );
 
     expect(result.passed).toBe(true);
