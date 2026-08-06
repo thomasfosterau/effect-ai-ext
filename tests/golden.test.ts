@@ -30,7 +30,9 @@ describe("Golden", () => {
     expect(decoded).not.toHaveProperty("expectedTools");
 
     const encoded = await runTest(Schema.encodeEffect(TranslationGolden)(decoded));
-    expect(JSON.stringify(encoded)).toBe(JSON.stringify(input));
+    // Structural equality, not JSON.stringify equality — the latter also
+    // pins key iteration order, which is not part of the contract.
+    expect(encoded).toEqual(input);
   });
 
   it("allows omitting optional fields, dropping their keys rather than encoding `undefined`", async () => {

@@ -9,15 +9,13 @@ import { describe, expect, it, vi } from "vite-plus/test";
 import { Effect, Layer } from "effect";
 import { Command } from "effect/unstable/cli";
 import { NodeServices } from "@effect/platform-node";
-import packageJson from "../../package.json" with { type: "json" };
 import { Cache } from "@thomasfosterau/effect-evals";
 import { cli, version } from "../../src/cli/Cli.ts";
 
 describe("cli/Cli", () => {
-  it("version matches package.json", () => {
-    expect(version).toBe(packageJson.version);
-  });
-
+  // No "version matches package.json" test: `src/cli/Cli.ts` defines
+  // `version = packageJson.version`, so both sides of that assertion read
+  // the same import — it could never fail.
   it("lists run as a subcommand in --help output", async () => {
     const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 

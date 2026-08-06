@@ -16,10 +16,9 @@ describe("eval/test glob separation", () => {
   const include = viteConfig.test!.include!;
 
   it("is exactly the narrow tests-only glob", () => {
+    // The exact pin is the whole gate: any glob equal to this cannot match
+    // `evals/*.eval.ts`. (A substring check on the pattern text would prove
+    // nothing — "**/*.ts" contains no "eval" yet matches every eval file.)
     expect(include).toEqual(["tests/**/*.test.ts"]);
-  });
-
-  it("does not match an eval file", () => {
-    expect(include.some((pattern) => pattern.includes("eval"))).toBe(false);
   });
 });
