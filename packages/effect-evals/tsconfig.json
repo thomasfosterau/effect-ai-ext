@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // The `effect-evals` bin runs `src/cli/main.ts` as raw TypeScript through
+    // Node's own type-stripping, which is STRIP-ONLY: non-erasable syntax
+    // (constructor parameter properties, enums, namespaces) would be a runtime
+    // `ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX` invisible to every other gate.
+    "erasableSyntaxOnly": true,
+    "types": ["node"]
+  },
+  "include": ["src", "tests", "tsup.config.ts", "vitest.config.ts"]
+}
