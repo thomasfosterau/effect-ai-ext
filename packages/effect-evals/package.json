@@ -1,0 +1,23 @@
+{
+  "name": "@thomasfosterau/effect-evals",
+  "version": "0.0.0",
+  "private": true,
+  "bin": {
+    "effect-evals": "./bin/effect-evals.js"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./viteplus": "./src/viteplus/index.ts"
+  },
+  "dependencies": {
+    "@effect/platform-node": "catalog:",
+    "effect": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/language-service": "catalog:",
+    "@types/node": "catalog:",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}
