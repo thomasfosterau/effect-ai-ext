@@ -4,10 +4,10 @@
  * @module tests/scorers/schema-match
  */
 
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import * as Schema from "effect/Schema";
-import { SchemaMatch } from "@thomasfosterau/effect-evals";
-import { runTest } from "@test-helpers/effect";
+import { SchemaMatch } from "../../src/index.ts";
+import { runTest } from "../helpers/effect.ts";
 
 const Person = Schema.Struct({ name: Schema.String, age: Schema.Finite });
 

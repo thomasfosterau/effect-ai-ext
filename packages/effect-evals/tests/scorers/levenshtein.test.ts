@@ -4,9 +4,9 @@
  * @module tests/scorers/levenshtein
  */
 
-import { describe, expect, it } from "vite-plus/test";
-import { Levenshtein } from "@thomasfosterau/effect-evals";
-import { runTest } from "@test-helpers/effect";
+import { describe, expect, it } from "vitest";
+import { Levenshtein } from "../../src/index.ts";
+import { runTest } from "../helpers/effect.ts";
 
 describe("Levenshtein.levenshteinSimilarity", () => {
   it("is 1 for identical strings", () => {

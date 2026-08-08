@@ -7,7 +7,7 @@
  * Node's default type stripping plus this package's `./loader.mjs`
  * resolution hook are already active process-wide by the time this runs, so
  * the file's own TypeScript and extensionless imports resolve the same way
- * this package's own source does. Under a test runner (vitest/vite-plus),
+ * this package's own source does. Under a test runner (vitest),
  * the bundler's own module loader handles it instead — this function itself
  * has no Node-flag dependency, only `import()`.
  *

@@ -5,9 +5,9 @@
  * @module tests/dataset
  */
 
-import { describe, expect, it } from "vite-plus/test";
-import { Dataset } from "@thomasfosterau/effect-evals";
-import { runTest } from "@test-helpers/effect";
+import { describe, expect, it } from "vitest";
+import { Dataset } from "../src/index.ts";
+import { runTest } from "./helpers/effect.ts";
 
 describe("Dataset.fromArray", () => {
   it("wraps an inline array of goldens as an effect", async () => {

@@ -3,11 +3,8 @@
  *
  * The core, runner-agnostic model for `@thomasfosterau/effect-evals`: an
  * eval is definable and a scorer writable as plain Effect values, with no
- * dependency beyond `effect` itself (this barrel never imports `vite-plus` or
- * any workspace package — see
- * `docs/decisions/single-barrel-package-exports.md`). The package is slated
- * for eventual extraction into its own repository; this is the foundation
- * (#923) the runner, metrics, adapter, and CLI build on.
+ * dependency beyond `effect` itself. This is the foundation the runner,
+ * metrics, and CLI build on.
  *
  * - {@link Golden} / {@link EvalCase} — the static case and its
  *   run-enriched counterpart (DeepEval's golden/test-case split).
@@ -19,8 +16,8 @@
  *   scorer+policy+name unit a runner executes; {@link Metric.contramap} is
  *   `Scorer.contramap`'s counterpart at the `Metric` level.
  * - {@link Dataset} — a named source of goldens.
- * - {@link EvalFile} — the `*.eval.ts` contract shared by every execution
- *   surface (the `./viteplus` adapter and the CLI).
+ * - {@link EvalFile} — the `*.eval.ts` contract every execution surface
+ *   consumes, starting with the CLI.
  * - {@link Runner} — `runSuite`, the Effect program that runs a suite's
  *   goldens through its task and metrics: trials, bounded concurrency,
  *   retry, and caching (#924).
@@ -42,11 +39,6 @@
  *   retrieval-augmented answers, built on the shared {@link RagCase} case
  *   shape and {@link ExtractThenClassify} extract → classify → ratio
  *   primitive (#927).
- * - {@link EvalFile} — the `*.eval.ts` default-export contract shared by
- *   both execution surfaces (the CLI, #930; the `./viteplus` adapter, #929).
- *
- * The `vite-plus/test` adapter lives at the separate `./viteplus`
- * sub-export so this barrel stays free of it.
  */
 
 export * as AnswerRelevancy from "./metrics/rag/AnswerRelevancy.ts";

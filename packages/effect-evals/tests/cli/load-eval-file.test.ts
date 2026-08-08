@@ -8,7 +8,7 @@
  * @module tests/cli/load-eval-file
  */
 
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import * as Layer from "effect/Layer";
 import {
   EvalFileImportError,
@@ -16,7 +16,7 @@ import {
   loadEvalFile,
   validateEvalFile,
 } from "../../src/cli/LoadEvalFile.ts";
-import { expectFailureInstanceOf, runTest } from "@test-helpers/effect";
+import { expectFailureInstanceOf, runTest } from "../helpers/effect.ts";
 
 const validSuite = { name: "s", dataset: {}, task: {}, metrics: [] };
 

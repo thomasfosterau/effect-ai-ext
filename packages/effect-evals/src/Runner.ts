@@ -1,7 +1,7 @@
 /**
  * @copyright Thomas Foster
  *
- * `runSuite` — the engine both execution surfaces (the `./viteplus` adapter,
+ * `runSuite` — the engine every execution surface (the CLI,
  * #929, and the CLI, #930) sit on: for each golden, run the task (the
  * system-under-test) with its own `R` flowing through, build the resulting
  * {@link EvaluatedCase}, run every {@link Metric.Metric} against it, and
@@ -48,11 +48,11 @@ import * as Threshold from "./Threshold.ts";
 
 /**
  * Whether a `layer` build failure is a `Config.ConfigError` — the
- * credential-gating signal both execution surfaces (the `./viteplus`
+ * credential-gating signal every execution surface (the
  * adapter and the CLI) key off to skip rather than fail when a required
  * provider credential is unset. Each builds and classifies `layer` with its
  * own combinator (`Effect.exit`+`Cause` for per-suite isolation, `Effect.result`
- * for per-file batching — see `../viteplus/index.ts` and `./cli/Run.ts`), so
+ * for per-file batching — see `./cli/Run.ts`), so
  * this predicate is the one piece of that classification actually shared.
  */
 export const isConfigError = (error: unknown): error is ConfigError => error instanceof ConfigError;

@@ -25,7 +25,7 @@
  * Node 19+ and Workers, no import needed) are used here, per
  * `docs/decisions/effect-evals-as-the-evaluation-toolkit.md`: the concrete
  * `FileSystem`/`Path` layer for {@link layerFileSystem} is supplied by the
- * caller (a test, the `vite-plus/test` adapter, or the CLI) — exactly like a
+ * caller (a test or the CLI) — exactly like a
  * judge `LanguageModel` is provided to a {@link Scorer.Scorer}.
  *
  * @module Cache

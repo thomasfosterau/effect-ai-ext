@@ -6,7 +6,7 @@
  * @module tests/metrics/rag/faithfulness
  */
 
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import { LanguageModel } from "effect/unstable/ai";
@@ -18,8 +18,8 @@ import {
   Metric,
   RagCase,
   Threshold,
-} from "@thomasfosterau/effect-evals";
-import { expectFailureInstanceOf, runTest } from "@test-helpers/effect";
+} from "../../../src/index.ts";
+import { expectFailureInstanceOf, runTest } from "../../helpers/effect.ts";
 import { deadJudge, makeJudgeStub, provideJudge } from "./helpers.ts";
 
 const RagGolden = Golden.Golden(Schema.String, Schema.String);

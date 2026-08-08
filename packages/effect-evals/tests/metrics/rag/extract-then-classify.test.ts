@@ -7,12 +7,12 @@
  * @module tests/metrics/rag/extract-then-classify
  */
 
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import * as Effect from "effect/Effect";
 import * as Stream from "effect/Stream";
 import { AiError, LanguageModel } from "effect/unstable/ai";
-import { ExtractThenClassify } from "@thomasfosterau/effect-evals";
-import { expectFailureInstanceOf, runTest } from "@test-helpers/effect";
+import { ExtractThenClassify } from "../../../src/index.ts";
+import { expectFailureInstanceOf, runTest } from "../../helpers/effect.ts";
 import { makeJudgeStub, provideJudge } from "./helpers.ts";
 
 describe("ExtractThenClassify.ratioScore", () => {

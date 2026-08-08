@@ -4,9 +4,9 @@
  * @module tests/scorers/json-validity
  */
 
-import { describe, expect, it } from "vite-plus/test";
-import { JsonValidity } from "@thomasfosterau/effect-evals";
-import { runTest } from "@test-helpers/effect";
+import { describe, expect, it } from "vitest";
+import { JsonValidity } from "../../src/index.ts";
+import { runTest } from "../helpers/effect.ts";
 
 describe("JsonValidity.jsonValidity", () => {
   it("scores 1 for a valid JSON object", async () => {

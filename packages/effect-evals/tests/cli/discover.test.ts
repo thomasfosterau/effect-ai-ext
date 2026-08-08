@@ -8,12 +8,12 @@
  * @module tests/cli/discover
  */
 
-import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { findEvalFiles, GlobError } from "../../src/cli/Discover.ts";
-import { expectFailureInstanceOf, runTest } from "@test-helpers/effect";
+import { expectFailureInstanceOf, runTest } from "../helpers/effect.ts";
 
 let dir: string;
 

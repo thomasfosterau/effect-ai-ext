@@ -16,6 +16,7 @@ This is the monorepo home of the `@thomasfosterau/effect-ai-*` family.
 | [`@thomasfosterau/effect-ai-cohere`](packages/effect-ai-cohere) | First-party Cohere provider (embed, rerank, classify, chat) | published-ready |
 | [`@thomasfosterau/effect-ai-voyage`](packages/effect-ai-voyage) | First-party Voyage AI provider (embed, rerank) | published-ready |
 | [`@thomasfosterau/effect-ai-elevenlabs`](packages/effect-ai-elevenlabs) | First-party ElevenLabs provider (TTS, STT, voice conversion) | published-ready |
+| [`@thomasfosterau/effect-evals`](packages/effect-evals) | Effect-native LLM evaluation toolkit — goldens, scorers, thresholds, G-Eval/RAG metrics, a caching runner, and an `effect-evals` CLI | unpublished |
 
 ## Design
 

@@ -9,13 +9,13 @@
  * @module tests/cli/flags
  */
 
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
 import { Command } from "effect/unstable/cli";
 import { NodeServices } from "@effect/platform-node";
 import * as Flags from "../../src/cli/Flags.ts";
-import { runTest } from "@test-helpers/effect";
+import { runTest } from "../helpers/effect.ts";
 
 interface Captured {
   readonly globs: ReadonlyArray<string>;

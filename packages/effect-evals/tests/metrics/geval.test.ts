@@ -13,15 +13,15 @@
  * @module tests/metrics/geval
  */
 
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
 import { LanguageModel } from "effect/unstable/ai";
 import * as Prompt from "effect/unstable/ai/Prompt";
-import { EvalCase, GEval, Golden, Metric, Threshold } from "@thomasfosterau/effect-evals";
-import { expectFailureInstanceOf, runTest } from "@test-helpers/effect";
+import { EvalCase, GEval, Golden, Metric, Threshold } from "../../src/index.ts";
+import { expectFailureInstanceOf, runTest } from "../helpers/effect.ts";
 
 // ── Stub judge model ─────────────────────────────────────────────────
 

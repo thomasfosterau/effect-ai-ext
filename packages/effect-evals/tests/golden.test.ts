@@ -4,12 +4,12 @@
  * @module tests/golden
  */
 
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import * as Prompt from "effect/unstable/ai/Prompt";
-import { EvalCase, Golden } from "@thomasfosterau/effect-evals";
-import { runTest, expectFailureInstanceOf } from "@test-helpers/effect";
+import { EvalCase, Golden } from "../src/index.ts";
+import { runTest, expectFailureInstanceOf } from "./helpers/effect.ts";
 
 describe("Golden", () => {
   const TranslationGolden = Golden.Golden(Schema.String, Schema.String);

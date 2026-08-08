@@ -10,7 +10,7 @@
 
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import { Dataset, EvalFile, Runner } from "@thomasfosterau/effect-evals";
+import { Dataset, EvalFile, Runner } from "../../src/index.ts";
 import { exactMatchMetric } from "./_shared.ts";
 
 const alwaysWrongTask = Runner.makeTask<string, string>({

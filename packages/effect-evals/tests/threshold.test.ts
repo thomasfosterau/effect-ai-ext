@@ -4,8 +4,8 @@
  * @module tests/threshold
  */
 
-import { describe, expect, it } from "vite-plus/test";
-import { Threshold } from "@thomasfosterau/effect-evals";
+import { describe, expect, it } from "vitest";
+import { Threshold } from "../src/index.ts";
 
 describe("Threshold.minScore", () => {
   const policy = Threshold.minScore(0.7);

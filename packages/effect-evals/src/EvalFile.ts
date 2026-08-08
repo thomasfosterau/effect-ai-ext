@@ -2,12 +2,12 @@
  * @copyright Thomas Foster
  *
  * `EvalFile` — the contract an `*.eval.ts` file honours, shared by every
- * execution surface (the `./viteplus` adapter, #929; the CLI, #930) so an
+ * execution surface (starting with the CLI) so an
  * eval file itself never has to know which surface will run it: `export
- * default defineEval({ suites, layer, options })` (the `./viteplus` shape)
+ * default { suites, layer, options }` shape
  * reads the same way a CLI dynamic `import()` would. Kept in core rather
- * than `./viteplus` so the CLI can depend on this shape without pulling in
- * `vite-plus/test`.
+ * than any one runner adapter, so a surface can depend on this shape without
+ * pulling in a test framework.
  *
  * @module EvalFile
  */
@@ -36,7 +36,7 @@ export type AnySuite = Suite<any, any, any, any, any, any, any, any>;
  * Credential gating is a runtime property of `layer`, not part of this
  * type: when building `layer` fails with a `Config.ConfigError` (a required
  * provider credential is unset), the execution surface must skip the
- * suite(s) rather than fail them — see `viteplus/index.ts`'s module docs.
+ * suite(s) rather than fail them.
  * `E` has no default narrower than `never` on purpose: a `Config.*`-backed
  * `layer` needs its real error type (e.g. `Config.ConfigError`, or a union
  * including it) named explicitly at the `satisfies EvalFile.EvalFile<R, E>`

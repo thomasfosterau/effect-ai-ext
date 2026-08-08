@@ -4,9 +4,9 @@
  * @module tests/scorers/exact-match
  */
 
-import { describe, expect, it } from "vite-plus/test";
-import { ExactMatch } from "@thomasfosterau/effect-evals";
-import { runTest } from "@test-helpers/effect";
+import { describe, expect, it } from "vitest";
+import { ExactMatch } from "../../src/index.ts";
+import { runTest } from "../helpers/effect.ts";
 
 describe("ExactMatch.exactMatch", () => {
   it("scores 1 when output matches golden.expected exactly", async () => {

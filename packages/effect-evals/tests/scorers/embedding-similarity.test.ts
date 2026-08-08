@@ -7,12 +7,12 @@
  * @module tests/scorers/embedding-similarity
  */
 
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import { AiError, EmbeddingModel } from "effect/unstable/ai";
-import { EmbeddingSimilarity } from "@thomasfosterau/effect-evals";
-import { expectFailureInstanceOf, runTest } from "@test-helpers/effect";
+import { EmbeddingSimilarity } from "../../src/index.ts";
+import { expectFailureInstanceOf, runTest } from "../helpers/effect.ts";
 
 /** Stubs `EmbeddingModel` to return a fixed vector per input text, recording every `embedMany` call. */
 const stubEmbeddingModel = (vectors: Record<string, ReadonlyArray<number>>) => {

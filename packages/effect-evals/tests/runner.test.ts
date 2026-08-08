@@ -7,15 +7,15 @@
  * @module tests/runner
  */
 
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import * as Config from "effect/Config";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Schedule from "effect/Schedule";
 import { AiError } from "effect/unstable/ai";
-import { Cache, Dataset, Metric, Runner, Scorer, Threshold } from "@thomasfosterau/effect-evals";
-import { runTest } from "@test-helpers/effect";
+import { Cache, Dataset, Metric, Runner, Scorer, Threshold } from "../src/index.ts";
+import { runTest } from "./helpers/effect.ts";
 
 class TaskError {
   readonly _tag = "TaskError";

@@ -5,10 +5,10 @@
  * @module tests/cache
  */
 
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import * as Effect from "effect/Effect";
-import { Cache } from "@thomasfosterau/effect-evals";
-import { runTest } from "@test-helpers/effect";
+import { Cache } from "../src/index.ts";
+import { runTest } from "./helpers/effect.ts";
 
 describe("Cache.hashKey", () => {
   const base = {

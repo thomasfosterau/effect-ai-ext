@@ -7,10 +7,10 @@
  * @module tests/metrics/rag/rag-case
  */
 
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import * as Effect from "effect/Effect";
-import { GEval, RagCase } from "@thomasfosterau/effect-evals";
-import { expectFailureInstanceOf, runTest } from "@test-helpers/effect";
+import { GEval, RagCase } from "../../../src/index.ts";
+import { expectFailureInstanceOf, runTest } from "../../helpers/effect.ts";
 
 describe("RagCase.renderValue", () => {
   it("returns a string field as-is", () => {

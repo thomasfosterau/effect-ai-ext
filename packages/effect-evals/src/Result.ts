@@ -61,7 +61,7 @@ export interface MetricAggregate {
 
 // ── Outcome-explaining / rendering seam ──────────────────────────────
 //
-// `Reporter.ts` (the single-suite terminal table), `viteplus/index.ts` (a
+// `Reporter.ts` (the single-suite terminal table), a runner adapter (a
 // failing case's assertion message), and the CLI (which renders through
 // `Reporter.formatTerminalTable`) all need to say *which trial explains a
 // metric's outcome* and *how spread out its scores were*. Both pieces of

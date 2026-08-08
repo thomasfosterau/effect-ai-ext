@@ -6,12 +6,12 @@
  * @module tests/reporter
  */
 
-import { afterEach, describe, expect, it, vi } from "vite-plus/test";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as PlatformError from "effect/PlatformError";
-import { Reporter, Result } from "@thomasfosterau/effect-evals";
-import { runTest } from "@test-helpers/effect";
+import { Reporter, Result } from "../src/index.ts";
+import { runTest } from "./helpers/effect.ts";
 
 const passingResult: Result.SuiteResult = {
   suite: "greetings",

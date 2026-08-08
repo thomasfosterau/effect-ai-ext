@@ -11,7 +11,7 @@
 
 import * as Effect from "effect/Effect";
 import { AiError, LanguageModel } from "effect/unstable/ai";
-import { Metric, Runner, Scorer, Threshold } from "@thomasfosterau/effect-evals";
+import { Metric, Runner, Scorer, Threshold } from "../../src/index.ts";
 
 /** A task that prompts the (fixture-provided) judge `LanguageModel` with the golden and returns its text. */
 export const languageModelTask = (

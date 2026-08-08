@@ -8,7 +8,7 @@
  * @module tests/cli/report
  */
 
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as Layer from "effect/Layer";
@@ -16,7 +16,7 @@ import * as Path from "effect/Path";
 import * as PlatformError from "effect/PlatformError";
 import type { CliReport } from "../../src/cli/Report.ts";
 import { writeJsonReport } from "../../src/cli/Report.ts";
-import { runTest } from "@test-helpers/effect";
+import { runTest } from "../helpers/effect.ts";
 
 const passingReport: CliReport = {
   ran: [

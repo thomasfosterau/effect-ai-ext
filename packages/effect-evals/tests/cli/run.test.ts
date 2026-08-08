@@ -9,12 +9,12 @@
  * @module tests/cli/run
  */
 
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
-import { Cache } from "@thomasfosterau/effect-evals";
+import { Cache } from "../../src/index.ts";
 import { runEvals } from "../../src/cli/Run.ts";
-import { runTest } from "@test-helpers/effect";
+import { runTest } from "../helpers/effect.ts";
 
 const FIXTURES = new URL("../fixtures/", import.meta.url);
 const fixture = (name: string): string => new URL(name, FIXTURES).pathname;

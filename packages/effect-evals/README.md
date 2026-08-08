@@ -1,8 +1,14 @@
 # @thomasfosterau/effect-evals
 
-Effect-native LLM evaluation: goldens, scorers, thresholds, and a runner with trials, bounded concurrency, retry, and caching — expressed as plain Effect values instead of a bolted-on async framework. Designed for eventual extraction into its own repository; the core (`"."` barrel) depends on `effect` only. See [the decision doc](../../docs/decisions/effect-evals-as-the-evaluation-toolkit.md).
+Effect-native LLM evaluation: goldens, scorers, thresholds, and a runner with trials, bounded concurrency, retry, and caching — expressed as plain Effect values instead of a bolted-on async framework. The core (`"."` barrel) depends on `effect` only.
 
-## Core model (#923)
+```sh
+npm install @thomasfosterau/effect-evals effect
+```
+
+`effect` is a peer dependency. The package also ships an `effect-evals` CLI for discovering and running `*.eval.ts` suites — see [CLI](#cli) below.
+
+## Core model
 
 - **`Golden` / `ConversationalGolden`** — the static, hand-authored description of one case: an input, an optional expected output, and whatever context a scorer needs to judge a run.
 - **`EvalCase`** — a golden enriched with the actuals a run produced (`output`, `retrievedContext`, `toolCalls`, `usage`). Scorers read an `EvalCase`, never a bare `Golden` (DeepEval's golden/test-case split).
@@ -11,9 +17,9 @@ Effect-native LLM evaluation: goldens, scorers, thresholds, and a runner with tr
 - **`Threshold` / `Metric`** — the pass/fail policy (`minScore` / `maxScore` / `strict`) and the `{ name, scorer, threshold }` unit a runner executes. `Metric.contramap(metric, from)` is `Scorer.contramap`'s counterpart for a metric (scorer + threshold together) — reuse a package metric like `GEval.gEval` or `EmbeddingSimilarity.embeddingSimilarity` against a case shape it wasn't written for.
 - **`Dataset`** — a named, effectfully-produced source of goldens.
 
-## Runner (#924)
+## Runner
 
-`Runner.runSuite` is the Effect program every execution surface (the `./viteplus` adapter, #929; the CLI, #930) sits on:
+`Runner.runSuite` is the Effect program every execution surface sits on:
 
 ```ts
 import * as Effect from "effect/Effect";
@@ -62,7 +68,7 @@ const result = await Effect.runPromise(
 - **Errors vs failing scores**: a metric whose Effect fails is recorded as `Errored`, distinct from a `Scored` result that simply misses its threshold. `ignoreErrors` (default `false`) controls whether an error excludes that trial from the metric's aggregate (and doesn't affect pass/fail) or forces the metric — and the case — to fail. This mirrors DeepEval's `ignore_errors`.
 - **Caching** (`Cache.ts`) is content-hash keyed (a full SHA-256 digest, via `crypto.subtle`) on the golden, the task's `id`, the metric name, `judgeModelId`, and the trial number, stored behind `effect`'s own `KeyValueStore` (`effect/unstable/persistence`). A cache hit skips both the task call and the metric's judge call for that trial. `Cache.layerMemory` is a zero-dependency in-memory store (tests, or runs with no persistence); `Cache.layerFileSystem(directory)` persists under a directory (default `Cache.defaultDirectory`, `.effect-evals/cache/`, gitignored) and requires `FileSystem`/`Path` in scope — provided by the caller (the `./viteplus` adapter or CLI), never bundled into the core. `bypassCache: true` skips cache reads and writes entirely. Invalidation is **manual, by identifier** — a task's `run` closure and a metric's `scorer`/`threshold` aren't hashed (they're code, not data), so bump `task.id` (e.g. `"translate@v1"` → `"translate@v2"`) or a metric's name/`judgeModelId` after changing its behavior, the same convention a cache-busting query string uses.
 
-## Reporters (#924)
+## Reporters
 
 `Reporter` is a named sink for a completed `Result.SuiteResult`; a reporter never fails the run — `terminal` and `json` both catch their own errors and log a warning instead.
 
@@ -111,42 +117,7 @@ const result = await Effect.runPromise(
 
 `summary` is `null` when every trial for that metric errored (no scores to summarize). `taskFailures` is empty unless the task itself failed for some trial, in which case that trial contributes to no metric's `trials` array at all (there was no output to score).
 
-## `viteplus` adapter (#929)
-
-`@thomasfosterau/effect-evals/viteplus` — a separate sub-export (the core `"."` barrel never imports `vite-plus/test`, see [the packaging amendment](../../docs/decisions/single-barrel-package-exports.md#deliberate-exceptions)) — runs `*.eval.ts` files under `vp test run`, evalite-style: one `describe` per suite, one `it` per case.
-
-An `*.eval.ts` file default-exports the shared `EvalFile` contract (`src/EvalFile.ts`) — the same shape the CLI (#930) will dynamically `import()` — and registers itself with `vite-plus/test` in one expression. `defineEval` only registers tests when actually running under `vite-plus/test` (`process.env.VITEST === "true"`); a bare `import()` of the file — the CLI's use case — gets back the plain `EvalFile` object with no side effect, so the same file is safe for both surfaces:
-
-```ts
-// packages/<pkg>/evals/translation-quality.eval.ts
-import { defineEval } from "@thomasfosterau/effect-evals/viteplus";
-import { Dataset, Runner } from "@thomasfosterau/effect-evals";
-import { anthropicLanguageModelLayer } from "./layers";
-
-export default defineEval({
-  suites: [
-    Runner.makeSuite({
-      name: "translation-quality",
-      dataset: Dataset.fromArray("greetings", [{ input: "Bonjour", expected: "Hello" }]),
-      task: Runner.makeTask({ id: "translate@v1", run: (golden) => translate(golden.input) }),
-      metrics: [translationQualityMetric],
-    }),
-  ],
-  // Everything the suites' combined `R` needs beyond platform services —
-  // judge/provider layers *and* the cache layer choice (`Cache.layerMemory`
-  // or `Cache.layerFileSystem`) both live here.
-  layer: anthropicLanguageModelLayer,
-  options: { trials: 3 },
-});
-```
-
-Point a package's own vitest config at `evals/**/*.eval.ts` (a glob `packageTest`'s `include: ["tests/**/*.test.ts"]` never matches — pinned by `tests/eval-glob-separation.test.ts` — so `vp run test:unit` neither runs eval files nor needs credentials) and run it with `vp test run evals`; a per-package `evals` script wrapping that command is the suggested convention until the CLI (#930) lands.
-
-**Credential gating.** `layer` is built exactly once, shared across every suite in the file. When that build fails with a `Config.ConfigError` (e.g. `CF_AIG_TOKEN` unset), every suite reports as **skipped** — one `it` per suite naming the missing config — never failed, so an eval file referencing a real provider is safe to leave in the tree in a credential-less checkout. A suite's own dataset/task/metric bug only fails that suite; it can't sabotage its siblings.
-
-A failing case's message names the metric, its score against the threshold, the judge's `reason`, and the trial spread (mean/stddev/min/max).
-
-## G-Eval judge metric (#926)
+## G-Eval judge metric
 
 `GEval.gEval` builds a `Metric` that scores a case against an arbitrary natural-language criterion using an LLM judge (DeepEval's G-Eval), covering anything from translation quality to a bespoke house style — without writing a new metric per criterion. `GEval.gEvalConversational` is the multi-turn variant: the judge reads the full rendered turn history and scores the exchange holistically.
 
@@ -192,18 +163,18 @@ An LLM judge is inherently noisy; DeepEval and this package both lean on the sam
 
 Combine all three for the most reproducible signal: explicit steps and a rubric pin down _what_ is being judged, and trials reveal _how consistently_ the judge applies them.
 
-## CLI (#930)
+## CLI
 
-The `effect-evals` bin discovers and runs `*.eval.ts` suites standalone — no test framework involved. It's the surface CI invokes and the one that survives this package's eventual extraction to its own repository. It consumes the same `EvalFile` shape as the `./viteplus` adapter above (with or without the `defineEval` wrapper — a bare `import()` unwraps to the plain `{ suites, layer, options? }` object either way) and the same credential-gating semantic: a file whose `layer` fails to build with a `Config.ConfigError` is skipped, not failed.
+The `effect-evals` bin discovers and runs `*.eval.ts` suites standalone — no test framework involved. It's the surface CI invokes. An `*.eval.ts` file default-exports the `EvalFile` contract (`src/EvalFile.ts`) — the plain `{ suites, layer, options? }` object — which the CLI dynamically `import()`s. Credential gating applies: a file whose `layer` fails to build with a `Config.ConfigError` is skipped, not failed, so an eval file referencing a real provider is safe to leave in the tree in a credential-less checkout.
 
 ```sh
 # From this package's directory, or anywhere in the workspace once installed:
-vp exec effect-evals run                                    # default glob: **/evals/**/*.eval.ts
-vp exec effect-evals run packages/jobs/evals                # explicit glob(s)
-vp exec effect-evals run --trials 3 --filter translation     # flags before positional globs
-vp exec effect-evals run --reporter terminal                 # terminal only (default: both terminal and json)
-vp exec effect-evals run --force --out ./tmp/results.json    # bypass the cache, write elsewhere
-vp exec effect-evals --help                                  # full flag reference
+pnpm effect-evals run                                    # default glob: **/evals/**/*.eval.ts
+pnpm effect-evals run packages/my-pkg/evals                # explicit glob(s)
+pnpm effect-evals run --trials 3 --filter translation     # flags before positional globs
+pnpm effect-evals run --reporter terminal                 # terminal only (default: both terminal and json)
+pnpm effect-evals run --force --out ./tmp/results.json    # bypass the cache, write elsewhere
+pnpm effect-evals --help                                  # full flag reference
 ```
 
 | Flag | Effect |
@@ -237,13 +208,13 @@ vp exec effect-evals --help                                  # full flag referen
 | [`Cache`](src/Cache.ts) | `layerMemory` / `layerFileSystem`, `hashKey`. |
 | [`Reporter`](src/Reporter.ts) | `Reporter`, `terminal`, `json`, `formatTerminalTable`. |
 | [`GEval`](src/metrics/GEval.ts) | `gEval`, `gEvalConversational`, `makeRubric`, `defaultTemplate`. |
-| [`viteplus`](src/viteplus/index.ts) | The `vite-plus/test` adapter (separate sub-export): `defineEval`, `evaluateEvalFile`, `evaluateSuite`, `formatCaseFailure`, `caseLabel`. |
 | [`cli`](src/cli/) | The `effect-evals` bin — see [CLI](#cli-930) above. |
 
 ## Development
 
 ```sh
-vp exec tsc -p tsconfig.json   # typecheck
-vp test run tests              # unit tests
-vp test run tests --coverage   # with coverage
+pnpm run check           # typecheck (native tsc)
+pnpm run test            # unit tests (vitest)
+pnpm run test:coverage   # with coverage
+pnpm run build           # tsup -> dist/
 ```

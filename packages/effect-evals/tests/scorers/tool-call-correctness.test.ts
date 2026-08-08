@@ -10,9 +10,9 @@
  * @module tests/scorers/tool-call-correctness
  */
 
-import { describe, expect, it } from "vite-plus/test";
-import { ToolCallCorrectness } from "@thomasfosterau/effect-evals";
-import { runTest } from "@test-helpers/effect";
+import { describe, expect, it } from "vitest";
+import { ToolCallCorrectness } from "../../src/index.ts";
+import { runTest } from "../helpers/effect.ts";
 
 const EXPECTED = [
   { name: "search", params: { query: "cats" } },

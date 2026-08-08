@@ -5,11 +5,11 @@
  * @module tests/cli/cli
  */
 
-import { describe, expect, it, vi } from "vite-plus/test";
+import { describe, expect, it, vi } from "vitest";
 import { Effect, Layer } from "effect";
 import { Command } from "effect/unstable/cli";
 import { NodeServices } from "@effect/platform-node";
-import { Cache } from "@thomasfosterau/effect-evals";
+import { Cache } from "../../src/index.ts";
 import { cli, version } from "../../src/cli/Cli.ts";
 
 describe("cli/Cli", () => {

@@ -2,8 +2,8 @@
  * Unit tests for `Result.summarize` (mean, population variance/stddev, and
  * range over a metric's per-trial scores) and the outcome-explaining /
  * rendering seam (`Result.lastReason`, `Result.formatSpread`) shared by
- * `Reporter.ts`, `viteplus/index.ts`, and the CLI — see the drift `Reporter`
- * and the `viteplus` adapter had before this seam existed:
+ * `Reporter.ts` and the CLI — see the drift `Reporter`
+ * and a second renderer had before this seam existed:
  * `Result.lastReason`'s fallback text ("" vs "(no reason given)" /
  * "(no trials recorded)") and `Result.formatSpread`'s label style (`μ=`/`σ=`
  * vs `mean=`/`stddev=`) are asserted here as the single canonical form.
@@ -11,8 +11,8 @@
  * @module tests/result
  */
 
-import { describe, expect, it } from "vite-plus/test";
-import { Result } from "@thomasfosterau/effect-evals";
+import { describe, expect, it } from "vitest";
+import { Result } from "../src/index.ts";
 
 const scoredMetric = (score: number, reason?: string): Result.MetricAggregate => ({
   metric: "exact-match",
@@ -95,14 +95,14 @@ describe("Result.lastReason", () => {
     expect(Result.lastReason(metric)).toBe("error: judge unavailable");
   });
 
-  // Drift case: `Reporter.ts` used to render "" here, `viteplus/index.ts`
+  // Drift case: `Reporter.ts` used to render "" here, the runner adapter
   // "(no reason given)" — the shared seam picks the latter as canonical.
   it("falls back to a placeholder when the most recent Scored trial gave no reason", () => {
     expect(Result.lastReason(scoredMetric(1))).toBe("(no reason given)");
   });
 
   // Drift case: neither prior copy agreed on this either — `Reporter.ts`
-  // returned "" for an empty trial list, `viteplus/index.ts` returned
+  // returned "" for an empty trial list, the runner adapter returned
   // "(no trials recorded)"; the shared seam picks the latter as canonical.
   it("falls back to a placeholder when there are no trials at all", () => {
     const metric: Result.MetricAggregate = {
@@ -117,7 +117,7 @@ describe("Result.lastReason", () => {
 });
 
 describe("Result.formatSpread", () => {
-  // Drift case: `Reporter.ts` used to render `μ=… σ=…`, `viteplus/index.ts`
+  // Drift case: `Reporter.ts` used to render `μ=… σ=…`, the runner adapter
   // `mean=… stddev=…` — the shared seam picks the ASCII form as canonical.
   it("renders mean, stddev, and range with the mean=/stddev= label style", () => {
     const summary = Result.summarize([0.6, 0.8, 1]);
@@ -129,7 +129,7 @@ describe("Result.formatSpread", () => {
   });
 
   // Drift case: `Reporter.ts` used to render "—" for an all-errored metric,
-  // `viteplus/index.ts` "no scored trials" — the shared seam picks the
+  // the runner adapter "no scored trials" — the shared seam picks the
   // latter, more descriptive form as canonical.
   it("falls back to a placeholder when there is no summary", () => {
     expect(Result.formatSpread(undefined)).toBe("no scored trials");

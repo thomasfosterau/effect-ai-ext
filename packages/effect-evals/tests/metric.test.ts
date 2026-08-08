@@ -6,13 +6,13 @@
  * @module tests/metric
  */
 
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Schema from "effect/Schema";
-import { EvalCase, Golden, Metric, Scorer, Threshold } from "@thomasfosterau/effect-evals";
-import { expectFailureInstanceOf, runTest } from "@test-helpers/effect";
+import { EvalCase, Golden, Metric, Scorer, Threshold } from "../src/index.ts";
+import { expectFailureInstanceOf, runTest } from "./helpers/effect.ts";
 
 const TranslationGolden = Golden.Golden(Schema.String, Schema.String);
 const TranslationCase = EvalCase.EvalCase(TranslationGolden, Schema.String);
