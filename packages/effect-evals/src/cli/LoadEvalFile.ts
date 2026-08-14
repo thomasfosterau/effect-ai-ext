@@ -22,7 +22,7 @@ import * as Schema from "effect/Schema";
 import type * as EvalFile from "../EvalFile.ts";
 
 /** The dynamic `import()` of an eval file threw (syntax error, missing file, a throwing top-level side effect, …). */
-export class EvalFileImportError extends Schema.TaggedErrorClass<EvalFileImportError>()(
+export class EvalFileImportError extends Schema.TaggedError<EvalFileImportError>()(
   "EvalFileImportError",
   {
     file: Schema.String,
@@ -31,7 +31,7 @@ export class EvalFileImportError extends Schema.TaggedErrorClass<EvalFileImportE
 ) {}
 
 /** An eval file's default export doesn't match the {@link EvalFile.EvalFile} contract. */
-export class InvalidEvalFileError extends Schema.TaggedErrorClass<InvalidEvalFileError>()(
+export class InvalidEvalFileError extends Schema.TaggedError<InvalidEvalFileError>()(
   "InvalidEvalFileError",
   {
     file: Schema.String,
