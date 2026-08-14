@@ -1,6 +1,6 @@
 {
   "name": "@thomasfosterau/effect-evals",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "An Effect-native LLM evaluation toolkit — goldens, scorers, thresholds, metrics (G-Eval, RAG), a caching runner, and a CLI for *.eval.ts suites.",
   "keywords": [
     "ai",
