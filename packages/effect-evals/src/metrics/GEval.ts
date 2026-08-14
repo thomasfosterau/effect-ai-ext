@@ -53,7 +53,7 @@ import type { Threshold } from "../Threshold.ts";
  * field a metric asked for is the same failure regardless of which judge
  * metric asked for it.
  */
-export class MissingEvaluationParamError extends Schema.TaggedErrorClass<MissingEvaluationParamError>()(
+export class MissingEvaluationParamError extends Schema.TaggedError<MissingEvaluationParamError>()(
   "MissingEvaluationParamError",
   {
     metric: Schema.String,

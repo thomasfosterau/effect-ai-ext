@@ -16,7 +16,7 @@ import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 
 /** A glob pattern failed to evaluate (a malformed pattern, an unreadable directory, …). */
-export class GlobError extends Schema.TaggedErrorClass<GlobError>()("GlobError", {
+export class GlobError extends Schema.TaggedError<GlobError>()("GlobError", {
   patterns: Schema.Array(Schema.String),
   cause: Schema.Defect(),
 }) {}

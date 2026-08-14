@@ -57,7 +57,7 @@ export interface Verdict {
  * sensitive, so a dropped or reordered verdict there would silently corrupt
  * the ranking rather than just skew a ratio.
  */
-export class VerdictCountMismatchError extends Schema.TaggedErrorClass<VerdictCountMismatchError>()(
+export class VerdictCountMismatchError extends Schema.TaggedError<VerdictCountMismatchError>()(
   "VerdictCountMismatchError",
   {
     expected: Schema.Finite,
