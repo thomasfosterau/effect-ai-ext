@@ -29,4 +29,4 @@ catalog:
   effect: 4.0.0-beta.99
   tsup: ^8.5.1
   typescript: "npm:@typescript/typescript6@6.0.2"
-  vitest: ^4.1.10
+  vitest: ^4.1.11
