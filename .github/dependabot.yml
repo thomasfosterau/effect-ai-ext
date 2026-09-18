@@ -1,0 +1,73 @@
+# Dependabot version-update configuration (a subset of effect-drizzle-ext's,
+# whose shape the gardeneria application's catalog set).
+#
+# Scope: the npm dependencies (pnpm maintains `pnpm-lock.yaml` directly, so
+# Dependabot regenerates the lockfile in the same PR as the bump) and the
+# GitHub Actions used by the workflows (SHA-pinned; Dependabot keeps the SHA
+# and its `# vX.Y.Z` comment current together).
+#
+# `groups` collect dependencies that MUST move together into a single PR:
+#
+# - `effect`: `effect` + `@effect/*` — the Effect 4 release line is a
+#   lockstep-versioned singleton set (see the `catalog:` comment in
+#   pnpm-workspace.yaml). `@effect/tsgo` is excluded: it ships artifacts for
+#   an explicit set of TypeScript versions and hard-errors on any other, so it
+#   belongs with the TypeScript pair below, not the Effect line.
+# - `typescript-toolchain`: `@effect/tsgo` + `@typescript/native` +
+#   `typescript` (the 6/7 side-by-side split) — `effect-tsgo patch` matches the
+#   native `tsc` by package version, so a standalone bump of either side fails
+#   `pnpm install` (UnsupportedTargetPackageVersionError). Grouping does not
+#   make such a bump safe — read the `components` table in
+#   node_modules/@effect/tsgo/dist/effect-tsgo.cjs — but it keeps the three
+#   in one reviewable PR.
+# - `vitest-toolchain`: `vitest` + `@vitest/*`.
+#
+# `cooldown` mirrors pnpm-workspace.yaml's `minimumReleaseAge` so Dependabot
+# never proposes a version pnpm's own supply-chain gate would then reject at
+# install time. `@thomasfosterau/*` is excluded to match the first-party
+# exemption there. Cooldown applies only to *version* updates — security
+# updates are opened immediately regardless of age.
+version: 2
+updates:
+  - package-ecosystem: "npm" # covers the pnpm-lock.yaml lockfile
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+    cooldown:
+      default-days: 1
+      exclude:
+        - "@thomasfosterau/*"
+    groups:
+      typescript-toolchain:
+        patterns:
+          - "@effect/tsgo"
+          - "@typescript/native"
+          - "typescript"
+      effect:
+        patterns:
+          - "effect"
+          - "@effect/*"
+        exclude-patterns:
+          - "@effect/tsgo"
+      vitest-toolchain:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "ci"
+      include: "scope"

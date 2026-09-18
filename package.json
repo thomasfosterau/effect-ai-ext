@@ -8,11 +8,12 @@
   "author": "Thomas Foster <me@thomasfoster.au>",
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": ">=22",
+    "pnpm": ">=11"
   },
-  "packageManager": "pnpm@10.33.0",
+  "packageManager": "pnpm@11.27.0",
   "scripts": {
-    "prepare": "sh scripts/patch-native-tsc.sh",
+    "prepare": "effect-tsgo patch --typescript",
     "check": "pnpm -r --workspace-concurrency=1 run check",
     "test": "pnpm -r run test",
     "test:coverage": "pnpm -r run test:coverage",
