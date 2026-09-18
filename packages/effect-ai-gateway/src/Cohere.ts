@@ -12,10 +12,11 @@
  * both services are built directly on `Binding.ts`'s `gatewayRun` universal
  * endpoint, decoding Cohere's native v2 wire format.
  *
- * `makeCohereEmbeddingModelFromUrl` is the binding-free sibling —
- * `Url.ts`'s config-resolved public HTTPS endpoint instead of the Worker
- * binding, for callers (a local CLI, a plain Node process, CI) with no
- * `AI` binding to ask.
+ * `makeCohereEmbeddingModelFromUrl` and `makeCohereRerankerFromUrl` are the
+ * binding-free siblings — `Url.ts`'s config-resolved public HTTPS endpoint
+ * instead of the Worker binding, for callers (a local CLI, a plain Node
+ * process, CI) with no `AI` binding to ask. Both pairs share one request
+ * body and one response mapping, so the two transports cannot drift.
  *
  * @module Cohere
  */
@@ -23,14 +24,19 @@
 import type * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
-import { AiError, EmbeddingModel } from "effect/unstable/ai";
-import { FetchHttpClient, HttpBody, HttpClient, HttpClientRequest } from "effect/unstable/http";
-import { gatewayRun, type GatewayBinding } from "./Binding";
+import type { AiError } from "effect/unstable/ai";
+import { EmbeddingModel } from "effect/unstable/ai";
+import { FetchHttpClient, HttpClient } from "effect/unstable/http";
+import type { GatewayBinding } from "./Binding";
+import { requestViaBinding, requestViaUrl } from "./internal/transport";
 import * as RerankerModel from "./RerankerModel";
 import * as Url from "./Url";
 
 /** The AI Gateway provider slug for Cohere (`AIGatewayProviders["cohere"]`). */
 const COHERE_PROVIDER: AIGatewayProviders = "cohere";
+
+/** `AiError.module` for every failure this module reports. */
+const MODULE = "Cohere";
 
 /** Cohere's embedding model. A single constant so rotation is one edit. */
 export const COHERE_EMBEDDING_MODEL = "embed-v4.0";
@@ -48,82 +54,10 @@ export const COHERE_RERANK_MODEL = "rerank-v3.5";
  */
 export const COHERE_EMBEDDING_DIMENSIONS = 1024;
 
-const failure = (method: string, reason: AiError.AiErrorReason): AiError.AiError =>
-  AiError.make({ module: "Cohere", method, reason });
-
-/**
- * A response normalised to the shape both {@link cohereRequest} (the
- * Worker-binding transport, a raw `fetch` `Response`) and
- * {@link cohereRequestFromUrl} (the `HttpClient` transport, an
- * `HttpClientResponse`) can produce, so the status/body/schema decode
- * pipeline below is written once and shared by both. Each transport maps
- * its own failure modes into these two Effects at construction time —
- * `text` is best-effort (never fails; falls back to `""`) since it's used
- * only for an error-body description, and `json` already carries the
- * `AiError` this module reports for a body-read failure.
- */
-interface NormalizedResponse {
-  readonly status: number;
-  readonly text: Effect.Effect<string>;
-  readonly json: Effect.Effect<unknown, AiError.AiError>;
-}
-
-/**
- * Runs a transport call producing a {@link NormalizedResponse} and decodes
- * it against a schema, shared by {@link cohereRequest} and
- * {@link cohereRequestFromUrl} (which differ only in how they obtain and
- * normalise the response). A rejected transport call maps to
- * `UnknownError`; non-2xx statuses map through
- * `AiError.reasonFromHttpStatus`; undecodable bodies map to
- * `InvalidOutputError` — the same posture `packages/ai`'s Voyage client
- * used for the direct API it's replacing.
- */
-const decodeCohereResponse = <S extends Schema.Top>(
-  response: Effect.Effect<NormalizedResponse, AiError.AiError>,
-  schema: S,
-  method: string,
-): Effect.Effect<S["Type"], AiError.AiError, S["DecodingServices"]> =>
-  response.pipe(
-    Effect.flatMap((res) =>
-      res.status >= 200 && res.status < 300
-        ? Effect.succeed(res)
-        : res.text.pipe(
-            Effect.flatMap((body) =>
-              Effect.fail(
-                failure(
-                  method,
-                  AiError.reasonFromHttpStatus({ status: res.status, description: body }),
-                ),
-              ),
-            ),
-          ),
-    ),
-    Effect.flatMap((res) => res.json),
-    Effect.flatMap((json) =>
-      Schema.decodeUnknownEffect(schema)(json).pipe(
-        Effect.mapError((error) =>
-          failure(
-            method,
-            new AiError.InvalidOutputError({
-              description: `Cohere ${method} response did not match the expected shape: ${String(error)}`,
-            }),
-          ),
-        ),
-      ),
-    ),
-  );
-
-/** Wraps a body-read failure (JSON parse, stream error) as the shared `UnknownError` shape. */
-const bodyReadFailure = (method: string, cause: unknown): AiError.AiError =>
-  failure(
-    method,
-    new AiError.UnknownError({ description: `Cohere ${method} response body: ${String(cause)}` }),
-  );
-
 /**
  * Runs one Cohere v2 endpoint through the gateway's Worker-binding
  * universal `run()` endpoint and decodes the JSON response against a
- * schema, via {@link decodeCohereResponse}.
+ * schema (`internal/transport.ts`).
  */
 const cohereRequest = <S extends Schema.Top>(
   binding: GatewayBinding,
@@ -132,34 +66,36 @@ const cohereRequest = <S extends Schema.Top>(
   schema: S,
   method: string,
 ): Effect.Effect<S["Type"], AiError.AiError, S["DecodingServices"]> =>
-  decodeCohereResponse(
-    gatewayRun(binding, {
-      provider: COHERE_PROVIDER,
-      endpoint,
-      headers: { "content-type": "application/json" },
-      query,
-    }).pipe(
-      Effect.mapError((cause) =>
-        failure(
-          method,
-          new AiError.UnknownError({
-            description: `Cohere ${method} gateway call failed: ${String(cause)}`,
-          }),
-        ),
-      ),
-      Effect.map(
-        (response): NormalizedResponse => ({
-          status: response.status,
-          text: Effect.tryPromise(() => response.text()).pipe(Effect.orElseSucceed(() => "")),
-          json: Effect.tryPromise({
-            try: () => response.json() as Promise<unknown>,
-            catch: (cause) => bodyReadFailure(method, cause),
-          }),
-        }),
-      ),
-    ),
+  requestViaBinding(
+    { module: MODULE, method },
+    binding,
+    { provider: COHERE_PROVIDER, endpoint, headers: { "content-type": "application/json" }, query },
     schema,
-    method,
+  );
+
+/**
+ * Runs one Cohere v2 endpoint through the gateway's public HTTPS endpoint
+ * (`Url.ts`) over an already-resolved `HttpClient.HttpClient` and decodes
+ * the JSON response against a schema (`internal/transport.ts`). Takes the
+ * precomputed base URL and `cf-aig-authorization` header so the caller
+ * builds them once at construction time, not on every request.
+ */
+const cohereRequestFromUrl = <S extends Schema.Top>(
+  httpClient: HttpClient.HttpClient,
+  baseUrl: string,
+  authHeader: Record<string, string>,
+  endpoint: string,
+  query: unknown,
+  schema: S,
+  method: string,
+): Effect.Effect<S["Type"], AiError.AiError, S["DecodingServices"]> =>
+  requestViaUrl(
+    { module: MODULE, method },
+    httpClient,
+    `${baseUrl}/${endpoint}`,
+    authHeader,
+    query,
+    schema,
   );
 
 // ── Embeddings ────────────────────────────────────────────────────────
@@ -177,6 +113,30 @@ const CohereEmbedResponse = Schema.Struct({
   ),
 });
 
+/** Caller options shared by both embedding transports. */
+export interface CohereEmbeddingOptions {
+  /**
+   * Cohere's retrieval-aware input type — embed stored documents with
+   * `"search_document"` and search queries with `"search_query"`.
+   */
+  readonly inputType: "search_document" | "search_query";
+}
+
+/** The `v2/embed` request body, identical on both transports. */
+const embedQuery = (options: CohereEmbeddingOptions, inputs: ReadonlyArray<string>) => ({
+  model: COHERE_EMBEDDING_MODEL,
+  input_type: options.inputType,
+  texts: inputs,
+  output_dimension: COHERE_EMBEDDING_DIMENSIONS,
+  embedding_types: ["float"],
+});
+
+/** Maps a decoded `v2/embed` response onto `EmbeddingModel`'s provider contract. */
+const mapEmbedResponse = (response: typeof CohereEmbedResponse.Type) => ({
+  results: response.embeddings.float.map((vector) => [...vector]),
+  usage: { inputTokens: response.meta?.billed_units?.input_tokens },
+});
+
 /**
  * Builds an `EmbeddingModel.Service` backed by Cohere `embed-v4.0` over the
  * gateway. `inputType` sets Cohere's retrieval-aware input type — embed
@@ -185,81 +145,18 @@ const CohereEmbedResponse = Schema.Struct({
  */
 export const makeCohereEmbeddingModel = (
   binding: GatewayBinding,
-  options: { readonly inputType: "search_document" | "search_query" },
+  options: CohereEmbeddingOptions,
 ): Effect.Effect<EmbeddingModel.Service> =>
   EmbeddingModel.make({
     embedMany: ({ inputs }) =>
       cohereRequest(
         binding,
         "v2/embed",
-        {
-          model: COHERE_EMBEDDING_MODEL,
-          input_type: options.inputType,
-          texts: inputs,
-          output_dimension: COHERE_EMBEDDING_DIMENSIONS,
-          embedding_types: ["float"],
-        },
+        embedQuery(options, inputs),
         CohereEmbedResponse,
         "embedMany",
-      ).pipe(
-        Effect.map((response) => ({
-          results: response.embeddings.float.map((vector) => [...vector]),
-          usage: { inputTokens: response.meta?.billed_units?.input_tokens },
-        })),
-      ),
+      ).pipe(Effect.map(mapEmbedResponse)),
   });
-
-/**
- * Runs one Cohere v2 endpoint through the gateway's **public HTTPS
- * endpoint** (unlike {@link cohereRequest}, which goes through the Worker
- * binding's `run()` universal endpoint) and decodes the JSON response
- * against a schema, via {@link decodeCohereResponse}. Takes an
- * already-resolved `HttpClient.HttpClient` plus the precomputed base URL
- * and `cf-aig-authorization` header so the caller
- * (`makeCohereEmbeddingModelFromUrl`) builds them once at construction
- * time, not on every request.
- *
- * Goes through Effect's `HttpClient`/`FetchHttpClient`, which is already
- * interruption-safe (the #706/#730 lesson `Binding.ts`'s `gatewayRun`
- * applies manually via a declared `signal` — see
- * docs/decisions/effect-ai-gateway.md) — no manual signal plumbing needed
- * here.
- */
-const cohereRequestFromUrl = <S extends Schema.Top>(
-  httpClient: HttpClient.HttpClient,
-  baseUrl: string,
-  authHeader: Record<string, string>,
-  endpoint: string,
-  query: unknown,
-  schema: S,
-  method: string,
-): Effect.Effect<S["Type"], AiError.AiError, S["DecodingServices"]> => {
-  const request = HttpClientRequest.post(`${baseUrl}/${endpoint}`, {
-    body: HttpBody.jsonUnsafe(query),
-  }).pipe(HttpClientRequest.setHeaders(authHeader));
-
-  return decodeCohereResponse(
-    httpClient.execute(request).pipe(
-      Effect.mapError((cause) =>
-        failure(
-          method,
-          new AiError.UnknownError({
-            description: `Cohere ${method} gateway call failed: ${String(cause)}`,
-          }),
-        ),
-      ),
-      Effect.map(
-        (response): NormalizedResponse => ({
-          status: response.status,
-          text: response.text.pipe(Effect.orElseSucceed(() => "")),
-          json: response.json.pipe(Effect.mapError((cause) => bodyReadFailure(method, cause))),
-        }),
-      ),
-    ),
-    schema,
-    method,
-  );
-};
 
 /**
  * Builds an `EmbeddingModel.Service` backed by Cohere `embed-v4.0` over the
@@ -273,9 +170,9 @@ const cohereRequestFromUrl = <S extends Schema.Top>(
  * `Config.ConfigError`. Provides `FetchHttpClient` internally, so the
  * returned effect carries no `HttpClient` (or Worker binding) requirement.
  */
-export const makeCohereEmbeddingModelFromUrl = (options: {
-  readonly inputType: "search_document" | "search_query";
-}): Effect.Effect<EmbeddingModel.Service, Config.ConfigError> =>
+export const makeCohereEmbeddingModelFromUrl = (
+  options: CohereEmbeddingOptions,
+): Effect.Effect<EmbeddingModel.Service, Config.ConfigError> =>
   Effect.gen(function* () {
     const gatewayConfig = yield* Url.gatewayUrlConfig;
     const httpClient = yield* HttpClient.HttpClient;
@@ -289,21 +186,10 @@ export const makeCohereEmbeddingModelFromUrl = (options: {
           baseUrl,
           authHeader,
           "v2/embed",
-          {
-            model: COHERE_EMBEDDING_MODEL,
-            input_type: options.inputType,
-            texts: inputs,
-            output_dimension: COHERE_EMBEDDING_DIMENSIONS,
-            embedding_types: ["float"],
-          },
+          embedQuery(options, inputs),
           CohereEmbedResponse,
           "embedMany",
-        ).pipe(
-          Effect.map((response) => ({
-            results: response.embeddings.float.map((vector) => [...vector]),
-            usage: { inputTokens: response.meta?.billed_units?.input_tokens },
-          })),
-        ),
+        ).pipe(Effect.map(mapEmbedResponse)),
     });
   }).pipe(Effect.provide(FetchHttpClient.layer));
 
@@ -325,28 +211,73 @@ const CohereRerankResponse = Schema.Struct({
   ),
 });
 
+/** The `v2/rerank` request body, identical on both transports. */
+const rerankQuery = ({ query, documents, topN }: RerankerModel.ProviderOptions) => ({
+  model: COHERE_RERANK_MODEL,
+  query,
+  documents,
+  ...(topN !== undefined && { top_n: topN }),
+});
+
+/** Maps a decoded `v2/rerank` response onto `RerankerModel`'s provider contract. */
+const mapRerankResponse = (
+  response: typeof CohereRerankResponse.Type,
+): RerankerModel.ProviderResponse => ({
+  results: response.results.map((entry) => ({
+    index: entry.index,
+    relevanceScore: entry.relevance_score,
+  })),
+  usage: { inputTokens: response.meta?.billed_units?.search_units },
+});
+
 /** Builds a `RerankerModel.Service` backed by Cohere `rerank-v3.5` over the gateway. */
 export const makeCohereReranker = (binding: GatewayBinding): Effect.Effect<RerankerModel.Service> =>
   RerankerModel.make({
-    rerank: ({ query, documents, topN }) =>
+    rerank: (options) =>
       cohereRequest(
         binding,
         "v2/rerank",
-        {
-          model: COHERE_RERANK_MODEL,
-          query,
-          documents,
-          ...(topN !== undefined && { top_n: topN }),
-        },
+        rerankQuery(options),
         CohereRerankResponse,
         "rerank",
-      ).pipe(
-        Effect.map((response) => ({
-          results: response.results.map((entry) => ({
-            index: entry.index,
-            relevanceScore: entry.relevance_score,
-          })),
-          usage: { inputTokens: response.meta?.billed_units?.search_units },
-        })),
-      ),
+      ).pipe(Effect.map(mapRerankResponse)),
   });
+
+/**
+ * Builds a `RerankerModel.Service` backed by Cohere `rerank-v3.5` over the
+ * AI Gateway's **public HTTPS endpoint** — the binding-free sibling of
+ * {@link makeCohereReranker}, usable from a plain Node process, a local
+ * CLI, or CI (an offline evaluation harness, say).
+ *
+ * Config (`CF_ACCOUNT_ID`, `CF_AIG_GATEWAY_ID`, `CF_AIG_TOKEN`) is resolved
+ * **once at construction**, not per request — the base URL and the auth
+ * header are pure string work over values that cannot change mid-run, and
+ * re-deriving them per case of a two-hundred-case evaluation would be a
+ * config read in a loop. A missing required value fails with a typed
+ * `Config.ConfigError`. Provides `FetchHttpClient` internally, so the effect
+ * carries no `HttpClient` (or Worker binding) requirement. Takes no options,
+ * so it is a plain (lazy) Effect value rather than a zero-argument
+ * constructor: `const reranker = yield* makeCohereRerankerFromUrl`.
+ */
+export const makeCohereRerankerFromUrl: Effect.Effect<
+  RerankerModel.Service,
+  Config.ConfigError
+> = Effect.gen(function* () {
+    const gatewayConfig = yield* Url.gatewayUrlConfig;
+    const httpClient = yield* HttpClient.HttpClient;
+    const baseUrl = Url.gatewayBaseUrl(gatewayConfig, COHERE_PROVIDER);
+    const authHeader = Url.cfAigAuthorizationHeader(gatewayConfig);
+
+    return yield* RerankerModel.make({
+      rerank: (options) =>
+        cohereRequestFromUrl(
+          httpClient,
+          baseUrl,
+          authHeader,
+          "v2/rerank",
+          rerankQuery(options),
+          CohereRerankResponse,
+          "rerank",
+        ).pipe(Effect.map(mapRerankResponse)),
+    });
+  }).pipe(Effect.provide(FetchHttpClient.layer));
