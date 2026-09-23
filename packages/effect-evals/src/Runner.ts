@@ -41,6 +41,7 @@ import { AiError } from "effect/unstable/ai";
 import * as Cache from "./Cache.ts";
 import * as Dataset from "./Dataset.ts";
 import * as Metric from "./Metric.ts";
+import * as Ranking from "./metrics/Ranking.ts";
 import * as Reporter from "./Reporter.ts";
 import * as Result from "./Result.ts";
 import type { Score } from "./Score.ts";
@@ -470,3 +471,105 @@ export const runSuite = <
 
     return result;
   });
+
+// ── Retrieval suites ─────────────────────────────────────────────────
+
+/**
+ * The golden of a retrieval case: one query and its graded ground truth.
+ * Handles are whatever the {@link RetrievalPort} returns — a checked-in
+ * dataset has to name documents in a way a reviewer can read and a rebuilt
+ * environment still resolves (`type:slug`, say), never an opaque row id.
+ */
+export interface RetrievalGolden {
+  /** The query as a user would type it. */
+  readonly query: string;
+  /** Handle → grade; see {@link Ranking.GradedRelevance}. */
+  readonly relevant: Ranking.GradedRelevance;
+  /** A stable name for the case within its dataset, for reports. */
+  readonly name?: string | undefined;
+}
+
+/**
+ * The seam a retrieval suite measures through: one method, no knowledge of
+ * what is behind it. The thing being measured — a search operation, a
+ * reranker chain — lives in the consumer; the suite hands it each golden's
+ * query and the page size, and reads back handles, best first.
+ *
+ * That seam is also what makes an offline mode the same code path as the
+ * credentialed one: a unit suite hands the runner an in-memory port over
+ * fixed orderings, an operator hands it one closing over a live search and
+ * reranker, and the runner cannot tell.
+ *
+ * `id` names the configuration under test (`"search@rerank-v3.5"`) and is
+ * the task id in the result cache key — bump it when the port's behaviour
+ * changes, as with any {@link TaskDefinition}.
+ */
+export interface RetrievalPort<E = never, R = never> {
+  readonly id: string;
+  /** Handles for one query, best first, at most `limit` of them. */
+  readonly retrieve: (
+    query: string,
+    options: { readonly limit: number },
+  ) => Effect.Effect<ReadonlyArray<string>, E, R>;
+}
+
+/** A retrieval suite: a dataset of {@link RetrievalGolden}s, the port under test, and the cutoff. */
+export interface RetrievalSuite<GoldenE = never, GoldenR = never, PortE = never, PortR = never> {
+  readonly name: string;
+  readonly dataset: Dataset.Dataset<RetrievalGolden, GoldenE, GoldenR>;
+  readonly port: RetrievalPort<PortE, PortR>;
+  /** Page size, and the `k` every cutoff metric uses. */
+  readonly k: number;
+  /** Which ranking metrics to score, and any pass/fail thresholds. Default: all four, never failing. */
+  readonly metrics?: Ranking.MetricsAtKOptions | undefined;
+}
+
+/** A {@link Result.SuiteResult} over retrieval goldens plus its cross-query aggregate. */
+export interface RetrievalSuiteResult extends Result.SuiteResult<RetrievalGolden> {
+  /** Per-metric means across the queries that scored; see {@link Result.aggregate}. */
+  readonly aggregate: Result.Aggregate;
+}
+
+/**
+ * Runs a retrieval-ranking suite: every golden's query goes through the
+ * port (truncated to `k` — a port that over-returns must not inflate
+ * recall), and the ranked handles are scored against the golden's graded
+ * relevance by the requested {@link Ranking} metrics at `k`. Built on
+ * {@link runSuite}, so trials, retry on retryable `AiError`s, caching (keyed
+ * on the port's `id`) and reporters all apply; the result is the ordinary
+ * per-case {@link Result.SuiteResult} plus a cross-query
+ * {@link Result.aggregate}.
+ *
+ * A query whose retrieval fails is recorded as that case's `taskFailures`,
+ * is excluded from every mean, and is counted in `aggregate.failedCases` —
+ * never scored as a zero. A suite in which every query failed has an empty
+ * `aggregate.metrics` and `passed: false`.
+ *
+ * Cases run **sequentially by default** (`caseConcurrency: 1`): a
+ * retrieval suite is usually run against a live search plane, and
+ * measuring it under a load pattern no user produces makes any latency the
+ * port records meaningless. Pass `caseConcurrency` to change that.
+ */
+export const runRetrievalSuite = <GoldenE, GoldenR, PortE, PortR, ReporterR = never>(
+  suite: RetrievalSuite<GoldenE, GoldenR, PortE, PortR>,
+  options: RunnerOptions<ReporterR> = {},
+): Effect.Effect<
+  RetrievalSuiteResult,
+  GoldenE,
+  GoldenR | PortR | ReporterR | Cache.KeyValueStore.KeyValueStore
+> =>
+  runSuite(
+    makeSuite({
+      name: suite.name,
+      dataset: suite.dataset,
+      task: makeTask<RetrievalGolden, ReadonlyArray<string>, PortE, PortR>({
+        id: `${suite.port.id}@k=${suite.k}`,
+        run: (golden) =>
+          suite.port
+            .retrieve(golden.query, { limit: suite.k })
+            .pipe(Effect.map((ranked) => ranked.slice(0, suite.k))),
+      }),
+      metrics: Ranking.metricsAtK(suite.k, suite.metrics ?? {}),
+    }),
+    { caseConcurrency: 1, ...options },
+  ).pipe(Effect.map((result) => ({ ...result, aggregate: Result.aggregate(result) })));

@@ -117,6 +117,73 @@ const result = await Effect.runPromise(
 
 `summary` is `null` when every trial for that metric errored (no scores to summarize). `taskFailures` is empty unless the task itself failed for some trial, in which case that trial contributes to no metric's `trials` array at all (there was no output to score).
 
+## Retrieval ranking metrics
+
+`Ranking` scores a **ranked list of document handles** against a **graded relevance map** — nDCG@k, recall@k, MRR@k and precision@k — as deterministic, judge-free scorers. Grades are positive numbers (`1`–`3` by convention: `3` is the answer, `2` would satisfy, `1` is better than nothing); a handle absent from the map is non-relevant. nDCG uses exponential gain (`2^grade − 1`) and normalises against the case's own relevant set, so a case with two relevant documents and `k = 20` can still score 1; precision divides by `k`, not by how many rows came back; MRR and recall are bounded by the page. Every scorer re-applies `k` itself, and its name carries the cutoff (`ndcg@10`, never `ndcg`) because `ndcg@10` and `ndcg@20` are different measurements.
+
+```ts
+import { Ranking, Threshold } from "@thomasfosterau/effect-evals";
+
+// The pure functions, over { ranked, relevant, k }:
+Ranking.ndcg({ ranked: ["b", "a"], relevant: { a: 3, b: 1 }, k: 5 }); // 0.7098…
+Ranking.scoreCase({ ranked, relevant, k: 10 }); // { "ndcg@10": …, "recall@10": …, "mrr@10": …, "precision@10": … }
+
+// As Scorers / Metrics over a RankingCase ({ golden: { relevant }, output: ranked }):
+Ranking.ndcgAtK(10); // Scorer named "ndcg@10"
+Ranking.metricsAtK(10, { thresholds: { ndcg: Threshold.minScore(0.8) } }); // all four, one gated
+```
+
+### `Runner.runRetrievalSuite`
+
+The retrieval counterpart of `runSuite`: a dataset of `RetrievalGolden`s (`{ query, relevant, name? }`), a one-method `RetrievalPort` the consumer supplies, and a cutoff `k`. The port is the seam — the thing being measured (a search operation, a reranker chain) lives in the consumer, the suite hands it each query and the page size, and reads back handles best-first. That is also what makes an offline mode the same code path as a credentialed one: a unit suite hands in an in-memory port over fixed orderings, an operator hands in one closing over a live search, and the runner cannot tell.
+
+```ts
+import * as Effect from "effect/Effect";
+import { Cache, Dataset, Runner, Threshold } from "@thomasfosterau/effect-evals";
+
+const port: Runner.RetrievalPort<SearchError, Database> = {
+  id: "search@rerank-v3.5", // the configuration under test; part of the cache key
+  retrieve: (query, { limit }) => search({ query, limit }).pipe(Effect.map((rows) => rows.map(handleOf))),
+};
+
+const result = await Effect.runPromise(
+  Runner.runRetrievalSuite(
+    {
+      name: "search-ranking-smoke",
+      dataset: Dataset.fromArray("search-ranking-smoke", [
+        { name: "genus", query: "monstera", relevant: { "taxon:monstera": 3, "taxon:monstera-x": 1 } },
+      ]),
+      port,
+      k: 20,
+      metrics: { thresholds: { ndcg: Threshold.minScore(0.8) } }, // optional; all four metrics, never failing, by default
+    },
+    { reporters: [Reporter.terminal] },
+  ).pipe(Effect.provide(Cache.layerMemory), Effect.provide(databaseLayer)),
+);
+
+result.aggregate.metrics["ndcg@20"]; // { mean, cases } across the queries that scored
+result.cases[0]?.metrics; // the ordinary per-case, per-metric result model
+```
+
+- **Built on `runSuite`**, so trials, retry on retryable `AiError`s, caching (keyed on the port's `id` and `k` — bump `id` when the port's behaviour changes) and reporters all apply, and the result is the ordinary `Result.SuiteResult` plus `aggregate: Result.aggregate(result)` — per-metric means across the queries that scored, with `totalCases` / `successfulCases` / `failedCases`.
+- **A failed query is not a zero.** A retrieval failure lands in that case's `taskFailures`, is excluded from every mean, and is counted in `aggregate.failedCases`; a suite in which every query failed has an empty `aggregate.metrics` and `passed: false`, never a page of noughts.
+- **Sequential by default** (`caseConcurrency: 1`): a retrieval suite usually runs against a live search plane, and measuring it under a load pattern no user produces makes any latency the port records meaningless. Pass `caseConcurrency` to change it.
+- **Over-returning ports are truncated** to `k` before scoring, and every metric re-applies `k` — a retrieval that returns more than it was asked for cannot inflate recall.
+- **What stays with the consumer:** dataset validation and content digests (which runs are comparable), per-query latency, persistence, and the run-to-run diff. `Result.aggregate` and `Result.SuiteResult` are plain values a consumer can persist or diff as it likes.
+
+#### Mapping gardeneria's `packages/evaluation` harness onto it
+
+| gardeneria | effect-evals |
+| --- | --- |
+| `EvaluationCase { name, query, relevant, locale?, type? }` | `Runner.RetrievalGolden { name?, query, relevant }`; a port closes over `locale` / `type` (per-case narrowing becomes part of the golden a custom `Dataset` carries, and the port reads it from `query` context or a wrapping golden) |
+| `RankingDataset` + `declareDataset` (validation, digest) | `Dataset.fromArray` / `Dataset.makeDataset`; validation and the digest stay app-side and feed `Result`'s `golden` as-is |
+| `RunConfiguration { limit, reranker, … }` | `k` (= `limit`) and `RetrievalPort.id` (= the reranker / configuration name) |
+| `RetrievalPort.retrieve({ query, limit, type?, locale? })` → `Effect<handles, string>` | `RetrievalPort.retrieve(query, { limit })` → `Effect<handles, E, R>` — any typed `E`, any `R` |
+| `metrics.ts` `ndcgAtK` / `recallAtK` / `precisionAtK` / `mrrAtK` / `scoreCase` / `metricKey` | `Ranking.ndcg` / `recall` / `precision` / `mrr` / `scoreCase` / `metricKey` — same formulas, same fixtures |
+| `aggregateScores` (means over successful cases) | `Result.aggregate` (means over cases that scored; `successfulCases` / `failedCases`) |
+| `runEvaluation` → `EvaluationRun` (`status`, `results`, `averageScores`, `avgLatencyMs`, `usageUnits`) | `Runner.runRetrievalSuite` → `RetrievalSuiteResult` (`passed`, `cases`, `aggregate`); latency and usage are the port's to record |
+| `persistence.ts`, `compare.ts` | app-side, over the plain result value |
+
 ## G-Eval judge metric
 
 `GEval.gEval` builds a `Metric` that scores a case against an arbitrary natural-language criterion using an LLM judge (DeepEval's G-Eval), covering anything from translation quality to a bespoke house style — without writing a new metric per criterion. `GEval.gEvalConversational` is the multi-turn variant: the judge reads the full rendered turn history and scores the exchange holistically.
@@ -203,10 +270,11 @@ pnpm effect-evals --help                                  # full flag reference
 | [`Metric`](src/Metric.ts) | `Metric`, `makeMetric`, `evaluate`, `contramap`. |
 | [`Dataset`](src/Dataset.ts) | `Dataset`, `makeDataset`, `fromArray`. |
 | [`EvalFile`](src/EvalFile.ts) | The `*.eval.ts` contract shared by every execution surface: `EvalFile`, `AnySuite`. |
-| [`Runner`](src/Runner.ts) | `Suite`, `makeSuite`, `TaskDefinition`, `makeTask`, `runSuite`. |
-| [`Result`](src/Result.ts) | The typed suite → case → trial → metric result model; `summarize`. |
+| [`Runner`](src/Runner.ts) | `Suite`, `makeSuite`, `TaskDefinition`, `makeTask`, `runSuite`; `RetrievalPort`, `RetrievalGolden`, `runRetrievalSuite`. |
+| [`Result`](src/Result.ts) | The typed suite → case → trial → metric result model; `summarize`, `aggregate`. |
 | [`Cache`](src/Cache.ts) | `layerMemory` / `layerFileSystem`, `hashKey`. |
 | [`Reporter`](src/Reporter.ts) | `Reporter`, `terminal`, `json`, `formatTerminalTable`. |
+| [`Ranking`](src/metrics/Ranking.ts) | `ndcg` / `recall` / `mrr` / `precision`, `scoreCase`, `metricKey`; `ndcgAtK` … as scorers, `metricAtK` / `metricsAtK`. |
 | [`GEval`](src/metrics/GEval.ts) | `gEval`, `gEvalConversational`, `makeRubric`, `defaultTemplate`. |
 | [`cli`](src/cli/) | The `effect-evals` bin — see [CLI](#cli-930) above. |
 
