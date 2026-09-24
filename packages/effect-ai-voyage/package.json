@@ -12,7 +12,7 @@
   ],
   "license": "MIT",
   "author": "Thomas Foster <me@thomasfoster.au>",
-  "homepage": "https://github.com/thomasfosterau/effect-ai-ext/tree/main/packages/effect-ai-voyage#readme",
+  "homepage": "https://github.com/thomasfosterau/effect-ai-ext/tree/trunk/packages/effect-ai-voyage#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/thomasfosterau/effect-ai-ext.git",

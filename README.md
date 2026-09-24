@@ -32,7 +32,7 @@ This is the monorepo home of the `@thomasfosterau/effect-ai-*` family.
 ## Development
 
 ```sh
-pnpm install        # installs + patches the native TypeScript compiler
+pnpm install        # pnpm 11 (Corepack); installs + patches the native TypeScript compiler
 pnpm run check      # type-check every package (native TS7 tsc)
 pnpm run test       # unit tests (vitest; stubbed fixtures, no live network)
 pnpm run build      # build publishable dist for every package (tsup)

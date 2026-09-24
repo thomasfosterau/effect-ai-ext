@@ -32,9 +32,11 @@ if/when published) — repoint the upstream package instead (see
 
 Node + pnpm. Everything runs through pnpm workspace scripts.
 
-- **Install:** `pnpm install`. This also runs `prepare`
-  (`scripts/patch-native-tsc.sh`), which patches the native TypeScript
-  compiler with `@effect/tsgo`.
+- **Install:** `pnpm install` (pnpm 11, pinned by `packageManager`; Corepack
+  resolves it). This also runs `prepare` (`effect-tsgo patch --typescript`),
+  which patches the native TypeScript compiler with `@effect/tsgo`. The patch
+  is idempotent — a binary whose hash already matches is skipped — and a
+  `@effect/tsgo` bump re-patches on the next install.
 - **Type-check:** `pnpm run check` → per package `tsc -p tsconfig.json`.
 - **Test:** `pnpm run test` → per package `vitest run`.
 - **Build:** `pnpm run build` → per package `tsup` (publishable `dist/`).
@@ -42,7 +44,10 @@ Node + pnpm. Everything runs through pnpm workspace scripts.
 
 ### TypeScript 6/7 side-by-side split
 
-Two TypeScripts, each with a job (both proven against `effect@4` beta):
+Two TypeScripts, each with a job (both proven against `effect@4` beta).
+`@effect/tsgo` ships artifacts for an explicit set of TypeScript versions and
+fails `pnpm install` on any other, so the two pins move together (see the
+comment in `pnpm-workspace.yaml`; Dependabot groups them).
 
 - **`@typescript/native`** (real `typescript@7`) → the fast native `tsc` used
   for `pnpm run check`. The `prepare` step patches it with `@effect/tsgo` so
@@ -82,7 +87,7 @@ Versions and changelogs are managed by [Changesets](https://github.com/changeset
   `changeset publish` ships any version not yet on the registry. Changesets
   begin once a package has a published version to bump from.
 - **Releasing is automated.** The `Release` workflow (`.github/workflows/release.yml`)
-  watches `main`: it opens/updates a **"Version Packages"** PR that applies the
+  watches `trunk` (the default branch): it opens/updates a **"Version Packages"** PR that applies the
   pending changesets (bumping versions, writing `CHANGELOG.md`); merging that PR
   publishes the bumped packages. With no pending changesets, any package whose
   version isn't yet on npm is published (packages already on the registry are
@@ -91,17 +96,25 @@ Versions and changelogs are managed by [Changesets](https://github.com/changeset
   via GitHub OIDC (`id-token: write`) — no `NPM_TOKEN` — and provenance is
   emitted automatically. This needs npm ≥ 11.5.1 (the workflow upgrades it) and
   a **Trusted Publisher** configured on npmjs.com for each package, pointing at
-  `thomasfosterau/effect-ai-ext` + `release.yml`. Never publish by hand:
-  provenance requires the CI OIDC provider, so a local `changeset publish`
-  fails.
+  `thomasfosterau/effect-ai-ext` + `release.yml`. The job runs in the
+  `release` GitHub Environment; adding required reviewers to it makes every
+  release a manually approved one. Never publish by hand: provenance requires
+  the CI OIDC provider, so a local `changeset publish` fails.
 
 ## Dependency conventions
 
-- **`catalog:` for every external dependency** (see `pnpm-workspace.yaml`).
+- **`catalog:` for every external dependency** (see `pnpm-workspace.yaml`;
+  `catalogMode: strict`, so `pnpm add` refuses a non-catalog specifier).
   Package manifests reference `catalog:` (dev/test deps) or a concrete range
   (peers). `effect` **must** be a singleton — two copies break
   Context / Layer / Schema identity — so it is a **peerDependency** on every
   published package, plus a `catalog:` devDependency for building/testing.
+  `effect-evals` currently builds against a newer beta through the named
+  `catalog:evals` (the reason, and why there is no `effect` override yet, is
+  in the workspace file's comment).
+- **Supply-chain delay:** `minimumReleaseAge` holds a newly published version
+  for a day before `pnpm install` will take it; Dependabot's `cooldown`
+  mirrors the window. First-party `@thomasfosterau/*` is exempt.
 - Internal deps use `workspace:*`. pnpm rewrites `catalog:`/`workspace:` to
   concrete ranges on publish.
 - After editing the catalog, run `pnpm install` and commit the regenerated
@@ -156,10 +169,16 @@ Every package mirrors an existing model. Read the reference before writing:
   or edit issues, PRs, comments, or releases in any other repo — the
   `thomasfosterau/website` source repo included — without explicit owner
   approval. Read other repos read-only for reference.
-- One branch + PR per issue: `issue-<n>-<slug>`, PR against `main`,
+- The default branch is **`trunk`** (there is no `main`; every workflow
+  trigger, `.changeset/config.json`'s `baseBranch`, and the package
+  `homepage` links say `trunk`).
+- One branch + PR per issue: `issue-<n>-<slug>`, PR against `trunk`,
   squash-merge. Keep the PR body current with what shipped vs the issue's spec.
 - **The issue is the spec — read all of it, comments included.** Issues are
-  snapshots; re-verify against current `main` before editing.
+  snapshots; re-verify against current `trunk` before editing.
+- **Agent sessions** are provisioned by `.claude/hooks/session-start.sh`
+  (registered in `.claude/settings.json`): a frozen `pnpm install`, which also
+  applies the tsgo patch, so the three gates run without manual setup.
 - **Stop-and-report is a valid outcome.** On a blocker outside the issue's
   scope (an upstream `effect/unstable/ai` gap, a design conflict with
   `effect-ai-ext`'s interfaces), comment the evidence on the issue and stop —

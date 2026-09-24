@@ -142,5 +142,8 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
 
-# Claude Code local scratch (agent worktrees, session state)
-.claude/
+# Claude Code: per-user state stays local; `.claude/settings.json` and
+# `.claude/hooks/` are tracked (the SessionStart hook provisions agent sessions).
+.claude/settings.local.json
+.claude/worktrees/
+.claude/scheduled_tasks.lock
