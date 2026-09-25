@@ -20,7 +20,8 @@
  *   consumes, starting with the CLI.
  * - {@link Runner} — `runSuite`, the Effect program that runs a suite's
  *   goldens through its task and metrics: trials, bounded concurrency,
- *   retry, and caching (#924).
+ *   retry, and caching (#924); `runRetrievalSuite`, the same loop over a
+ *   `RetrievalPort` for retrieval-ranking datasets.
  * - {@link Result} — the typed run → case → trial → metric result model
  *   `Runner` produces.
  * - {@link Cache} — content-hash result caching behind `effect`'s own
@@ -31,6 +32,9 @@
  *   {@link JsonValidity}, {@link SchemaMatch}, {@link EmbeddingSimilarity},
  *   {@link ToolCallCorrectness}) — judge-free, reproducible {@link Scorer}s
  *   built on the primitive above (#925).
+ * - {@link Ranking} — nDCG@k, recall@k, MRR@k and precision@k over a
+ *   ranked list and a graded-relevance map: deterministic scorers for
+ *   retrieval evaluation.
  * - {@link GEval} — the arbitrary-criteria LLM judge metric (single- and
  *   multi-turn).
  * - The RAG metric suite ({@link Faithfulness}, {@link AnswerRelevancy},
@@ -56,6 +60,7 @@ export * as Golden from "./Golden.ts";
 export * as Metadata from "./Metadata.ts";
 export * as Metric from "./Metric.ts";
 export * as RagCase from "./metrics/rag/RagCase.ts";
+export * as Ranking from "./metrics/Ranking.ts";
 export * as Reporter from "./Reporter.ts";
 export * as Result from "./Result.ts";
 export * as Runner from "./Runner.ts";

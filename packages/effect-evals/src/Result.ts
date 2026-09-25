@@ -119,3 +119,62 @@ export interface SuiteResult<Golden = unknown> {
   readonly passed: boolean;
   readonly durationMillis: number;
 }
+
+// ── Cross-case aggregation ───────────────────────────────────────────
+
+/** One metric's mean across a suite's cases — see {@link aggregate}. */
+export interface MetricAggregateAcrossCases {
+  /** Mean of the per-case means, over the cases that scored this metric. */
+  readonly mean: number;
+  /** How many cases contributed a score. */
+  readonly cases: number;
+}
+
+/** What {@link aggregate} reduces a suite's cases to. */
+export interface Aggregate {
+  /** Metric name → mean over the cases that scored it. */
+  readonly metrics: Readonly<Record<string, MetricAggregateAcrossCases>>;
+  readonly totalCases: number;
+  /** Cases in which the task produced an output on at least one trial. */
+  readonly successfulCases: number;
+  /** Cases in which the task failed on every trial (no output to score). */
+  readonly failedCases: number;
+}
+
+/**
+ * Folds a suite's cases into per-metric means across cases — the number a
+ * report compares between two runs of the same dataset.
+ *
+ * **Means are over the cases that scored only.** A case whose task failed
+ * on every trial contributes no evidence about quality, and averaging it in
+ * as a zero would report a broken provider as a quality regression; it is
+ * counted in `failedCases` instead, where it is visible. Likewise a metric
+ * whose every trial errored for a case (no `summary`) is left out of that
+ * metric's mean. A suite in which nothing scored aggregates to an empty
+ * `metrics` map rather than `NaN`.
+ */
+export const aggregate = (result: SuiteResult): Aggregate => {
+  const sums = new Map<string, { sum: number; cases: number }>();
+  let successfulCases = 0;
+  for (const caseResult of result.cases) {
+    const scored = caseResult.metrics.some((metric) => metric.summary !== undefined);
+    if (caseResult.taskFailures.length < caseResult.trials || scored) successfulCases += 1;
+    for (const metric of caseResult.metrics) {
+      if (metric.summary === undefined) continue;
+      const entry = sums.get(metric.metric) ?? { sum: 0, cases: 0 };
+      entry.sum += metric.summary.mean;
+      entry.cases += 1;
+      sums.set(metric.metric, entry);
+    }
+  }
+  const metrics: Record<string, MetricAggregateAcrossCases> = {};
+  for (const [name, { sum, cases }] of sums) {
+    metrics[name] = { mean: sum / cases, cases };
+  }
+  return {
+    metrics,
+    totalCases: result.cases.length,
+    successfulCases,
+    failedCases: result.cases.length - successfulCases,
+  };
+};
