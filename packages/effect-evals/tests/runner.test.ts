@@ -504,7 +504,7 @@ describe("Runner.runSuite — reporters", () => {
 describe("Runner.isConfigError", () => {
   it("identifies a real Config.ConfigError", async () => {
     const error = await runTest(
-      Config.string("EFFECT_EVALS_RUNNER_TEST_MISSING_CONFIG").pipe(Effect.flip),
+      Config.String("EFFECT_EVALS_RUNNER_TEST_MISSING_CONFIG").pipe(Effect.flip),
     );
     expect(Runner.isConfigError(error)).toBe(true);
   });

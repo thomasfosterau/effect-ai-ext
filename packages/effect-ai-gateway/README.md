@@ -47,6 +47,9 @@ pnpm add @thomasfosterau/effect-ai-gateway effect @effect/ai-anthropic
 # @cloudflare/workers-types is a peer for the binding-based transports (types only)
 ```
 
+`effect` and `@effect/ai-anthropic` (both `>=4.0.0-rc.113`) are peer
+dependencies (`effect` must be a singleton).
+
 ## Usage
 
 ```ts

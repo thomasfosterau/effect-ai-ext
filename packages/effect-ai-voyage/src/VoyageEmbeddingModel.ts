@@ -128,14 +128,14 @@ export interface Options {
 // =============================================================================
 
 /**
- * Constructs an `EmbeddingModel.Service` backed by {@link VoyageClient}.
+ * Constructs an `EmbeddingModel` service backed by {@link VoyageClient}.
  *
  * @see {@link layer} for providing the service as a `Layer`
  * @see {@link model} for a providable model descriptor
  */
 export const make = Effect.fnUntraced(function* (
   options: Options,
-): Effect.fn.Return<EmbeddingModel.Service, never, VoyageClient> {
+): Effect.fn.Return<EmbeddingModel.EmbeddingModel, never, VoyageClient> {
   const client = yield* VoyageClient;
 
   return yield* EmbeddingModel.make({

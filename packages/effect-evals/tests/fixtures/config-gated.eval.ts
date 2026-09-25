@@ -28,7 +28,7 @@ const configGatedSuite = Runner.makeSuite({
 const missingLayer = Layer.effect(
   LanguageModel.LanguageModel,
   Effect.gen(function* () {
-    const apiKey = yield* Config.string("EFFECT_EVALS_FIXTURE_NEVER_SET_TOKEN");
+    const apiKey = yield* Config.String("EFFECT_EVALS_FIXTURE_NEVER_SET_TOKEN");
     return yield* LanguageModel.make({
       generateText: () => Effect.succeed([{ type: "text" as const, text: apiKey }]),
       streamText: () => Stream.die("fixture: streamText is not used"),

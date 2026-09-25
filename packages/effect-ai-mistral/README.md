@@ -18,7 +18,7 @@ service directly against Mistral's OpenAI-compatible
 pnpm add @thomasfosterau/effect-ai-mistral effect
 ```
 
-`effect` is a peer dependency (it must be a singleton).
+`effect` (`>=4.0.0-rc.113`) is a peer dependency (it must be a singleton).
 
 ## Usage
 

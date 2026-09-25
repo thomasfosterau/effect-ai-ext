@@ -138,7 +138,7 @@ const mapEmbedResponse = (response: typeof CohereEmbedResponse.Type) => ({
 });
 
 /**
- * Builds an `EmbeddingModel.Service` backed by Cohere `embed-v4.0` over the
+ * Builds an `EmbeddingModel` service backed by Cohere `embed-v4.0` over the
  * gateway. `inputType` sets Cohere's retrieval-aware input type — embed
  * stored documents with `"search_document"` and search queries with
  * `"search_query"`.
@@ -146,7 +146,7 @@ const mapEmbedResponse = (response: typeof CohereEmbedResponse.Type) => ({
 export const makeCohereEmbeddingModel = (
   binding: GatewayBinding,
   options: CohereEmbeddingOptions,
-): Effect.Effect<EmbeddingModel.Service> =>
+): Effect.Effect<EmbeddingModel.EmbeddingModel> =>
   EmbeddingModel.make({
     embedMany: ({ inputs }) =>
       cohereRequest(
@@ -159,7 +159,7 @@ export const makeCohereEmbeddingModel = (
   });
 
 /**
- * Builds an `EmbeddingModel.Service` backed by Cohere `embed-v4.0` over the
+ * Builds an `EmbeddingModel` service backed by Cohere `embed-v4.0` over the
  * AI Gateway's **public HTTPS endpoint** — the binding-free sibling of
  * {@link makeCohereEmbeddingModel}, usable from a plain Node process, a
  * local CLI, or CI. `inputType` sets Cohere's retrieval-aware input type,
@@ -172,7 +172,7 @@ export const makeCohereEmbeddingModel = (
  */
 export const makeCohereEmbeddingModelFromUrl = (
   options: CohereEmbeddingOptions,
-): Effect.Effect<EmbeddingModel.Service, Config.ConfigError> =>
+): Effect.Effect<EmbeddingModel.EmbeddingModel, Config.ConfigError> =>
   Effect.gen(function* () {
     const gatewayConfig = yield* Url.gatewayUrlConfig;
     const httpClient = yield* HttpClient.HttpClient;

@@ -2,19 +2,23 @@
 #
 # The `catalog:` protocol pins the versions that MUST be singletons across the
 # workspace. `effect` especially: two copies break Context / Layer / Schema
-# identity at runtime, so every package references `catalog:` (as a
-# peerDependency for published packages, a devDependency for building/testing).
-# On `pnpm publish`, pnpm rewrites `catalog:` / `workspace:*` to concrete
-# ranges, so published consumers get ordinary version specs.
+# identity at runtime, so every package takes it from `catalog:` as a
+# devDependency for building/testing and declares it as a peerDependency
+# through `catalog:peers`. On `pnpm publish`, pnpm rewrites `catalog:` /
+# `catalog:peers` / `workspace:*` to concrete ranges, so published consumers
+# get ordinary version specs.
 #
-# EVERY external dev/test dependency version lives here — package.json files
-# reference only `catalog:` / `catalog:<name>` (or `workspace:*` for internal
-# packages); `catalogMode: strict` makes `pnpm add` enforce that at add time.
-# The published packages' peerDependencies stay concrete specs in each
-# manifest (their range policy is a separate decision — issue #32). After
+# EVERY external dependency version lives here — package.json files reference
+# only `catalog:` / `catalog:peers` (or `workspace:*` for internal packages);
+# `catalogMode: strict` makes `pnpm add` enforce that at add time. After
 # editing this catalog, ALWAYS run `pnpm install` and commit the regenerated
 # pnpm-lock.yaml — a stale lockfile fails every CI job at once with
 # ERR_PNPM_LOCKFILE_CONFIG_MISMATCH.
+#
+# The Effect line (`effect`, `@effect/ai-anthropic`, `@effect/platform-node`)
+# moves as one: every package builds and tests against the same exact rc, the
+# one the consuming applications run (issue #32). The published peer RANGES
+# live in the `peers` named catalog below.
 #
 # TypeScript is the 6/7 side-by-side split (see AGENTS.md → Toolchain):
 #   - `@typescript/native` (real `typescript@7`) provides the fast native `tsc`
@@ -30,8 +34,13 @@ catalogMode: strict
 catalog:
   "@changesets/cli": ^3.0.3
   "@cloudflare/workers-types": ^5.20260923.1
-  "@effect/ai-anthropic": 4.0.0-beta.99
+  "@effect/ai-anthropic": 4.0.0-rc.115
   "@effect/language-service": ^0.87.0
+  "@effect/platform-node": 4.0.0-rc.115
+  # Transitive only (via @effect/platform-node's `^` range); pinned and
+  # overridden so it cannot float ahead of `effect` — rc.117 peers on
+  # `effect ^4.0.0-rc.117`, which the singleton override would silently mask.
+  "@effect/platform-node-shared": 4.0.0-rc.115
   # Effect Language Service as a native (TypeScript-Go) binary — the TS7 side
   # of the 6/7 split. `effect-tsgo patch --typescript` (the root `prepare`)
   # overwrites the native `tsc` binary with an Effect-patched build matched by
@@ -45,24 +54,33 @@ catalog:
   "@types/node": ^26.6.2
   "@typescript/native": "npm:typescript@7.0.2"
   "@vitest/coverage-v8": ^4.1.11
-  effect: 4.0.0-beta.99
+  effect: 4.0.0-rc.115
   tsup: ^8.5.1
   typescript: "npm:@typescript/typescript6@6.0.2"
   vitest: ^4.1.11
 
+# Peer ranges the PUBLISHED packages declare: an open floor, never an exact
+# pin (an exact `4.0.0-rc.115` peer would reject a consumer on rc.117), per
+# the shared Effect-floor policy (effect-jsonapi#115). Kept as a named catalog
+# so `catalogMode: strict` still governs them; `pnpm publish` replaces
+# `catalog:peers` with these ranges in the published manifest. The floor is
+# the lowest rc the code type-checks AND passes the unit suite on — rc.113,
+# which renamed `Config.string` → `Config.String`, the `effect/unstable/cli`
+# constructors (`Flag.String` / `Int` / `Literals` …), and made the
+# `LanguageModel` / `EmbeddingModel` service shapes the module-named
+# interfaces; rc.112 fails on all three (issue #32). Re-verify by pointing the
+# default catalog's Effect line at the floor before lowering or raising it.
 catalogs:
-  # `effect-evals` builds against a newer beta than the provider packages: it
-  # migrated off `Schema.TaggedErrorClass` (removed in beta.104) and the
-  # providers' `Sse.decode` error channel changes at beta.10x, so the two pins
-  # cannot be unified without an API migration on one side or the other. That
-  # migration — and the move to the shared `>=4.0.0-rc.112` floor — is issue
-  # #32; until it lands there is deliberately NO `overrides: { effect: … }`
-  # singleton override here (it would force the default pin onto this catalog
-  # and break `effect-evals`). Consumers never see two copies: `effect` is a
-  # peer of every published package.
-  evals:
-    "@effect/platform-node": 4.0.0-beta.107
-    effect: 4.0.0-beta.107
+  peers:
+    "@effect/ai-anthropic": ">=4.0.0-rc.113"
+    effect: ">=4.0.0-rc.113"
+
+overrides:
+  # `effect` MUST be a singleton (see the header): force every resolution to
+  # the catalog version so a hoisting reshuffle cannot introduce a second copy.
+  effect: "catalog:"
+  "@effect/platform-node-shared": "catalog:"
+
 # pnpm 11 fails the install on dependency build scripts that are neither
 # allowed nor denied here (pnpm 10 only warned). esbuild's postinstall places
 # its platform binary (tsup bundles with it); msgpackr-extract arrives via

@@ -31,10 +31,10 @@ interface JudgeCall {
   readonly user: string;
 }
 
-/** Builds a `LanguageModel.Service` whose structured-output hook returns canned JSON from `respond`. */
+/** Builds a `LanguageModel` service whose structured-output hook returns canned JSON from `respond`. */
 const makeJudgeStub = (
   respond: (call: JudgeCall) => unknown,
-): Effect.Effect<{ readonly model: LanguageModel.Service; readonly calls: JudgeCall[] }> =>
+): Effect.Effect<{ readonly model: LanguageModel.LanguageModel; readonly calls: JudgeCall[] }> =>
   Effect.gen(function* () {
     const calls: JudgeCall[] = [];
     const model = yield* LanguageModel.make({
@@ -56,11 +56,11 @@ const makeJudgeStub = (
     return { model, calls };
   });
 
-const provideJudge = (model: LanguageModel.Service) =>
+const provideJudge = (model: LanguageModel.LanguageModel) =>
   Layer.succeed(LanguageModel.LanguageModel, model);
 
 /** A judge that dies if actually called — for tests expecting the model is never reached. */
-const deadJudge = (): Promise<LanguageModel.Service> =>
+const deadJudge = (): Promise<LanguageModel.LanguageModel> =>
   runTest(
     LanguageModel.make({
       generateText: () => Effect.die("gEval should not have called the judge"),

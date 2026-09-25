@@ -239,8 +239,8 @@ export const make = Effect.fnUntraced(function* (
 /**
  * Turns the raw SSE byte stream into a stream of decoded events: parse SSE
  * frames, drop keep-alive and `[DONE]` frames, JSON-decode each remaining
- * `data` payload against the event schema, and map any transport or schema
- * failure into an `AiError`.
+ * `data` payload against the event schema, and map any transport, SSE framing
+ * or schema failure into an `AiError`.
  */
 const buildEventStream = (
   response: HttpClientResponse.HttpClientResponse,
@@ -254,12 +254,13 @@ const buildEventStream = (
         Effect.mapError((error) => Errors.mapSchemaError(error, "chatStream")),
       ),
     ),
-    Stream.catchTag("HttpClientError", (error) =>
-      Stream.fromEffect(Errors.mapHttpClientError(error, "chatStream")),
-    ),
-    // SSE reconnection is not supported for chat — an upstream retry directive
-    // is a defect, not a recoverable condition.
-    Stream.catchTag("Retry", (error) => Stream.die(error)),
+    Stream.catchTags({
+      HttpClientError: (error) => Stream.fromEffect(Errors.mapHttpClientError(error, "chatStream")),
+      SseError: (error) => Stream.fail(Errors.mapSseError(error, "chatStream")),
+      // SSE reconnection is not supported for chat — an upstream retry directive
+      // is a defect, not a recoverable condition.
+      Retry: (error) => Stream.die(error),
+    }),
   );
 
 /**

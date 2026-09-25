@@ -50,7 +50,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "peerDependencies": {
-    "effect": "4.0.0-beta.99"
+    "effect": "catalog:peers"
   },
   "dependencies": {
     "@thomasfosterau/effect-ai-ext": "workspace:*"

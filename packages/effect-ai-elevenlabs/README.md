@@ -24,7 +24,7 @@ directly against the ElevenLabs API.
 pnpm add @thomasfosterau/effect-ai-elevenlabs @thomasfosterau/effect-ai-ext effect
 ```
 
-`effect` is a peer dependency (it must be a singleton).
+`effect` (`>=4.0.0-rc.113`) is a peer dependency (it must be a singleton).
 
 ## Usage
 

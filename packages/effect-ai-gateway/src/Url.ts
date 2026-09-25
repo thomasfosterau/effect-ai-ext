@@ -48,9 +48,9 @@ export interface GatewayUrlConfig {
  * real credential.
  */
 export const gatewayUrlConfig: Config.Config<GatewayUrlConfig> = Config.all({
-  accountId: Config.string("CF_ACCOUNT_ID"),
-  gatewayId: Config.string("CF_AIG_GATEWAY_ID").pipe(Config.withDefault("website")),
-  token: Config.redacted("CF_AIG_TOKEN"),
+  accountId: Config.String("CF_ACCOUNT_ID"),
+  gatewayId: Config.String("CF_AIG_GATEWAY_ID").pipe(Config.withDefault("website")),
+  token: Config.Redacted("CF_AIG_TOKEN"),
 });
 
 /**

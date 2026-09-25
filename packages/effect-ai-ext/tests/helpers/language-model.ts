@@ -2,7 +2,7 @@
  * Test stub for the upstream `LanguageModel` service.
  *
  * The `fromLanguageModel` adapters draw a `LanguageModel` from context and call
- * `generateObject`. These helpers provide a hand-built `LanguageModel.Service`
+ * `generateObject`. These helpers provide a hand-built `LanguageModel` service
  * layer whose `generateObject` returns a canned structured value (or fails),
  * so the adapter tests exercise the real prompt/validation path with no network.
  *

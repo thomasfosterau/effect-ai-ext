@@ -6,7 +6,7 @@ Effect-native LLM evaluation: goldens, scorers, thresholds, and a runner with tr
 npm install @thomasfosterau/effect-evals effect
 ```
 
-`effect` is a peer dependency. The package also ships an `effect-evals` CLI for discovering and running `*.eval.ts` suites — see [CLI](#cli) below.
+`effect` (`>=4.0.0-rc.113`) is a peer dependency. The package also ships an `effect-evals` CLI for discovering and running `*.eval.ts` suites — see [CLI](#cli) below.
 
 ## Core model
 

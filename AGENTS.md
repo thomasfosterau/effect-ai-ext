@@ -44,7 +44,7 @@ Node + pnpm. Everything runs through pnpm workspace scripts.
 
 ### TypeScript 6/7 side-by-side split
 
-Two TypeScripts, each with a job (both proven against `effect@4` beta).
+Two TypeScripts, each with a job (both proven against the `effect@4` rc line).
 `@effect/tsgo` ships artifacts for an explicit set of TypeScript versions and
 fails `pnpm install` on any other, so the two pins move together (see the
 comment in `pnpm-workspace.yaml`; Dependabot groups them).
@@ -105,13 +105,19 @@ Versions and changelogs are managed by [Changesets](https://github.com/changeset
 
 - **`catalog:` for every external dependency** (see `pnpm-workspace.yaml`;
   `catalogMode: strict`, so `pnpm add` refuses a non-catalog specifier).
-  Package manifests reference `catalog:` (dev/test deps) or a concrete range
-  (peers). `effect` **must** be a singleton — two copies break
+  Package manifests reference `catalog:` (dev/test deps) or `catalog:peers`
+  (peer ranges). `effect` **must** be a singleton — two copies break
   Context / Layer / Schema identity — so it is a **peerDependency** on every
-  published package, plus a `catalog:` devDependency for building/testing.
-  `effect-evals` currently builds against a newer beta through the named
-  `catalog:evals` (the reason, and why there is no `effect` override yet, is
-  in the workspace file's comment).
+  published package, plus a `catalog:` devDependency for building/testing,
+  and `overrides: { effect: "catalog:" }` forces every resolution in the
+  workspace onto that one copy.
+- **The Effect line moves as one.** `effect`, `@effect/ai-anthropic` and
+  `@effect/platform-node` (plus the transitive `@effect/platform-node-shared`)
+  share one exact rc in the default catalog — the rc the consuming apps run.
+  The published peer is an **open floor** (`catalog:peers`,
+  `effect: ">=4.0.0-rc.113"`), never an exact pin, per the shared Effect-floor
+  policy (effect-jsonapi#115): the lowest rc the code compiles and runs on
+  (issue #32). Raising the floor is a breaking change for every package.
 - **Supply-chain delay:** `minimumReleaseAge` holds a newly published version
   for a day before `pnpm install` will take it; Dependabot's `cooldown`
   mirrors the window. First-party `@thomasfosterau/*` is exempt.
