@@ -1,7 +1,7 @@
 {
   "name": "@thomasfosterau/effect-ai-gateway",
   "version": "0.1.1",
-  "description": "Route Effect AI providers (Anthropic, Cohere) through a Cloudflare AI Gateway Worker binding, BYOK.",
+  "description": "Route Effect AI providers (Anthropic, Cohere, OpenAI moderation) through a Cloudflare AI Gateway Worker binding or its public HTTPS endpoint, BYOK.",
   "keywords": [
     "effect",
     "ai",
@@ -9,7 +9,10 @@
     "ai-gateway",
     "byok",
     "anthropic",
-    "cohere"
+    "cohere",
+    "openai",
+    "moderation",
+    "reranker"
   ],
   "license": "MIT",
   "author": "Thomas Foster <me@thomasfoster.au>",
