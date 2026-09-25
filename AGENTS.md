@@ -40,7 +40,11 @@ Node + pnpm. Everything runs through pnpm workspace scripts.
 - **Type-check:** `pnpm run check` → per package `tsc -p tsconfig.json`.
 - **Test:** `pnpm run test` → per package `vitest run`.
 - **Build:** `pnpm run build` → per package `tsup` (publishable `dist/`).
-- **All three:** `pnpm run ci`.
+- **Dist check:** `pnpm run check:dist` (after `build`) imports every built
+  `dist` entry and subpath under real Node ESM and fails if a value export
+  the bundled `.d.ts` declares is missing at runtime — the src-resolving
+  vitest suites cannot see bundler output.
+- **All of them:** `pnpm run ci`.
 
 ### TypeScript 6/7 side-by-side split
 
@@ -112,12 +116,16 @@ Versions and changelogs are managed by [Changesets](https://github.com/changeset
   and `overrides: { effect: "catalog:" }` forces every resolution in the
   workspace onto that one copy.
 - **The Effect line moves as one.** `effect`, `@effect/ai-anthropic` and
-  `@effect/platform-node` (plus the transitive `@effect/platform-node-shared`)
-  share one exact rc in the default catalog — the rc the consuming apps run.
-  The published peer is an **open floor** (`catalog:peers`,
-  `effect: ">=4.0.0-rc.113"`), never an exact pin, per the shared Effect-floor
-  policy (effect-jsonapi#115): the lowest rc the code compiles and runs on
-  (issue #32). Raising the floor is a breaking change for every package.
+  `@effect/platform-node` (plus the transitive `@effect/platform-node-shared`,
+  which only the catalog + `overrides` name, so Dependabot never bumps it —
+  do it by hand) share one exact rc in the default catalog — the rc the
+  consuming apps run. The published peers are an **open floor**
+  (`catalog:peers`, `effect: ">=4.0.0-rc.113"`), never an exact pin, per the
+  shared Effect-floor policy (effect-jsonapi#115): the lowest rc the code
+  compiles and runs on (issue #32). Raising the floor is a breaking change for
+  every package. `@effect/*` packages a published package needs are **peers**
+  too (never exact-pinned dependencies: their own `effect` peer would reject
+  a consumer's older rc).
 - **Supply-chain delay:** `minimumReleaseAge` holds a newly published version
   for a day before `pnpm install` will take it; Dependabot's `cooldown`
   mirrors the window. First-party `@thomasfosterau/*` is exempt.

@@ -3,10 +3,13 @@
  *
  * Imports the package entry, so every top-level statement in every module
  * runs against the workspace's pinned `effect`, and checks the public surface
- * is all there; then launches the real `effect-evals` bin, which loads the
- * CLI (`effect/unstable/cli` flags built at module scope) and
- * `@effect/platform-node` exactly as a consumer's `npx effect-evals` does.
- * `effect-ai-gateway@0.1.1` crashed at this point on `effect@4.0.0-rc.115`
+ * is all there; then launches the `effect-evals` bin from this workspace,
+ * which loads the CLI (`effect/unstable/cli` flags built at module scope) and
+ * `@effect/platform-node`. This is NOT how a consumer's `npx effect-evals`
+ * runs: the bin re-execs `src/cli/main.ts` through Node's type stripping,
+ * which Node refuses under `node_modules` (issue #42). It passes here only
+ * because the workspace package's real path is outside `node_modules`.
+ * `effect-ai-gateway@0.1.1` crashed at module load on `effect@4.0.0-rc.115`
  * (`TypeError: Config.string is not a function`); the CLI's `Flag.string` /
  * `Flag.integer` were the same shape of break here.
  *

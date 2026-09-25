@@ -57,7 +57,9 @@ jobs:
       - run: pnpm run test
 
   # Prove every package builds a publishable dist (esbuild ESM bundle +
-  # bundled declarations) standalone.
+  # bundled declarations) standalone, then import each built entry under real
+  # Node ESM and check every value export its declarations promise exists at
+  # runtime (`scripts/check-dist.mjs`, issue #32).
   build:
     needs: typecheck
     runs-on: ubuntu-latest
@@ -73,3 +75,4 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
+      - run: pnpm run check:dist

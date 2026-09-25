@@ -62,11 +62,9 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage"
   },
-  "dependencies": {
-    "@effect/platform-node": "catalog:"
-  },
   "devDependencies": {
     "@effect/language-service": "catalog:",
+    "@effect/platform-node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "effect": "catalog:",
     "tsup": "catalog:",
@@ -74,6 +72,12 @@
     "vitest": "catalog:"
   },
   "peerDependencies": {
+    "@effect/platform-node": "catalog:peers",
     "effect": "catalog:peers"
+  },
+  "peerDependenciesMeta": {
+    "@effect/platform-node": {
+      "optional": true
+    }
   }
 }

@@ -29,6 +29,9 @@ const EXPORTS = [
   "makeCohereRerankerFromUrl",
   "makeOpenAiModerationModel",
   "makeOpenAiModerationModelFromUrl",
+  // The RerankerModel re-export from effect-ai-ext (the deprecation shim).
+  "make",
+  "RerankerModel",
 ] as const;
 
 describe("module load", () => {

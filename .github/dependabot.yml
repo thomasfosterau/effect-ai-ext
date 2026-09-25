@@ -10,7 +10,10 @@
 #
 # - `effect`: `effect` + `@effect/*` — the Effect 4 release line is a
 #   lockstep-versioned singleton set (see the `catalog:` comment in
-#   pnpm-workspace.yaml). `@effect/tsgo` is excluded: it ships artifacts for
+#   pnpm-workspace.yaml). `@effect/platform-node-shared` is pinned there only
+#   through the catalog + `overrides` (no manifest names it), so this group
+#   never proposes it: bump it by hand to the same rc in the same PR.
+#   `@effect/tsgo` is excluded: it ships artifacts for
 #   an explicit set of TypeScript versions and hard-errors on any other, so it
 #   belongs with the TypeScript pair below, not the Effect line.
 # - `typescript-toolchain`: `@effect/tsgo` + `@typescript/native` +
