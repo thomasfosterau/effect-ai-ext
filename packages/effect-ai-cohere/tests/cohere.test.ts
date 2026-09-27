@@ -727,6 +727,34 @@ describe("CohereLanguageModel.streamText", () => {
       AiError.AiError,
     );
   });
+
+  it("maps an SSE framing failure (an event over the decoder's size cap) to an InvalidOutputError", async () => {
+    // One `data:` line one code unit past `Sse.decode()`'s default 10 MiB
+    // `maxEventSize`, never terminated by a blank line: the decoder fails with
+    // `Sse.SseError` (`EventTooLarge`), which must surface as an `AiError`,
+    // never as a raw transport error.
+    const oversized = `data: ${"x".repeat(10 * 1024 * 1024)}\n`;
+    const { fetch } = makeFetch(
+      () =>
+        new Response(oversized, {
+          status: 200,
+          headers: { "content-type": "text/event-stream" },
+        }),
+    );
+
+    const error = await expectFailureInstanceOf(
+      LanguageModel.streamText({ prompt: "hi" }).pipe(
+        Stream.runCollect,
+        Effect.provide(modelLayer(fetch)),
+      ),
+      AiError.AiError,
+    );
+
+    expect(error.module).toBe("CohereClient");
+    expect(error.method).toBe("chatStream");
+    expect(error.reason).toBeInstanceOf(AiError.InvalidOutputError);
+    expect(error.reason.message).toContain("exceeded the maximum size");
+  });
 });
 
 // ── Embeddings ────────────────────────────────────────────────────────

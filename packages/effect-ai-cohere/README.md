@@ -24,7 +24,7 @@ directly against Cohere's v2 API.
 pnpm add @thomasfosterau/effect-ai-cohere effect
 ```
 
-`effect` is a peer dependency (it must be a singleton).
+`effect` (`>=4.0.0-rc.113`) is a peer dependency (it must be a singleton).
 
 ## Usage
 

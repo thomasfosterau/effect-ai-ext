@@ -27,7 +27,7 @@ export interface JudgeCall {
 }
 
 /**
- * Builds a `LanguageModel.Service` whose structured-output hook returns the
+ * Builds a `LanguageModel` service whose structured-output hook returns the
  * next canned response from `responses`, in call order. Dies if called more
  * times than `responses` has entries — a test asserting on a specific call
  * sequence should fail loudly on an unexpected extra call, not silently
@@ -35,7 +35,7 @@ export interface JudgeCall {
  */
 export const makeJudgeStub = (
   responses: ReadonlyArray<(call: JudgeCall) => unknown>,
-): Effect.Effect<{ readonly model: LanguageModel.Service; readonly calls: JudgeCall[] }> =>
+): Effect.Effect<{ readonly model: LanguageModel.LanguageModel; readonly calls: JudgeCall[] }> =>
   Effect.gen(function* () {
     const calls: JudgeCall[] = [];
     const model = yield* LanguageModel.make({
@@ -64,11 +64,11 @@ export const makeJudgeStub = (
   });
 
 /** Provides a stubbed judge model as the `LanguageModel.LanguageModel` service. */
-export const provideJudge = (model: LanguageModel.Service) =>
+export const provideJudge = (model: LanguageModel.LanguageModel) =>
   Layer.succeed(LanguageModel.LanguageModel, model);
 
 /** A judge that dies if actually called — for tests expecting the model is never reached. */
-export const deadJudge = (): Promise<LanguageModel.Service> =>
+export const deadJudge = (): Promise<LanguageModel.LanguageModel> =>
   runTest(
     LanguageModel.make({
       generateText: () => Effect.die("the RAG metric should not have called the judge"),

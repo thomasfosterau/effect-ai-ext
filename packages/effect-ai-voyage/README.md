@@ -21,7 +21,7 @@ abstractions.
 pnpm add @thomasfosterau/effect-ai-voyage @thomasfosterau/effect-ai-ext effect
 ```
 
-`effect` is a peer dependency (it must be a singleton).
+`effect` (`>=4.0.0-rc.113`) is a peer dependency (it must be a singleton).
 
 ## Usage
 

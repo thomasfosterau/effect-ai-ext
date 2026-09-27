@@ -18,7 +18,8 @@
     "test": "pnpm -r run test",
     "test:coverage": "pnpm -r run test:coverage",
     "build": "pnpm -r run build",
-    "ci": "pnpm run check && pnpm run test && pnpm run build",
+    "check:dist": "node scripts/check-dist.mjs",
+    "ci": "pnpm run check && pnpm run test && pnpm run build && pnpm run check:dist",
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "changeset:publish": "pnpm run build && changeset publish"

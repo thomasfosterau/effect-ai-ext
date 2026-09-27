@@ -116,7 +116,7 @@ export const model = (
   AiModel.make("cohere", model, layer({ model, config }));
 
 /**
- * Constructs a `LanguageModel.Service` backed by {@link CohereClient}.
+ * Constructs a `LanguageModel` service backed by {@link CohereClient}.
  * Request defaults from `config` are merged with any {@link Config} service in
  * context, the context values winning.
  *
@@ -129,7 +129,7 @@ export const make = Effect.fnUntraced(function* ({
 }: {
   readonly model: (string & {}) | Model;
   readonly config?: Omit<ConfigService, "model"> | undefined;
-}): Effect.fn.Return<LanguageModel.Service, never, CohereClient> {
+}): Effect.fn.Return<LanguageModel.LanguageModel, never, CohereClient> {
   const client = yield* CohereClient;
 
   const makeConfig: Effect.Effect<ConfigService & { readonly model: string }> = Effect.gen(

@@ -3,10 +3,11 @@
  *
  * Maps the failure channels of the underlying HTTP client — transport
  * failures, non-2xx statuses, and body-decode failures — plus schema
- * decode failures, into the unified `AiError` surface every Effect AI
- * provider presents. Status codes are classified through the shared
- * `AiError.reasonFromHttpStatus` (so 401 → authentication, 429 → rate
- * limit, 5xx → internal-provider, etc.) rather than a bespoke table.
+ * decode failures and SSE framing failures, into the unified `AiError`
+ * surface every Effect AI provider presents. Status codes are classified
+ * through the shared `AiError.reasonFromHttpStatus` (so 401 →
+ * authentication, 429 → rate limit, 5xx → internal-provider, etc.) rather
+ * than a bespoke table.
  *
  * @module internal/errors
  */
@@ -16,6 +17,7 @@ import { dual } from "effect/Function";
 import * as Option from "effect/Option";
 import * as Redactable from "effect/Redactable";
 import type * as Schema from "effect/Schema";
+import type * as Sse from "effect/unstable/encoding/Sse";
 import * as AiError from "effect/unstable/ai/AiError";
 import type * as HttpClientError from "effect/unstable/http/HttpClientError";
 import type * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
@@ -41,6 +43,23 @@ export const mapSchemaError = dual<
     module: MODULE,
     method,
     reason: AiError.InvalidOutputError.fromSchemaError(error),
+  }),
+);
+
+/**
+ * Wraps a Server-Sent Events framing failure (`Sse.SseError` — today only
+ * `EventTooLarge`, an event exceeding the decoder's `maxEventSize`) as an
+ * `InvalidOutputError`: the provider's stream could not be read as SSE, the
+ * same classification the upstream Effect providers give it.
+ */
+export const mapSseError = dual<
+  (method: string) => (error: Sse.SseError) => AiError.AiError,
+  (error: Sse.SseError, method: string) => AiError.AiError
+>(2, (error, method) =>
+  AiError.make({
+    module: MODULE,
+    method,
+    reason: new AiError.InvalidOutputError({ description: error.message }),
   }),
 );
 

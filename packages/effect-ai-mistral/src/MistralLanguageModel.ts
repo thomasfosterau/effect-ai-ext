@@ -110,7 +110,7 @@ export const model = (
   AiModel.make("mistral", model, layer({ model, config }));
 
 /**
- * Constructs a `LanguageModel.Service` backed by {@link MistralClient}.
+ * Constructs a `LanguageModel` service backed by {@link MistralClient}.
  * Request defaults from `config` are merged with any {@link Config} service
  * in context, the context values winning.
  *
@@ -123,7 +123,7 @@ export const make = Effect.fnUntraced(function* ({
 }: {
   readonly model: (string & {}) | Model;
   readonly config?: Omit<ConfigService, "model"> | undefined;
-}): Effect.fn.Return<LanguageModel.Service, never, MistralClient> {
+}): Effect.fn.Return<LanguageModel.LanguageModel, never, MistralClient> {
   const client = yield* MistralClient;
 
   const makeConfig: Effect.Effect<ConfigService & { readonly model: string }> = Effect.gen(
