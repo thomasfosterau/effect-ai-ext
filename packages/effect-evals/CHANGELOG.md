@@ -1,5 +1,23 @@
 # @thomasfosterau/effect-evals
 
+## 0.2.0
+
+### Minor Changes
+
+- 1091f13: **Breaking:** the `effect` peer dependency moves from `>=4.0.0-beta.104` to the open floor `>=4.0.0-rc.113` (issue #32, the shared Effect-floor policy). You need `effect@4.0.0-rc.113` or later; any later rc is accepted. The package is built and tested on `4.0.0-rc.115`, and its type-check and unit suite also pass on rc.113, rc.114 and rc.117. rc.112 and every beta are no longer supported. This is a minor bump because the package is pre-1.0.
+  
+  - **Breaking: `@effect/platform-node` is now an optional peer dependency (`>=4.0.0-rc.113`) instead of a dependency.** It was published as an exact pin, whose own `effect` peer — and the `@effect/platform-node-shared` it floats to the newest rc — rejected any `effect` older than that pin, so npm reported ERESOLVE / ELSPROBLEMS for consumers on an older rc. Only the `effect-evals` CLI needs it: install `@effect/platform-node` at your `effect` version (and pin `@effect/platform-node-shared` to it too). The library entry needs nothing extra.
+  - The CLI's flags use the rc constructors (`Flag.String` / `Int` / `Boolean` / `Literals`, `Argument.String`). rc.113 removed the lower-case spellings. The `effect-evals` command line is unchanged.
+- 4d53f7f: Retrieval-ranking evaluation, ported from gardeneria's `packages/evaluation` harness (its hand-computed tests are the fixtures):
+  
+  - **`Ranking`** — nDCG@k, recall@k, MRR@k and precision@k over a ranked list of document handles and a graded-relevance map (`Ranking.ndcg` / `recall` / `mrr` / `precision` / `scoreCase` as pure functions; `Ranking.ndcgAtK(k)` etc. as `Scorer`s over a `RankingCase`; `Ranking.metricAtK` / `metricsAtK` as `Metric`s with optional thresholds). Exponential gain, normalised against the case's own relevant set, precision divided by `k`, every scorer re-applying `k`, and the cutoff in every name (`ndcg@10`).
+  - **`Runner.runRetrievalSuite`** — the retrieval counterpart of `runSuite`: a dataset of `RetrievalGolden`s, a consumer-supplied one-method `RetrievalPort` (`{ id, retrieve(query, { limit }) }`), and a cutoff `k`; returns the ordinary per-case `SuiteResult` plus a cross-query `aggregate`. Built on `runSuite`, so trials, retries, caching (keyed on the port's `id` and `k`) and reporters apply. A failed query is recorded and excluded from every mean, never scored as a zero; cases run sequentially by default.
+  - **`Result.aggregate`** — per-metric means across a suite's cases (over the cases that scored), with `totalCases` / `successfulCases` / `failedCases`; useful for any suite, not only retrieval.
+
+### Patch Changes
+
+- 774a352: Fix the `homepage` link in every package manifest: it pointed at a `tree/main/…` path on GitHub, but the repository's default branch is `trunk`, so the link npm shows for each package 404'd. No code changes.
+
 ## 0.1.1
 
 ### Patch Changes
