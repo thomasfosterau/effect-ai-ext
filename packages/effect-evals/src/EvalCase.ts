@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * `EvalCase` — a {@link Golden.Golden} enriched with the actuals produced by
  * running the system under test: the real `output`, whatever context was
  * retrieved along the way, any tool calls made, and timing/usage. Scorers
@@ -9,6 +7,8 @@
  * `Golden` / `LLMTestCase`).
  *
  * @module EvalCase
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Schema from "effect/Schema";

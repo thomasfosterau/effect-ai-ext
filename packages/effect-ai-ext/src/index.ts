@@ -1,6 +1,4 @@
 /**
- * @module effect-ai-ext
- *
  * Provider-neutral AI service _abstractions_ that upstream Effect
  * (`effect/ai`) does not yet ship. Each module is written as if it
  * could merge into `effect/ai` itself — a `Context.Service` tag, a
@@ -39,6 +37,8 @@
  * a peer dependency, one singleton copy), so mixing the two import styles is
  * safe. To take the upstream modules straight from `effect`, import from
  * `effect/ai` — nothing here shadows or wraps them.
+ *
+ * @module effect-ai-ext
  */
 
 // The extension abstractions.

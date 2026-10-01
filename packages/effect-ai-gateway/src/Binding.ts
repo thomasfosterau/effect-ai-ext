@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * Shared Cloudflare AI Gateway binding plumbing.
  *
  * The Worker's `AI` binding (`env.AI`, from `Cloudflare.AI.Gateway("AI", {
@@ -13,6 +11,8 @@
  * beside this one, not new binding plumbing.
  *
  * @module Binding
+ *
+ * @copyright Thomas Foster
  */
 
 import type * as Cause from "effect/Cause";
@@ -59,11 +59,11 @@ export const gatewayUrl = (
  * `Anthropic.ts` doesn't need this).
  *
  * The `signal` parameter is **declared** on the `Effect.tryPromise`
- * evaluator, not omitted — the website#706 / website#730 lesson: `Effect.tryPromise`
- * threads Effect's managed `AbortSignal` as part of its contract when the
- * evaluator declares the parameter, so a wrapping `Effect.timeout` (or
- * any interruption) cancels the in-flight gateway subrequest instead of
- * merely abandoning it.
+ * evaluator, not omitted — the website#706 / website#730 lesson:
+ * `Effect.tryPromise` threads Effect's managed `AbortSignal` as part of its
+ * contract when the evaluator declares the parameter, so a wrapping
+ * `Effect.timeout` (or any interruption) cancels the in-flight gateway
+ * subrequest instead of merely abandoning it.
  *
  * Unlike {@link gatewayUrl} (pure local URL templating, essentially
  * infallible), this is a real network call to an external provider, so a

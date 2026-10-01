@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * `EvalFile` — the contract an `*.eval.ts` file honours, shared by every
  * execution surface (starting with the CLI) so an
  * eval file itself never has to know which surface will run it: `export
@@ -10,6 +8,8 @@
  * pulling in a test framework.
  *
  * @module EvalFile
+ *
+ * @copyright Thomas Foster
  */
 
 import type * as Layer from "effect/Layer";

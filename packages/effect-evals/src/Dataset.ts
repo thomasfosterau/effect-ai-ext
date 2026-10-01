@@ -1,12 +1,13 @@
 /**
- * @copyright Thomas Foster
- *
- * `Dataset` — a named source of goldens for a runner (website#924) to iterate.
+ * `Dataset` — a named source of goldens for a runner (website#924) to
+ * iterate.
  * Just a seam for now: goldens can be given inline, or as an Effect that
  * yields them (file-loading, a remote source, synthetic generation later —
  * whatever produces `ReadonlyArray<Golden>` fits here unchanged).
  *
  * @module Dataset
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Effect from "effect/Effect";

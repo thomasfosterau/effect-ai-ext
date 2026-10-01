@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * `ElevenLabsSpeechModel` — the ElevenLabs implementation of `effect-ai-ext`'s
  * `SpeechModel` service (text-to-speech). It exposes both surfaces the
  * abstraction defines: `generate`, returning the full audio buffer, and
@@ -20,6 +18,8 @@
  * by the neutral `SpeechOptions` (`voice`, `format`, `sampleRate`).
  *
  * @module ElevenLabsSpeechModel
+ *
+ * @copyright Thomas Foster
  */
 
 import { SpeechModel } from "@thomasfosterau/effect-ai-ext";

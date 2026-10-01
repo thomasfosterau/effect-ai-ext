@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * `Scorer` — a named function from an {@link EvalCase.EvalCase} to a
  * {@link Score.Score}, expressed as a plain Effect value: judge or embedding
  * dependencies (e.g. `LanguageModel.LanguageModel` from `effect/ai`)
@@ -8,9 +6,12 @@
  * `self.error` mutation, no exceptions escaping a scorer's control flow.
  *
  * This module carries only the shape; concrete scorers (deterministic,
- * G-Eval, RAG, tool-call correctness) are later slices (website#925–website#927).
+ * G-Eval, RAG, tool-call correctness) are later slices
+ * (website#925–website#927).
  *
  * @module Scorer
+ *
+ * @copyright Thomas Foster
  */
 
 import type * as Effect from "effect/Effect";

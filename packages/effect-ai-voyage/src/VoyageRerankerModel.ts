@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * `VoyageRerankerModel` — the Voyage AI implementation of effect-ai-ext's
  * `RerankerModel` service. It maps a query and candidate documents onto
  * Voyage's `/v1/rerank` request (via {@link VoyageClient}), then converts the
@@ -8,6 +6,8 @@
  * validates the indices, deduplicates, and sorts by descending relevance.
  *
  * @module VoyageRerankerModel
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Effect from "effect/Effect";

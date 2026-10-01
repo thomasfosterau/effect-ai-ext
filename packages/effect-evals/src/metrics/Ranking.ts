@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * Ranking metrics for retrieval evaluation — nDCG@k, recall@k, MRR@k and
  * precision@k — as deterministic, judge-free {@link Scorer.Scorer}s over a
  * {@link RankingCase}: the ranked handles a retrieval returned, scored
@@ -41,6 +39,8 @@
  * silently inflate recall.
  *
  * @module metrics/Ranking
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Effect from "effect/Effect";

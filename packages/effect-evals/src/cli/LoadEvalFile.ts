@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * Loads one `*.eval.ts` file's default export and validates it against the
  * {@link EvalFile.EvalFile} contract. The dynamic `import()` is a plain
  * Node/V8 one — under the real CLI (`bin/effect-evals.js`), Node's
@@ -12,6 +10,8 @@
  * has no Node-flag dependency, only `import()`.
  *
  * @module cli/LoadEvalFile
+ *
+ * @copyright Thomas Foster
  */
 
 import * as path from "node:path";

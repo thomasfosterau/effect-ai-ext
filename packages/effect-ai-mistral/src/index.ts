@@ -1,6 +1,4 @@
 /**
- * @module effect-ai-mistral
- *
  * A custom Effect AI provider for Mistral. Effect ships no
  * `@effect/ai-mistral` package, so this package implements the
  * `LanguageModel` service directly against Mistral's OpenAI-compatible
@@ -29,6 +27,8 @@
  *   Effect.provide(ModelLayer),
  * )
  * ```
+ *
+ * @module effect-ai-mistral
  */
 
 export * as MistralClient from "./MistralClient";

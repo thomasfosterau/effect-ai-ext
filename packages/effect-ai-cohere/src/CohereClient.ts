@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * `CohereClient` — the low-level Effect service for Cohere's v2 API. It wraps
  * an `HttpClient` with base-URL prefixing and bearer authentication, then
  * exposes the four endpoints this provider speaks — `/v2/chat` (regular and
@@ -20,6 +18,8 @@
  * gets repointed.
  *
  * @module CohereClient
+ *
+ * @copyright Thomas Foster
  */
 
 import type * as Config from "effect/Config";

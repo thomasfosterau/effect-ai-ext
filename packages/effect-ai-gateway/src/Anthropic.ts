@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * Anthropic `LanguageModel` provider routed through the Cloudflare AI
  * Gateway Worker binding (the website repo's
  * `docs/decisions/effect-ai-gateway.md`), replacing the direct
@@ -20,6 +18,8 @@
  * `LanguageModel.LanguageModel` changes.
  *
  * @module Anthropic
+ *
+ * @copyright Thomas Foster
  */
 
 import { AnthropicClient, AnthropicLanguageModel } from "@effect/ai-anthropic";

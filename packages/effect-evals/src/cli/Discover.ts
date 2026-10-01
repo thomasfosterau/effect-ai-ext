@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * Glob discovery of `*.eval.ts` files for the `run` command. Uses Node's own
  * `fs.promises.glob` (stable as of the pinned Node version — see
  * the `engines.node` floor) rather than a dependency: this module is CLI-only and
@@ -8,6 +6,8 @@
  * userland glob package would buy nothing.
  *
  * @module cli/Discover
+ *
+ * @copyright Thomas Foster
  */
 
 import { glob } from "node:fs/promises";

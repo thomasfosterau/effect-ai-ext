@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * The typed result model a {@link Runner.runSuite} run produces: suite →
  * case → trial → metric result. A metric *execution error* (the scorer's
  * Effect failed) is kept distinct from a *failing score* (the scorer
@@ -9,6 +7,8 @@
  * pure statistics; {@link Runner} decides what counts as a pass.
  *
  * @module Result
+ *
+ * @copyright Thomas Foster
  */
 
 import type { Score } from "./Score.ts";

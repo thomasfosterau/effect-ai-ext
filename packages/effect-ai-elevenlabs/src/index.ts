@@ -1,6 +1,4 @@
 /**
- * @module effect-ai-elevenlabs
- *
  * A custom Effect AI provider for ElevenLabs — the audio leg of the
  * `@thomasfosterau/effect-ai-*` family. Effect ships no ElevenLabs package, so
  * this package implements `effect-ai-ext`'s audio abstractions directly against
@@ -36,6 +34,8 @@
  *   return speech.stream({ text: "Hello from Effect" })
  * }).pipe(Effect.provide(SpeechLayer))
  * ```
+ *
+ * @module effect-ai-elevenlabs
  */
 
 export * as ElevenLabsClient from "./ElevenLabsClient";

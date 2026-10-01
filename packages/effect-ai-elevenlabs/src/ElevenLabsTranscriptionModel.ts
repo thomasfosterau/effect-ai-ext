@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * `ElevenLabsTranscriptionModel` — the ElevenLabs implementation of
  * `effect-ai-ext`'s `TranscriptionModel` service (speech-to-text) over Scribe.
  * It accepts audio as bytes or a stream, uploads it as `multipart/form-data`,
@@ -12,6 +10,8 @@
  * by the caller's own input.
  *
  * @module ElevenLabsTranscriptionModel
+ *
+ * @copyright Thomas Foster
  */
 
 import { TranscriptionModel } from "@thomasfosterau/effect-ai-ext";

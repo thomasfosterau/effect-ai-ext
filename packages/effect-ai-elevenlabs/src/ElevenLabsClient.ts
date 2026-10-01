@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * `ElevenLabsClient` — the low-level Effect service for the ElevenLabs audio
  * API. It wraps an `HttpClient` with base-URL prefixing and `xi-api-key`
  * authentication, then exposes the four calls the models need: one-shot and
@@ -21,6 +19,8 @@
  * which aborts the in-flight request). Nothing is buffered whole.
  *
  * @module ElevenLabsClient
+ *
+ * @copyright Thomas Foster
  */
 
 import type * as Config from "effect/Config";

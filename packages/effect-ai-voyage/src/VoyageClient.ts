@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * `VoyageClient` — the low-level Effect service for Voyage AI's
  * `/v1/embeddings` and `/v1/rerank` endpoints. It wraps an `HttpClient` with
  * base-URL prefixing and bearer authentication, then exposes one call per
@@ -14,6 +12,8 @@
  * client through it for BYOK.
  *
  * @module VoyageClient
+ *
+ * @copyright Thomas Foster
  */
 
 import type * as Config from "effect/Config";

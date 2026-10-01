@@ -1,9 +1,8 @@
 /**
- * @copyright Thomas Foster
- *
- * `runSuite` — the engine every execution surface (the CLI,
- * website#929, and the CLI, website#930) sit on: for each golden, run the task (the
- * system-under-test) with its own `R` flowing through, build the resulting
+ * `runSuite` — the engine every execution surface (the vite-plus/test
+ * adapter, website#929, and the CLI, website#930) sits on: for each golden,
+ * run the task (the system-under-test) with its own `R` flowing through,
+ * build the resulting
  * {@link EvaluatedCase}, run every {@link Metric.Metric} against it, and
  * aggregate. No test-framework coupling — this module returns the typed
  * {@link Result.SuiteResult} model.
@@ -29,6 +28,8 @@
  *   forces the metric — and the case — to fail.
  *
  * @module Runner
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Arr from "effect/Array";

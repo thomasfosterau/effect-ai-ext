@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * `MistralClient` — the low-level Effect service for Mistral's
  * `/v1/chat/completions` endpoint. It wraps an `HttpClient` with base-URL
  * prefixing and bearer authentication, then exposes one regular and one
@@ -14,6 +12,8 @@
  * OpenAI-compatible endpoint via the `apiUrl` option.
  *
  * @module MistralClient
+ *
+ * @copyright Thomas Foster
  */
 
 import type * as Config from "effect/Config";

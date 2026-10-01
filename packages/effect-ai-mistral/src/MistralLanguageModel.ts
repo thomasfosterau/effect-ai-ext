@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * `MistralLanguageModel` — the Mistral implementation of Effect AI's
  * `LanguageModel` service. It translates Effect AI prompts, tools, and
  * structured-output requests into Mistral `/v1/chat/completions` requests
@@ -21,6 +19,8 @@
  * returned as parsed JSON; the framework validates them against the toolkit.
  *
  * @module MistralLanguageModel
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Context from "effect/Context";

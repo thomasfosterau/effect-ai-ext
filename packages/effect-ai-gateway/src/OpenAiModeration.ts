@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * OpenAI `omni-moderation` as a provider-neutral `ModerationModel`
  * (`@thomasfosterau/effect-ai-ext`), routed through the Cloudflare AI
  * Gateway's universal endpoint. OpenAI has no `@effect/ai-*` package to
@@ -44,6 +42,8 @@
  * a multimodal input.
  *
  * @module OpenAiModeration
+ *
+ * @copyright Thomas Foster
  */
 
 import type * as Config from "effect/Config";

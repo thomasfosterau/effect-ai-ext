@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * `Reporter` — a named sink for a completed {@link Result.SuiteResult}.
  * {@link Runner.runSuite} invokes every reporter it's given after a suite
  * finishes; a reporter never fails the run — each implementation here
@@ -43,6 +41,8 @@
  * `summary` is `null` when every trial errored (no scores to summarize).
  *
  * @module Reporter
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Effect from "effect/Effect";

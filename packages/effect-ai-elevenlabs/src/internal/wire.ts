@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * Wire-format definitions for the ElevenLabs endpoints this package speaks:
  * `/v1/text-to-speech` (TTS), `/v1/speech-to-text` (Scribe STT), and
  * `/v1/speech-to-speech` (voice conversion).
@@ -18,6 +16,8 @@
  * mapping layer narrows what it knows and defaults the rest.
  *
  * @module internal/wire
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Schema from "effect/Schema";
