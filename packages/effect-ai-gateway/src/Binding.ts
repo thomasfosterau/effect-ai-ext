@@ -59,7 +59,7 @@ export const gatewayUrl = (
  * `Anthropic.ts` doesn't need this).
  *
  * The `signal` parameter is **declared** on the `Effect.tryPromise`
- * evaluator, not omitted — the #706/#730 lesson: `Effect.tryPromise`
+ * evaluator, not omitted — the website#706 / website#730 lesson: `Effect.tryPromise`
  * threads Effect's managed `AbortSignal` as part of its contract when the
  * evaluator declares the parameter, so a wrapping `Effect.timeout` (or
  * any interruption) cancels the in-flight gateway subrequest instead of

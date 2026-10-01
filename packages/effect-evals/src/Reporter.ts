@@ -7,8 +7,8 @@
  * catches its own errors and logs a warning instead, so `report`'s error
  * channel is always `never`. A reporter's own dependencies (the JSON
  * reporter's `FileSystem`) are provided via `Layer`/`Effect.provide` at the
- * call site, exactly like a {@link Scorer.Scorer}'s judge model — see
- * `docs/decisions/effect-evals-as-the-evaluation-toolkit.md`.
+ * call site, exactly like a {@link Scorer.Scorer}'s judge model — see the
+ * website repo's `docs/decisions/effect-evals-as-the-evaluation-toolkit.md`.
  *
  * `json`'s output is the {@link Result.SuiteResult} shape verbatim, `JSON.stringify`d:
  *

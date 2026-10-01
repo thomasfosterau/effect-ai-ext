@@ -20,8 +20,6 @@
  * - Result `index` values refer to positions in the caller's input `documents`
  *   array; results are returned sorted by descending `relevanceScore`
  *   regardless of provider ordering.
- *
- * @since 4.0.0
  */
 
 import * as Context from "effect/Context";
@@ -41,7 +39,6 @@ import { AiError } from "effect/ai";
  * @see {@link make} for constructing a reranker model service from a provider
  *
  * @category services
- * @since 4.0.0
  */
 export class RerankerModel extends Context.Service<RerankerModel, Service>()(
   "@thomasfosterau/effect-ai-ext/RerankerModel",
@@ -56,7 +53,6 @@ export class RerankerModel extends Context.Service<RerankerModel, Service>()(
  * the empty input short-circuit bypassed the provider.
  *
  * @category models
- * @since 4.0.0
  */
 export class RerankerUsage extends Schema.Class<RerankerUsage>(
   "@thomasfosterau/effect-ai-ext/RerankerModel/RerankerUsage",
@@ -69,7 +65,6 @@ export class RerankerUsage extends Schema.Class<RerankerUsage>(
  * relevance score.
  *
  * @category models
- * @since 4.0.0
  */
 export class RerankedDocument extends Schema.Class<RerankedDocument>(
   "@thomasfosterau/effect-ai-ext/RerankerModel/RerankedDocument",
@@ -92,7 +87,6 @@ export class RerankedDocument extends Schema.Class<RerankedDocument>(
  * @see {@link RerankerUsage} for token usage metadata
  *
  * @category models
- * @since 4.0.0
  */
 export class RerankResponse extends Schema.Class<RerankResponse>(
   "@thomasfosterau/effect-ai-ext/RerankerModel/RerankResponse",
@@ -105,7 +99,6 @@ export class RerankResponse extends Schema.Class<RerankResponse>(
  * Caller-facing input options for a rerank request.
  *
  * @category options
- * @since 4.0.0
  */
 export interface RerankOptions {
   /** The query to rank the documents against. */
@@ -120,7 +113,6 @@ export interface RerankOptions {
  * Provider input options for rerank requests.
  *
  * @category options
- * @since 4.0.0
  */
 export interface ProviderOptions {
   readonly query: string;
@@ -132,7 +124,6 @@ export interface ProviderOptions {
  * Provider response contract consumed by {@link make}.
  *
  * @category models
- * @since 4.0.0
  */
 export interface ProviderResponse {
   readonly results: ReadonlyArray<{
@@ -146,7 +137,6 @@ export interface ProviderResponse {
  * Defines the service interface for reranker operations.
  *
  * @category models
- * @since 4.0.0
  */
 export interface Service {
   readonly rerank: (options: RerankOptions) => Effect.Effect<RerankResponse, AiError.AiError>;
@@ -229,7 +219,6 @@ const mapProviderResponse = (
  * @see {@link ProviderResponse} for the provider response contract consumed by this constructor
  *
  * @category constructors
- * @since 4.0.0
  */
 export const make = (params: {
   readonly rerank: (options: ProviderOptions) => Effect.Effect<ProviderResponse, AiError.AiError>;

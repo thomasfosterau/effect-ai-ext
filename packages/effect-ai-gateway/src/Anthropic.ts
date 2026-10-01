@@ -2,8 +2,9 @@
  * @copyright Thomas Foster
  *
  * Anthropic `LanguageModel` provider routed through the Cloudflare AI
- * Gateway Worker binding (docs/decisions/effect-ai-gateway.md), replacing
- * the direct `api.anthropic.com` call. The provider key is BYOK,
+ * Gateway Worker binding (the website repo's
+ * `docs/decisions/effect-ai-gateway.md`), replacing the direct
+ * `api.anthropic.com` call. The provider key is BYOK,
  * configured once on the `website` gateway (Cloudflare dashboard,
  * provider keys) — never an env var, so this module never takes or reads
  * an API key.
@@ -73,8 +74,8 @@ export const anthropicLanguageModelLayer = (
  * via `Url.gatewayUrlConfig`; a missing required value fails layer
  * construction with a typed `Config.ConfigError`, not a silent fallback.
  * Rides `FetchHttpClient` (like {@link anthropicLanguageModelLayer}), whose
- * `fetch` calls are already interruption-safe (docs/decisions/effect-ai-gateway.md's
- * #706/#730 lesson) — no manual `signal` plumbing needed here, unlike
+ * `fetch` calls are already interruption-safe (the website#706 /
+ * website#730 lesson) — no manual `signal` plumbing needed here, unlike
  * `Binding.ts`'s raw `ai.gateway(id).run()` seam.
  */
 export const anthropicLanguageModelLayerFromUrl = (options: {

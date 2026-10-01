@@ -13,7 +13,7 @@
  * Follows `GEval.judge`'s request/response mechanics (one
  * `LanguageModel.generateObject` call per step, a `Schema.Struct` response,
  * never string-parsed) rather than that function's exact signature, per its
- * module doc's anticipation of this suite (#927): the response shape here is
+ * module doc's anticipation of this suite (website#927): the response shape here is
  * a per-statement verdict list, not a single score.
  *
  * @module metrics/rag/ExtractThenClassify

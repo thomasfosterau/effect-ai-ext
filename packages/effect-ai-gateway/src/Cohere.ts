@@ -2,8 +2,8 @@
  * @copyright Thomas Foster
  *
  * Cohere `EmbeddingModel` and `RerankerModel` providers routed through the
- * Cloudflare AI Gateway Worker binding (docs/decisions/effect-ai-gateway.md),
- * replacing the dormant Voyage client. The provider key is BYOK, configured
+ * Cloudflare AI Gateway Worker binding (the website repo's
+ * `docs/decisions/effect-ai-gateway.md`), replacing the dormant Voyage client. The provider key is BYOK, configured
  * once on the `website` gateway (Cloudflare dashboard, provider keys) —
  * never an env var, so this module never takes or reads an API key.
  *

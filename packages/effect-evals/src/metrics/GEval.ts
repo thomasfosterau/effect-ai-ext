@@ -25,7 +25,7 @@
  * The request/response mechanics in the `judge` helper below — one
  * `generateObject` call, rubric-scale clamping and normalisation — are the
  * part expected to generalise to other structured-judge metrics (the RAG
- * suite, #927); a metric with a materially different judge response shape
+ * suite, website#927); a metric with a materially different judge response shape
  * (e.g. per-chunk verdicts) will call `LanguageModel.generateObject` the same
  * way rather than reuse this exact function signature.
  *
@@ -175,7 +175,7 @@ const defaultUser = (params: GEvalTemplateParams): string =>
 /** The default {@link GEvalTemplate}. */
 export const defaultTemplate: GEvalTemplate = { system: defaultSystem, user: defaultUser };
 
-// ── Judge call (shared with future structured-judge metrics, e.g. #927) ──
+// ── Judge call (shared with future structured-judge metrics, e.g. website#927) ──
 
 const ScoreAndReason = Schema.Struct({
   score: Schema.Finite,
@@ -208,7 +208,7 @@ interface JudgeParams {
  * (`scaleMin === scaleMax`) normalises to `1` since every valid judge score
  * on that rubric is, by construction, the only (and so the best) one.
  *
- * Exported for reuse by other structured-judge metrics (RAG suite, #927).
+ * Exported for reuse by other structured-judge metrics (RAG suite, website#927).
  */
 export const judge = (
   params: JudgeParams,

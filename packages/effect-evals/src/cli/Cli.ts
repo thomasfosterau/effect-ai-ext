@@ -2,7 +2,7 @@
  * @copyright Thomas Foster
  *
  * The `effect-evals` root command: `run` is its only subcommand for now
- * (watch mode is explicitly out of scope — see #930).
+ * (watch mode is explicitly out of scope — see website#930).
  *
  * @module cli/Cli
  */

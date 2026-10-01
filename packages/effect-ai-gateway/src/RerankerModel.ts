@@ -7,8 +7,6 @@
  * deprecation window so existing `@thomasfosterau/effect-ai-gateway` imports
  * (and `Cohere.ts`'s `makeCohereReranker`) keep working; it will be removed in
  * a future release. Import from `@thomasfosterau/effect-ai-ext` instead.
- *
- * @since 4.0.0
  */
 
 export * from "@thomasfosterau/effect-ai-ext/RerankerModel";

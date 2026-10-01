@@ -10,8 +10,6 @@
  * The shape mirrors `EmbeddingModel`: a provider supplies one `convert`
  * function through {@link make}, and the result is validated (non-empty audio)
  * before being returned.
- *
- * @since 4.0.0
  */
 
 import * as Context from "effect/Context";
@@ -32,7 +30,6 @@ import { AiError } from "effect/ai";
  * @see {@link make} for constructing a voice conversion model service from a provider
  *
  * @category services
- * @since 4.0.0
  */
 export class VoiceConversionModel extends Context.Service<VoiceConversionModel, Service>()(
   "@thomasfosterau/effect-ai-ext/VoiceConversionModel",
@@ -47,7 +44,6 @@ export class VoiceConversionModel extends Context.Service<VoiceConversionModel, 
  * processed audio duration.
  *
  * @category models
- * @since 4.0.0
  */
 export class VoiceConversionUsage extends Schema.Class<VoiceConversionUsage>(
   "@thomasfosterau/effect-ai-ext/VoiceConversionModel/VoiceConversionUsage",
@@ -61,7 +57,6 @@ export class VoiceConversionUsage extends Schema.Class<VoiceConversionUsage>(
  * @see {@link VoiceConversionUsage} for usage metadata
  *
  * @category models
- * @since 4.0.0
  */
 export class VoiceConversionResponse extends Schema.Class<VoiceConversionResponse>(
   "@thomasfosterau/effect-ai-ext/VoiceConversionModel/VoiceConversionResponse",
@@ -77,7 +72,6 @@ export class VoiceConversionResponse extends Schema.Class<VoiceConversionRespons
  * Caller-facing input options for a voice conversion request.
  *
  * @category options
- * @since 4.0.0
  */
 export interface VoiceConversionOptions {
   /** The source audio, as a byte buffer or a stream of chunks. */
@@ -92,7 +86,6 @@ export interface VoiceConversionOptions {
  * Provider input options for voice conversion requests.
  *
  * @category options
- * @since 4.0.0
  */
 export interface ProviderOptions {
   readonly audio: Uint8Array | Stream.Stream<Uint8Array>;
@@ -104,7 +97,6 @@ export interface ProviderOptions {
  * Provider response contract consumed by {@link make}.
  *
  * @category models
- * @since 4.0.0
  */
 export interface ProviderResponse {
   readonly audio: Uint8Array;
@@ -116,7 +108,6 @@ export interface ProviderResponse {
  * Defines the service interface for voice conversion operations.
  *
  * @category models
- * @since 4.0.0
  */
 export interface Service {
   readonly convert: (
@@ -160,7 +151,6 @@ const mapProviderResponse = (
  * @see {@link ProviderResponse} for the provider response contract consumed by this constructor
  *
  * @category constructors
- * @since 4.0.0
  */
 export const make = (params: {
   readonly convert: (

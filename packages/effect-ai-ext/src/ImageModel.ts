@@ -10,8 +10,6 @@
  * The shape mirrors `EmbeddingModel`: a provider supplies one `generate`
  * function through {@link make}, and the result is validated (at least one
  * image, no more than the requested `count`) before being returned.
- *
- * @since 4.0.0
  */
 
 import * as Context from "effect/Context";
@@ -31,7 +29,6 @@ import { AiError } from "effect/ai";
  * @see {@link make} for constructing an image model service from a provider
  *
  * @category services
- * @since 4.0.0
  */
 export class ImageModel extends Context.Service<ImageModel, Service>()(
   "@thomasfosterau/effect-ai-ext/ImageModel",
@@ -45,7 +42,6 @@ export class ImageModel extends Context.Service<ImageModel, Service>()(
  * `inputTokens` is `undefined` when the provider does not report usage.
  *
  * @category models
- * @since 4.0.0
  */
 export class ImageUsage extends Schema.Class<ImageUsage>(
   "@thomasfosterau/effect-ai-ext/ImageModel/ImageUsage",
@@ -57,7 +53,6 @@ export class ImageUsage extends Schema.Class<ImageUsage>(
  * One generated image: its data (raw bytes or a base64 string) and media type.
  *
  * @category models
- * @since 4.0.0
  */
 export class ImagePart extends Schema.Class<ImagePart>(
   "@thomasfosterau/effect-ai-ext/ImageModel/ImagePart",
@@ -75,7 +70,6 @@ export class ImagePart extends Schema.Class<ImagePart>(
  * @see {@link ImageUsage} for usage metadata
  *
  * @category models
- * @since 4.0.0
  */
 export class ImageResponse extends Schema.Class<ImageResponse>(
   "@thomasfosterau/effect-ai-ext/ImageModel/ImageResponse",
@@ -88,7 +82,6 @@ export class ImageResponse extends Schema.Class<ImageResponse>(
  * Caller-facing input options for an image generation request.
  *
  * @category options
- * @since 4.0.0
  */
 export interface ImageOptions {
   /** The prompt describing the image to generate. */
@@ -105,7 +98,6 @@ export interface ImageOptions {
  * Provider input options for image generation requests.
  *
  * @category options
- * @since 4.0.0
  */
 export interface ProviderOptions {
   readonly prompt: string;
@@ -118,7 +110,6 @@ export interface ProviderOptions {
  * Provider response contract consumed by {@link make}.
  *
  * @category models
- * @since 4.0.0
  */
 export interface ProviderResponse {
   readonly images: ReadonlyArray<{
@@ -132,7 +123,6 @@ export interface ProviderResponse {
  * Defines the service interface for image operations.
  *
  * @category models
- * @since 4.0.0
  */
 export interface Service {
   readonly generate: (options: ImageOptions) => Effect.Effect<ImageResponse, AiError.AiError>;
@@ -184,7 +174,6 @@ const mapProviderResponse = (
  * @see {@link ProviderResponse} for the provider response contract consumed by this constructor
  *
  * @category constructors
- * @since 4.0.0
  */
 export const make = (params: {
   readonly generate: (
