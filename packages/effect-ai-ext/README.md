@@ -54,13 +54,13 @@ itself ships), e.g. `@thomasfosterau/effect-ai-ext/RerankerModel`.
 
 | Module | Operation(s) | If it merged upstream |
 | --- | --- | --- |
-| `RerankerModel` | `rerank` | `effect/ai/RerankerModel` — the sibling of `EmbeddingModel` for relevance reordering. Validates indices (in range, unique, count ≤ `topN`), sorts by descending score, short-circuits empty inputs. |
-| `ClassifierModel` | `classify`, `fromLanguageModel` | `effect/ai/ClassifierModel` — single/multi-label text classification with confidences and optional example-shots. |
-| `SpeechModel` | `generate`, `stream` | `effect/ai/SpeechModel` — text-to-speech with both a one-shot buffer surface and a streaming surface, like `LanguageModel.generateText`/`streamText`. |
-| `TranscriptionModel` | `transcribe` | `effect/ai/TranscriptionModel` — speech-to-text with optional segment timestamps and detected language. |
-| `ImageModel` | `generate` | `effect/ai/ImageModel` — prompt-to-image with base64-or-bytes result parts. |
-| `ModerationModel` | `moderate`, `fromLanguageModel` | `effect/ai/ModerationModel` — per-category policy scores plus a flagged verdict. |
-| `VoiceConversionModel` | `convert` | `effect/ai/VoiceConversionModel` — re-voice audio into a target voice. |
+| `RerankerModel` | `rerank` | Would be `effect/ai/RerankerModel` — the sibling of `EmbeddingModel` for relevance reordering. Validates indices (in range, unique, count ≤ `topN`), sorts by descending score, short-circuits empty inputs. |
+| `ClassifierModel` | `classify`, `fromLanguageModel` | Would be `effect/ai/ClassifierModel` — single/multi-label text classification with confidences and optional example-shots. |
+| `SpeechModel` | `generate`, `stream` | Would be `effect/ai/SpeechModel` — text-to-speech with both a one-shot buffer surface and a streaming surface, like `LanguageModel.generateText`/`streamText`. |
+| `TranscriptionModel` | `transcribe` | Would be `effect/ai/TranscriptionModel` — speech-to-text with optional segment timestamps and detected language. |
+| `ImageModel` | `generate` | Would be `effect/ai/ImageModel` — prompt-to-image with base64-or-bytes result parts. |
+| `ModerationModel` | `moderate`, `fromLanguageModel` | Would be `effect/ai/ModerationModel` — per-category policy scores plus a flagged verdict. |
+| `VoiceConversionModel` | `convert` | Would be `effect/ai/VoiceConversionModel` — re-voice audio into a target voice. |
 
 `ClassifierModel` and `ModerationModel` additionally expose a
 `fromLanguageModel` adapter that backs the abstraction with **any**
