@@ -6,6 +6,8 @@
  */
 
 import { describe, expect, it } from "vitest";
+import * as Cause from "effect/Cause";
+import * as Config from "effect/Config";
 import * as ConfigProvider from "effect/ConfigProvider";
 import * as Effect from "effect/Effect";
 import * as Redacted from "effect/Redacted";
@@ -36,16 +38,28 @@ describe("gatewayUrlConfig", () => {
     expect(Redacted.value(exit.value.token)).toBe("secret");
   });
 
-  it("defaults gatewayId to website when CF_AIG_GATEWAY_ID is unset", async () => {
-    // "website" mirrors @thomasfosterau/bindings's AI_GATEWAY_ID by
-    // convention — Url.ts deliberately doesn't import that package (it
-    // pulls in alchemy), so this default is a hand-kept literal; keep it in
-    // sync if AI_GATEWAY_ID ever changes.
+  it("fails with a typed ConfigError when CF_AIG_GATEWAY_ID is missing", async () => {
     const exit = await runTestExit(withConfig({ CF_ACCOUNT_ID: "acct", CF_AIG_TOKEN: "secret" }));
 
-    expect(exit._tag).toBe("Success");
-    if (exit._tag !== "Success") return;
-    expect(exit.value.gatewayId).toBe("website");
+    expect(exit._tag).toBe("Failure");
+    if (exit._tag !== "Failure") return;
+    const error = Cause.squash(exit.cause);
+    expect(error).toBeInstanceOf(Config.ConfigError);
+    expect(String(error)).toContain("CF_AIG_GATEWAY_ID");
+  });
+
+  it("treats an empty CF_AIG_GATEWAY_ID as missing", async () => {
+    // rc.118's ConfigProvider reads "" as an absent value, so an empty
+    // variable fails the same way an unset one does (no silent empty id).
+    const exit = await runTestExit(
+      withConfig({ CF_ACCOUNT_ID: "acct", CF_AIG_GATEWAY_ID: "", CF_AIG_TOKEN: "secret" }),
+    );
+
+    expect(exit._tag).toBe("Failure");
+    if (exit._tag !== "Failure") return;
+    const error = Cause.squash(exit.cause);
+    expect(error).toBeInstanceOf(Config.ConfigError);
+    expect(String(error)).toContain("CF_AIG_GATEWAY_ID");
   });
 
   it("fails with a typed ConfigError when CF_ACCOUNT_ID is missing", async () => {

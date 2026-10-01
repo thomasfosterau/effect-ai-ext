@@ -108,13 +108,13 @@ describe("anthropicLanguageModelLayerFromUrl", () => {
     expect(response.text).toBe("hello from the URL gateway");
   });
 
-  it("defaults CF_AIG_GATEWAY_ID to the website gateway when unset", async () => {
-    const { calls, layer: fetchLayer } = stubFetch({
+  it("fails layer construction with a typed ConfigError when CF_AIG_GATEWAY_ID is missing", async () => {
+    const { layer: fetchLayer } = stubFetch({
       status: 200,
-      body: anthropicMessageResponse("hello"),
+      body: anthropicMessageResponse("unreachable"),
     });
 
-    await runTest(
+    const exit = await runTestExit(
       LanguageModel.generateText({ prompt: "say hello" }).pipe(
         Effect.provide(
           anthropicLanguageModelLayerFromUrl({ model: "claude-sonnet-4-6" }).pipe(
@@ -125,9 +125,7 @@ describe("anthropicLanguageModelLayerFromUrl", () => {
       ),
     );
 
-    expect(calls[0]?.url).toBe(
-      "https://gateway.ai.cloudflare.com/v1/acct/website/anthropic/v1/messages?beta=true",
-    );
+    expect(exit._tag).toBe("Failure");
   });
 
   it("fails layer construction with a typed ConfigError when CF_ACCOUNT_ID is missing", async () => {
