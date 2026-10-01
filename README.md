@@ -2,7 +2,7 @@
 
 Idiomatic extensions to Effect's AI package(s). More providers, richer
 service abstractions, purely additive — written to feel like they belong in
-`effect/unstable/ai` itself.
+`effect/ai` itself.
 
 This is the monorepo home of the `@thomasfosterau/effect-ai-*` family.
 
@@ -27,7 +27,7 @@ This is the monorepo home of the `@thomasfosterau/effect-ai-*` family.
 - **Upstream boundary.** No local packages for providers the Effect org
   covers (`@effect/ai-anthropic` today) — repoint the upstream package.
 - **Upstream-shaped abstractions.** Every `effect-ai-ext` module is written as
-  if it could merge into `effect/unstable/ai`.
+  if it could merge into `effect/ai`.
 
 ## Development
 

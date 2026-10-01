@@ -7,7 +7,7 @@
  * sibling checks only the "is it JSON at all" half). `schemaMatchValue` is the
  * same decode over a case whose `output` is already a structured value, no
  * JSON string round trip. Uses `Schema` from `effect`, never
- * `effect/unstable/schema`. Never fails: a decode failure scores `0` with the
+ * `effect/schema`. Never fails: a decode failure scores `0` with the
  * decode error's message as `reason`.
  *
  * @module scorers/SchemaMatch

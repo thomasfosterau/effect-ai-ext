@@ -1,7 +1,7 @@
 {
   "name": "@thomasfosterau/effect-ai-ext",
   "version": "0.3.0",
-  "description": "Provider-neutral AI service abstractions upstream Effect lacks — reranker, classifier, TTS, STT, image, moderation, voice conversion — each shaped like effect/unstable/ai.",
+  "description": "Provider-neutral AI service abstractions upstream Effect lacks — reranker, classifier, TTS, STT, image, moderation, voice conversion — each shaped like effect/ai.",
   "keywords": [
     "effect",
     "ai",

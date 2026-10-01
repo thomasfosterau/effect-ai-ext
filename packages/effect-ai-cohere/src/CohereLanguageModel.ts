@@ -31,22 +31,22 @@
 import * as Context from "effect/Context";
 import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
-import * as Encoding from "effect/Encoding";
+import * as Base64 from "effect/encoding/Base64";
 import { dual } from "effect/Function";
 import * as Layer from "effect/Layer";
 import * as Predicate from "effect/Predicate";
 import * as Redactable from "effect/Redactable";
 import * as Stream from "effect/Stream";
-import type * as AiError from "effect/unstable/ai/AiError";
-import * as AiErrorNs from "effect/unstable/ai/AiError";
-import * as IdGenerator from "effect/unstable/ai/IdGenerator";
-import * as LanguageModel from "effect/unstable/ai/LanguageModel";
-import * as AiModel from "effect/unstable/ai/Model";
-import type * as Prompt from "effect/unstable/ai/Prompt";
-import type * as Response from "effect/unstable/ai/Response";
-import * as Tool from "effect/unstable/ai/Tool";
-import type * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
-import type * as HttpClientResponse from "effect/unstable/http/HttpClientResponse";
+import type * as AiError from "effect/ai/AiError";
+import * as AiErrorNs from "effect/ai/AiError";
+import * as IdGenerator from "effect/ai/IdGenerator";
+import * as LanguageModel from "effect/ai/LanguageModel";
+import * as AiModel from "effect/ai/Model";
+import type * as Prompt from "effect/ai/Prompt";
+import type * as Response from "effect/ai/Response";
+import * as Tool from "effect/ai/Tool";
+import type * as HttpClientRequest from "effect/http/HttpClientRequest";
+import type * as HttpClientResponse from "effect/http/HttpClientResponse";
 import { CohereClient } from "./CohereClient";
 import type * as Wire from "./internal/wire";
 
@@ -271,7 +271,7 @@ const fileToImageUrl = (part: Prompt.FilePart): string => {
       ? data
       : `data:${normalizeImageMediaType(part.mediaType)};base64,${data}`;
   }
-  return `data:${normalizeImageMediaType(part.mediaType)};base64,${Encoding.encodeBase64(data)}`;
+  return `data:${normalizeImageMediaType(part.mediaType)};base64,${Base64.encode(data)}`;
 };
 
 /**

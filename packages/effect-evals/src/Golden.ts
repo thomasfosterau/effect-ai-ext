@@ -5,7 +5,7 @@
  * evaluation case: an input, optionally an expected output, and whatever
  * retrieval/tool context a scorer needs to judge a run. `ConversationalGolden`
  * is the multi-turn variant, holding its turn history as `Prompt.Prompt` from
- * `effect/unstable/ai` so a golden's conversation shape never drifts from the
+ * `effect/ai` so a golden's conversation shape never drifts from the
  * shape a `LanguageModel` actually consumes.
  *
  * Goldens are enriched into {@link EvalCase.EvalCase}s by running the system
@@ -16,7 +16,7 @@
  */
 
 import * as Schema from "effect/Schema";
-import * as Prompt from "effect/unstable/ai/Prompt";
+import * as Prompt from "effect/ai/Prompt";
 import { Metadata } from "./Metadata.ts";
 
 /**

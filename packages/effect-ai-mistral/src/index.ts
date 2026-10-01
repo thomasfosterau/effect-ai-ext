@@ -15,8 +15,8 @@
  * @example
  * ```ts
  * import { Effect, Layer, Redacted } from "effect"
- * import { FetchHttpClient } from "effect/unstable/http"
- * import { LanguageModel } from "effect/unstable/ai"
+ * import { FetchHttpClient } from "effect/http"
+ * import { LanguageModel } from "effect/ai"
  * import { MistralClient, MistralLanguageModel } from "@thomasfosterau/effect-ai-mistral"
  *
  * const ModelLayer = MistralLanguageModel.layer({ model: "mistral-large-latest" }).pipe(

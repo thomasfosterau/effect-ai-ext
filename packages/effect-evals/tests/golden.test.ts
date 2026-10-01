@@ -7,7 +7,7 @@
 import { describe, expect, it } from "vitest";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
-import * as Prompt from "effect/unstable/ai/Prompt";
+import * as Prompt from "effect/ai/Prompt";
 import { EvalCase, Golden } from "../src/index.ts";
 import { runTest, expectFailureInstanceOf } from "./helpers/effect.ts";
 

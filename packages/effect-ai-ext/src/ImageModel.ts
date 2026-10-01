@@ -2,7 +2,7 @@
  * Defines the provider-neutral service for image generation.
  *
  * An `ImageModel` turns a text prompt into one or more images — the sibling of
- * `LanguageModel` and `EmbeddingModel` from `effect/unstable/ai` (which has no
+ * `LanguageModel` and `EmbeddingModel` from `effect/ai` (which has no
  * image module yet). Each image part carries either raw bytes or a base64
  * string plus its media type, and provider failures stay represented as
  * `AiError` values.
@@ -17,7 +17,7 @@
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
-import { AiError } from "effect/unstable/ai";
+import { AiError } from "effect/ai";
 
 /**
  * Service tag for image model operations.

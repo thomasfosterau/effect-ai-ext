@@ -12,7 +12,7 @@
 import { describe, expect, it } from "vitest";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
-import { Command } from "effect/unstable/cli";
+import { Command } from "effect/cli";
 import { NodeServices } from "@effect/platform-node";
 import * as Flags from "../../src/cli/Flags.ts";
 import { runTest } from "../helpers/effect.ts";

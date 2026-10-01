@@ -3,7 +3,7 @@
  *
  * `Scorer` — a named function from an {@link EvalCase.EvalCase} to a
  * {@link Score.Score}, expressed as a plain Effect value: judge or embedding
- * dependencies (e.g. `LanguageModel.LanguageModel` from `effect/unstable/ai`)
+ * dependencies (e.g. `LanguageModel.LanguageModel` from `effect/ai`)
  * live in `R`, and failures are typed in `E` rather than thrown — no
  * `self.error` mutation, no exceptions escaping a scorer's control flow.
  *

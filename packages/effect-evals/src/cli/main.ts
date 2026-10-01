@@ -17,7 +17,7 @@
 
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import { Command } from "effect/unstable/cli";
+import { Command } from "effect/cli";
 import { NodeRuntime, NodeServices } from "@effect/platform-node";
 import * as Cache from "../Cache.ts";
 import { cli, version } from "./Cli.ts";

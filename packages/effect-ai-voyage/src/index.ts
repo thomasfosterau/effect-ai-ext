@@ -8,7 +8,7 @@
  * - {@link VoyageClient} — the low-level HTTP client for `/v1/embeddings` and
  *   `/v1/rerank`, with all failures mapped to `AiError`. Its `apiUrl` override
  *   lets a routing layer (the Cloudflare AI Gateway) repoint it for BYOK.
- * - {@link VoyageEmbeddingModel} — `effect/unstable/ai`'s `EmbeddingModel`,
+ * - {@link VoyageEmbeddingModel} — `effect/ai`'s `EmbeddingModel`,
  *   with the current model/dimension matrix exposed as constants.
  * - {@link VoyageRerankerModel} — `@thomasfosterau/effect-ai-ext`'s
  *   `RerankerModel`.
@@ -16,8 +16,8 @@
  * @example
  * ```ts
  * import { Effect, Layer, Redacted } from "effect"
- * import { FetchHttpClient } from "effect/unstable/http"
- * import { EmbeddingModel } from "effect/unstable/ai"
+ * import { FetchHttpClient } from "effect/http"
+ * import { EmbeddingModel } from "effect/ai"
  * import { VoyageClient, VoyageEmbeddingModel } from "@thomasfosterau/effect-ai-voyage"
  *
  * const ModelLayer = VoyageEmbeddingModel.layer({

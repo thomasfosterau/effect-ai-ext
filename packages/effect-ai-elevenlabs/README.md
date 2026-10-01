@@ -24,13 +24,13 @@ directly against the ElevenLabs API.
 pnpm add @thomasfosterau/effect-ai-elevenlabs @thomasfosterau/effect-ai-ext effect
 ```
 
-`effect` (`>=4.0.0-rc.113`) is a peer dependency (it must be a singleton).
+`effect` (`>=4.0.0-rc.118`) is a peer dependency (it must be a singleton).
 
 ## Usage
 
 ```ts
 import { Effect, Layer, Redacted, Stream } from "effect";
-import { FetchHttpClient } from "effect/unstable/http";
+import { FetchHttpClient } from "effect/http";
 import { SpeechModel } from "@thomasfosterau/effect-ai-ext";
 import { ElevenLabsClient, ElevenLabsSpeechModel } from "@thomasfosterau/effect-ai-elevenlabs";
 

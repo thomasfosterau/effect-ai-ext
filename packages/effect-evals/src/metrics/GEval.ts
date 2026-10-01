@@ -34,8 +34,8 @@
 
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
-import { AiError, LanguageModel } from "effect/unstable/ai";
-import * as Prompt from "effect/unstable/ai/Prompt";
+import { AiError, LanguageModel } from "effect/ai";
+import * as Prompt from "effect/ai/Prompt";
 import { makeMetric, type Metric } from "../Metric.ts";
 import { makeScorer } from "../Scorer.ts";
 import type { Score } from "../Score.ts";

@@ -18,7 +18,7 @@
  * @example
  * ```ts
  * import { Effect, Layer, Redacted } from "effect"
- * import { FetchHttpClient } from "effect/unstable/http"
+ * import { FetchHttpClient } from "effect/http"
  * import { SpeechModel } from "@thomasfosterau/effect-ai-ext"
  * import { ElevenLabsClient, ElevenLabsSpeechModel } from "@thomasfosterau/effect-ai-elevenlabs"
  *

@@ -18,7 +18,7 @@
 
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as EmbeddingModel from "effect/unstable/ai/EmbeddingModel";
+import * as EmbeddingModel from "effect/ai/EmbeddingModel";
 import { CohereClient } from "./CohereClient";
 
 /** Cohere's embedding model. A single constant so rotation is one edit. */

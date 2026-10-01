@@ -1,6 +1,6 @@
 /**
  * The `@thomasfosterau/effect-ai-ext` barrel is a superset of
- * `effect/unstable/ai`: it re-exports every upstream AI module alongside the
+ * `effect/ai`: it re-exports every upstream AI module alongside the
  * extension abstractions, and those re-exports are the same identities as
  * upstream (one singleton `effect`), so mixing import styles is safe.
  *
@@ -8,7 +8,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import * as UpstreamAi from "effect/unstable/ai";
+import * as UpstreamAi from "effect/ai";
 import * as Ext from "@thomasfosterau/effect-ai-ext";
 
 describe("effect-ai-ext barrel", () => {
@@ -26,7 +26,7 @@ describe("effect-ai-ext barrel", () => {
     }
   });
 
-  it("re-exports every upstream effect/unstable/ai module", () => {
+  it("re-exports every upstream effect/ai module", () => {
     for (const name of Object.keys(UpstreamAi)) {
       expect(Ext, name).toHaveProperty(name);
     }

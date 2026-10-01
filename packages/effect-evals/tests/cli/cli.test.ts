@@ -7,7 +7,7 @@
 
 import { describe, expect, it, vi } from "vitest";
 import { Effect, Layer } from "effect";
-import { Command } from "effect/unstable/cli";
+import { Command } from "effect/cli";
 import { NodeServices } from "@effect/platform-node";
 import { Cache } from "../../src/index.ts";
 import { cli, version } from "../../src/cli/Cli.ts";

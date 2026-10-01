@@ -26,7 +26,7 @@ import { SpeechModel } from "@thomasfosterau/effect-ai-ext";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Stream from "effect/Stream";
-import * as AiError from "effect/unstable/ai/AiError";
+import * as AiError from "effect/ai/AiError";
 import { ElevenLabsClient } from "./ElevenLabsClient";
 import { mediaTypeForOutputFormat, resolveOutputFormat } from "./internal/audio";
 import type * as Wire from "./internal/wire";

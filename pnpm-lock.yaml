@@ -13,14 +13,14 @@ catalogs:
       specifier: ^5.20260927.1
       version: 5.20260927.1
     '@effect/ai-anthropic':
-      specifier: 4.0.0-rc.117
-      version: 4.0.0-rc.117
+      specifier: 4.0.0-rc.118
+      version: 4.0.0-rc.118
     '@effect/language-service':
-      specifier: ^0.87.2
-      version: 0.87.2
+      specifier: ^0.87.3
+      version: 0.87.3
     '@effect/platform-node':
-      specifier: 4.0.0-rc.117
-      version: 4.0.0-rc.117
+      specifier: 4.0.0-rc.118
+      version: 4.0.0-rc.118
     '@effect/tsgo':
       specifier: 0.46.1
       version: 0.46.1
@@ -44,8 +44,8 @@ catalogs:
       version: 5.0.2
 
 overrides:
-  effect: 4.0.0-rc.117
-  '@effect/platform-node-shared': 4.0.0-rc.117
+  effect: 4.0.0-rc.118
+  '@effect/platform-node-shared': 4.0.0-rc.118
 
 importers:
 
@@ -56,7 +56,7 @@ importers:
         version: 3.0.3
       '@effect/language-service':
         specifier: 'catalog:'
-        version: 0.87.2
+        version: 0.87.3
       '@effect/tsgo':
         specifier: 'catalog:'
         version: 0.46.1
@@ -78,13 +78,13 @@ importers:
     devDependencies:
       '@effect/language-service':
         specifier: 'catalog:'
-        version: 0.87.2
+        version: 0.87.3
       '@vitest/coverage-v8':
         specifier: 'catalog:'
         version: 5.0.2(vitest@5.0.2)
       effect:
-        specifier: 4.0.0-rc.117
-        version: 4.0.0-rc.117
+        specifier: 4.0.0-rc.118
+        version: 4.0.0-rc.118
       tsup:
         specifier: 'catalog:'
         version: 8.5.1(@typescript/typescript6@6.0.2)(postcss@8.5.26)(supports-color@7.2.0)(yaml@2.9.0)
@@ -103,13 +103,13 @@ importers:
     devDependencies:
       '@effect/language-service':
         specifier: 'catalog:'
-        version: 0.87.2
+        version: 0.87.3
       '@vitest/coverage-v8':
         specifier: 'catalog:'
         version: 5.0.2(vitest@5.0.2)
       effect:
-        specifier: 4.0.0-rc.117
-        version: 4.0.0-rc.117
+        specifier: 4.0.0-rc.118
+        version: 4.0.0-rc.118
       tsup:
         specifier: 'catalog:'
         version: 8.5.1(@typescript/typescript6@6.0.2)(postcss@8.5.26)(supports-color@7.2.0)(yaml@2.9.0)
@@ -124,13 +124,13 @@ importers:
     devDependencies:
       '@effect/language-service':
         specifier: 'catalog:'
-        version: 0.87.2
+        version: 0.87.3
       '@vitest/coverage-v8':
         specifier: 'catalog:'
         version: 5.0.2(vitest@5.0.2)
       effect:
-        specifier: 4.0.0-rc.117
-        version: 4.0.0-rc.117
+        specifier: 4.0.0-rc.118
+        version: 4.0.0-rc.118
       tsup:
         specifier: 'catalog:'
         version: 8.5.1(@typescript/typescript6@6.0.2)(postcss@8.5.26)(supports-color@7.2.0)(yaml@2.9.0)
@@ -152,16 +152,16 @@ importers:
         version: 5.20260927.1
       '@effect/ai-anthropic':
         specifier: 'catalog:'
-        version: 4.0.0-rc.117(effect@4.0.0-rc.117)
+        version: 4.0.0-rc.118(effect@4.0.0-rc.118)
       '@effect/language-service':
         specifier: 'catalog:'
-        version: 0.87.2
+        version: 0.87.3
       '@vitest/coverage-v8':
         specifier: 'catalog:'
         version: 5.0.2(vitest@5.0.2)
       effect:
-        specifier: 4.0.0-rc.117
-        version: 4.0.0-rc.117
+        specifier: 4.0.0-rc.118
+        version: 4.0.0-rc.118
       tsup:
         specifier: 'catalog:'
         version: 8.5.1(@typescript/typescript6@6.0.2)(postcss@8.5.26)(supports-color@7.2.0)(yaml@2.9.0)
@@ -176,13 +176,13 @@ importers:
     devDependencies:
       '@effect/language-service':
         specifier: 'catalog:'
-        version: 0.87.2
+        version: 0.87.3
       '@vitest/coverage-v8':
         specifier: 'catalog:'
         version: 5.0.2(vitest@5.0.2)
       effect:
-        specifier: 4.0.0-rc.117
-        version: 4.0.0-rc.117
+        specifier: 4.0.0-rc.118
+        version: 4.0.0-rc.118
       tsup:
         specifier: 'catalog:'
         version: 8.5.1(@typescript/typescript6@6.0.2)(postcss@8.5.26)(supports-color@7.2.0)(yaml@2.9.0)
@@ -201,13 +201,13 @@ importers:
     devDependencies:
       '@effect/language-service':
         specifier: 'catalog:'
-        version: 0.87.2
+        version: 0.87.3
       '@vitest/coverage-v8':
         specifier: 'catalog:'
         version: 5.0.2(vitest@5.0.2)
       effect:
-        specifier: 4.0.0-rc.117
-        version: 4.0.0-rc.117
+        specifier: 4.0.0-rc.118
+        version: 4.0.0-rc.118
       tsup:
         specifier: 'catalog:'
         version: 8.5.1(@typescript/typescript6@6.0.2)(postcss@8.5.26)(supports-color@7.2.0)(yaml@2.9.0)
@@ -222,16 +222,16 @@ importers:
     devDependencies:
       '@effect/language-service':
         specifier: 'catalog:'
-        version: 0.87.2
+        version: 0.87.3
       '@effect/platform-node':
         specifier: 'catalog:'
-        version: 4.0.0-rc.117(effect@4.0.0-rc.117)(redis@6.2.1)
+        version: 4.0.0-rc.118(effect@4.0.0-rc.118)(redis@6.2.1)
       '@vitest/coverage-v8':
         specifier: 'catalog:'
         version: 5.0.2(vitest@5.0.2)
       effect:
-        specifier: 4.0.0-rc.117
-        version: 4.0.0-rc.117
+        specifier: 4.0.0-rc.118
+        version: 4.0.0-rc.118
       tsup:
         specifier: 'catalog:'
         version: 8.5.1(@typescript/typescript6@6.0.2)(postcss@8.5.26)(supports-color@7.2.0)(yaml@2.9.0)
@@ -337,26 +337,26 @@ packages:
   '@cloudflare/workers-types@5.20260927.1':
     resolution: {integrity: sha512-7/L0y4Pb8ig/8QSQW4/g4WbGyPYKniw+uC03nkN7VMvawHTWEuqeoVCKi9nOHKiya434eeEUaic2o0+vJhKjYw==}
 
-  '@effect/ai-anthropic@4.0.0-rc.117':
-    resolution: {integrity: sha512-UENH5wxqQud9NLlX2WqauiWuJ+Q9dBW2bOxMOsUJalZ0YdjbcK3LgNTZjrOR+0jPGTlBR9OIgF9qqFPZg6J0AA==}
+  '@effect/ai-anthropic@4.0.0-rc.118':
+    resolution: {integrity: sha512-75a5I0nU/CnKXBstDKCtMVWazzGnmxETRtO1EXXtFJfYRGIp2MjJeB5bIfBReqrT6aXA3LE+D4S1K/9bqfOTHg==}
     peerDependencies:
-      effect: 4.0.0-rc.117
+      effect: 4.0.0-rc.118
 
-  '@effect/language-service@0.87.2':
-    resolution: {integrity: sha512-CfiSoaVQO8pZgaMZGw5VvMvRGybsJ2LaSDoLYaqiVGvo/YYPYVR2GzUKY0h1NtIweq/+SQ5XLrvtzPIttWQ0GQ==}
+  '@effect/language-service@0.87.3':
+    resolution: {integrity: sha512-g1OmRBZF5chbW9QMNoirPo5Bb4zzU2HfP88tR7/VSZEUxHJ1/qVb8AQ0kUh2ggctLH1I715yCwP4gkw56PTjpQ==}
     hasBin: true
 
-  '@effect/platform-node-shared@4.0.0-rc.117':
-    resolution: {integrity: sha512-GyRkEfLBG49MwJe+/XDPiXYcQ44RA9p2z0AurlsWhR1cd1PqOUMEZU1pORL+/R5hR8aH6ZuqoJYD8lAc6h+wlA==}
+  '@effect/platform-node-shared@4.0.0-rc.118':
+    resolution: {integrity: sha512-pNbmIlxbAUxAthUNsp2xm1NLG9kxoYecsPkoYl9mNF2oxPcKDxAvkOar7tYnLSUpXJeATm4pxYVipdZjQfqO4Q==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
-      effect: 4.0.0-rc.117
+      effect: 4.0.0-rc.118
 
-  '@effect/platform-node@4.0.0-rc.117':
-    resolution: {integrity: sha512-WbPcvQDkqXFnCeG6LohJ9eVNapCDhZbCpezhYKxm0IsZEk7swakRh7RkC1t2CXzd3hGmszTv2k9e/pXyZuL+wQ==}
+  '@effect/platform-node@4.0.0-rc.118':
+    resolution: {integrity: sha512-qdAxPZ+5bKxVnzkwziqcHZTHRHz2hyfFX6NhwEmm75CBpmaIzXIZR2LRqGd1/8eI3J3cOrXcAYzByhln7T1/EA==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
-      effect: 4.0.0-rc.117
+      effect: 4.0.0-rc.118
       redis: '>=5.0.0 <7.0.0'
 
   '@effect/tsgo-darwin-arm64@0.46.1':
@@ -889,9 +889,6 @@ packages:
   '@types/estree@1.0.9':
     resolution: {integrity: sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==}
 
-  '@types/node@26.6.2':
-    resolution: {integrity: sha512-X1P21scMv4zGKLYqjdGjaKa7COa0RKVYYZZN/NfvLQ1JegxFhdhpZG/Lyn8AXx6CDUavKAd11v6BvfpkDByK8g==}
-
   '@types/node@26.6.3':
     resolution: {integrity: sha512-dsqMQQoeTLqu9wynDD00q573mNzso3IdQOAfHRJqLCcmCFPoGo9A1bDpUcv/9tnKpErQWv9uKeGfl37EIS02Yg==}
 
@@ -1118,8 +1115,8 @@ packages:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
 
-  effect@4.0.0-rc.117:
-    resolution: {integrity: sha512-UUyi9QiOW4nySFIBM3KnYbNMd9EZliOdKfBcyLD0mPMPheO2fkuXS5y0opjWc9oqzlJxPQICEGm8gGw3kh9j/w==}
+  effect@4.0.0-rc.118:
+    resolution: {integrity: sha512-hxhpCd+swzrtu9lnyPpEFre2ODQzJ9qxgyL1oHIEY8NKnW4PxTbM1XzplMZXiAsLD62HO+KJc41Nqxr9T791ZQ==}
 
   es-module-lexer@2.3.2:
     resolution: {integrity: sha512-poHGpORABojJJucnV9KbOavETW8lBVnphkW77ER5/BQ5Fz7oXSoCNek7IH3vR5nRjdsEz926ibFYX8KtLQmdyw==}
@@ -1569,8 +1566,8 @@ packages:
     engines: {node: '>=20.11'}
     hasBin: true
 
-  ws@8.21.3:
-    resolution: {integrity: sha512-201TZ/kPWxoPr/OKWjquZR1SWKXcvxdH+e1xrx89b3YbmzLMFCLfnaG1HFIgWzJOEWZ7MvpK++odZufgYR50Rw==}
+  ws@8.22.0:
+    resolution: {integrity: sha512-Ydggc987+RO0AnWtZ/7Wq9FtNvcrL1b/RO0ud9mWjUPgDrsAAwQSF51sm2hm1XofbU/4jkpGEsLFsZZxU+1DOg==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       bufferutil: ^4.0.1
@@ -1721,25 +1718,25 @@ snapshots:
 
   '@cloudflare/workers-types@5.20260927.1': {}
 
-  '@effect/ai-anthropic@4.0.0-rc.117(effect@4.0.0-rc.117)':
+  '@effect/ai-anthropic@4.0.0-rc.118(effect@4.0.0-rc.118)':
     dependencies:
-      effect: 4.0.0-rc.117
+      effect: 4.0.0-rc.118
 
-  '@effect/language-service@0.87.2': {}
+  '@effect/language-service@0.87.3': {}
 
-  '@effect/platform-node-shared@4.0.0-rc.117(effect@4.0.0-rc.117)':
+  '@effect/platform-node-shared@4.0.0-rc.118(effect@4.0.0-rc.118)':
     dependencies:
       '@types/ws': 8.18.1
-      effect: 4.0.0-rc.117
-      ws: 8.21.3
+      effect: 4.0.0-rc.118
+      ws: 8.22.0
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
 
-  '@effect/platform-node@4.0.0-rc.117(effect@4.0.0-rc.117)(redis@6.2.1)':
+  '@effect/platform-node@4.0.0-rc.118(effect@4.0.0-rc.118)(redis@6.2.1)':
     dependencies:
-      '@effect/platform-node-shared': 4.0.0-rc.117(effect@4.0.0-rc.117)
-      effect: 4.0.0-rc.117
+      '@effect/platform-node-shared': 4.0.0-rc.118(effect@4.0.0-rc.118)
+      effect: 4.0.0-rc.118
       redis: 6.2.1
       undici: 8.11.2
     transitivePeerDependencies:
@@ -2073,17 +2070,13 @@ snapshots:
 
   '@types/estree@1.0.9': {}
 
-  '@types/node@26.6.2':
-    dependencies:
-      undici-types: 8.9.0
-
   '@types/node@26.6.3':
     dependencies:
       undici-types: 8.9.0
 
   '@types/ws@8.18.1':
     dependencies:
-      '@types/node': 26.6.2
+      '@types/node': 26.6.3
 
   '@typescript/typescript-aix-ppc64@7.0.2':
     optional: true
@@ -2221,7 +2214,7 @@ snapshots:
 
   detect-libc@2.1.2: {}
 
-  effect@4.0.0-rc.117: {}
+  effect@4.0.0-rc.118: {}
 
   es-module-lexer@2.3.2: {}
 
@@ -2642,6 +2635,6 @@ snapshots:
 
   why-is-node-running@3.2.2: {}
 
-  ws@8.21.3: {}
+  ws@8.22.0: {}
 
   yaml@2.9.0: {}

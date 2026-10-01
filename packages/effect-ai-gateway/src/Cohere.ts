@@ -24,9 +24,9 @@
 import type * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
-import type { AiError } from "effect/unstable/ai";
-import { EmbeddingModel } from "effect/unstable/ai";
-import { FetchHttpClient, HttpClient } from "effect/unstable/http";
+import type { AiError } from "effect/ai";
+import { EmbeddingModel } from "effect/ai";
+import { FetchHttpClient, HttpClient } from "effect/http";
 import type { GatewayBinding } from "./Binding";
 import { requestViaBinding, requestViaUrl } from "./internal/transport";
 import * as RerankerModel from "./RerankerModel";

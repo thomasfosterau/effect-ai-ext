@@ -19,8 +19,8 @@ import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
-import { AiError, LanguageModel, Tool, Toolkit } from "effect/unstable/ai";
-import { FetchHttpClient, HttpClient, HttpClientRequest } from "effect/unstable/http";
+import { AiError, LanguageModel, Tool, Toolkit } from "effect/ai";
+import { FetchHttpClient, HttpClient, HttpClientRequest } from "effect/http";
 import { MistralClient, MistralLanguageModel } from "@thomasfosterau/effect-ai-mistral";
 import { expectFailureInstanceOf, runTest } from "./helpers/effect";
 

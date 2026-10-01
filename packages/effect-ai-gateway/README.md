@@ -34,7 +34,7 @@ through the gateway's public HTTPS endpoint too:
 
 Both transports share one request body and one lenient response decode per
 provider, and every failure — a rejected call, a non-2xx status, an
-unreadable or undecodable body — is an `AiError` (`effect/unstable/ai`)
+unreadable or undecodable body — is an `AiError` (`effect/ai`)
 naming the provider module and method.
 
 > ¹ `RerankerModel` migrates to `@thomasfosterau/effect-ai-ext` (issue #2),
@@ -47,14 +47,14 @@ pnpm add @thomasfosterau/effect-ai-gateway effect @effect/ai-anthropic
 # @cloudflare/workers-types is a peer for the binding-based transports (types only)
 ```
 
-`effect` and `@effect/ai-anthropic` (both `>=4.0.0-rc.113`) are peer
+`effect` and `@effect/ai-anthropic` (both `>=4.0.0-rc.118`) are peer
 dependencies (`effect` must be a singleton).
 
 ## Usage
 
 ```ts
 import { Effect } from "effect";
-import { LanguageModel } from "effect/unstable/ai";
+import { LanguageModel } from "effect/ai";
 import { anthropicLanguageModelLayer } from "@thomasfosterau/effect-ai-gateway";
 import { AI_GATEWAY_ID } from "@thomasfosterau/bindings"; // your gateway id
 

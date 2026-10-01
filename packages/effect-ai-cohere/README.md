@@ -24,14 +24,14 @@ directly against Cohere's v2 API.
 pnpm add @thomasfosterau/effect-ai-cohere effect
 ```
 
-`effect` (`>=4.0.0-rc.113`) is a peer dependency (it must be a singleton).
+`effect` (`>=4.0.0-rc.118`) is a peer dependency (it must be a singleton).
 
 ## Usage
 
 ```ts
 import { Effect, Layer, Redacted } from "effect";
-import { FetchHttpClient } from "effect/unstable/http";
-import { LanguageModel } from "effect/unstable/ai";
+import { FetchHttpClient } from "effect/http";
+import { LanguageModel } from "effect/ai";
 import { CohereClient, CohereLanguageModel } from "@thomasfosterau/effect-ai-cohere";
 
 const ModelLayer = CohereLanguageModel.layer({ model: "command-a-03-2025" }).pipe(
@@ -55,7 +55,7 @@ available via `LanguageModel.streamText`.
 
 ```ts
 import { CohereClient, CohereEmbeddingModel, CohereRerankerModel } from "@thomasfosterau/effect-ai-cohere";
-import { EmbeddingModel } from "effect/unstable/ai";
+import { EmbeddingModel } from "effect/ai";
 import { RerankerModel } from "@thomasfosterau/effect-ai-ext";
 
 const EmbedLayer = CohereEmbeddingModel.layer({ inputType: "search_document" }).pipe(

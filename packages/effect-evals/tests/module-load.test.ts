@@ -4,7 +4,7 @@
  * Imports the package entry, so every top-level statement in every module
  * runs against the workspace's pinned `effect`, and checks the public surface
  * is all there; then launches the `effect-evals` bin from this workspace,
- * which loads the CLI (`effect/unstable/cli` flags built at module scope) and
+ * which loads the CLI (`effect/cli` flags built at module scope) and
  * `@effect/platform-node`. This is NOT how a consumer's `npx effect-evals`
  * runs: the bin re-execs `src/cli/main.ts` through Node's type stripping,
  * which Node refuses under `node_modules` (issue #42). It passes here only

@@ -17,8 +17,8 @@ import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
-import { AiError, EmbeddingModel } from "effect/unstable/ai";
-import { FetchHttpClient, HttpClient, HttpClientRequest } from "effect/unstable/http";
+import { AiError, EmbeddingModel } from "effect/ai";
+import { FetchHttpClient, HttpClient, HttpClientRequest } from "effect/http";
 import { RerankerModel } from "@thomasfosterau/effect-ai-ext";
 import {
   VoyageClient,

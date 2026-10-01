@@ -2,7 +2,7 @@
  * Defines the provider-neutral service for text-to-speech synthesis.
  *
  * A `SpeechModel` turns text into audio — the sibling of `LanguageModel` and
- * `EmbeddingModel` from `effect/unstable/ai` (which has no speech module yet).
+ * `EmbeddingModel` from `effect/ai` (which has no speech module yet).
  * It exposes both a one-shot surface (`generate`, returning the full audio
  * buffer) and a streaming surface (`stream`, emitting audio chunks), and
  * represents provider failures as `AiError` values.
@@ -18,7 +18,7 @@ import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
-import { AiError } from "effect/unstable/ai";
+import { AiError } from "effect/ai";
 
 /**
  * Service tag for speech (text-to-speech) model operations.

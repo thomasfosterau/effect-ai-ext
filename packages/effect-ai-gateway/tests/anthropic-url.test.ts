@@ -17,8 +17,8 @@ import { describe, expect, it } from "vitest";
 import * as ConfigProvider from "effect/ConfigProvider";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import { LanguageModel } from "effect/unstable/ai";
-import { FetchHttpClient } from "effect/unstable/http";
+import { LanguageModel } from "effect/ai";
+import { FetchHttpClient } from "effect/http";
 import { anthropicLanguageModelLayerFromUrl } from "@thomasfosterau/effect-ai-gateway";
 import { runTest, runTestExit } from "./helpers/effect";
 

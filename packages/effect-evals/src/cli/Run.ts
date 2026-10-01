@@ -5,7 +5,7 @@
  * eval files, load and validate each one, run its (optionally filtered)
  * suites through {@link Runner.runSuite}, and aggregate into a
  * {@link Report.CliReport}. Pure with respect to the CLI framework — no
- * `effect/unstable/cli` import here — so it's directly unit-testable and so
+ * `effect/cli` import here — so it's directly unit-testable and so
  * `RunCommand.ts` stays a thin flags-to-config translation.
  *
  * **Credential gating.** Each file's `layer` is built on its own, in its own

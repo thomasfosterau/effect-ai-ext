@@ -10,7 +10,7 @@
 import { describe, expect, it } from "vitest";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import { AiError, EmbeddingModel } from "effect/unstable/ai";
+import { AiError, EmbeddingModel } from "effect/ai";
 import { EmbeddingSimilarity } from "../../src/index.ts";
 import { expectFailureInstanceOf, runTest } from "../helpers/effect.ts";
 

@@ -14,7 +14,7 @@
  */
 
 import * as Effect from "effect/Effect";
-import { AiError } from "effect/unstable/ai";
+import { AiError } from "effect/ai";
 import { isMissing, MissingEvaluationParamError, renderValue } from "../GEval.ts";
 import type { VerdictCountMismatchError } from "./ExtractThenClassify.ts";
 

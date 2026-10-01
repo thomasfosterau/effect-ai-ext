@@ -3,7 +3,7 @@
  *
  * A `ClassifierModel` assigns one or more labels to each input text with a
  * confidence score — the sibling of `LanguageModel` and `EmbeddingModel` from
- * `effect/unstable/ai` (which has no classifier module yet). It supports
+ * `effect/ai` (which has no classifier module yet). It supports
  * single- and multi-label classification, optional caller-supplied label sets,
  * and optional example-shot classification, and represents provider failures as
  * `AiError` values.
@@ -28,7 +28,7 @@
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
-import { AiError, LanguageModel } from "effect/unstable/ai";
+import { AiError, LanguageModel } from "effect/ai";
 
 /**
  * Service tag for classifier model operations.

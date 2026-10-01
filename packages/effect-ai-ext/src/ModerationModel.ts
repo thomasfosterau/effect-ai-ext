@@ -3,7 +3,7 @@
  *
  * A `ModerationModel` scores text against a set of policy categories and
  * reports whether each input is flagged — the sibling of `LanguageModel` and
- * `EmbeddingModel` from `effect/unstable/ai` (which has no moderation module
+ * `EmbeddingModel` from `effect/ai` (which has no moderation module
  * yet). Provider failures stay represented as `AiError` values.
  *
  * The shape mirrors `EmbeddingModel`: a provider supplies one `moderate`
@@ -23,7 +23,7 @@
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
-import { AiError, LanguageModel } from "effect/unstable/ai";
+import { AiError, LanguageModel } from "effect/ai";
 
 /**
  * Service tag for moderation model operations.
