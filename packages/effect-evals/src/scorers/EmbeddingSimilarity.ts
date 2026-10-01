@@ -3,7 +3,7 @@
  *
  * `embeddingSimilarity` — cosine similarity between a case's `output` and
  * its golden's `expected`, both embedded through the ambient `EmbeddingModel`
- * service (`effect/unstable/ai`) so any provider layer can back it
+ * service (`effect/ai`) so any provider layer can back it
  * (autoevals' `EmbeddingSimilarity`). This package takes no provider
  * dependency itself — `EmbeddingModel` lives in `R`, and a caller provides a
  * concrete layer (the Cohere gateway layer is wired at call sites in #931,
@@ -14,7 +14,7 @@
 
 import * as Effect from "effect/Effect";
 import * as Number from "effect/Number";
-import { AiError, EmbeddingModel } from "effect/unstable/ai";
+import { AiError, EmbeddingModel } from "effect/ai";
 import { makeScorer, type Scorer } from "../Scorer.ts";
 import type { StringCase } from "./StringCase.ts";
 

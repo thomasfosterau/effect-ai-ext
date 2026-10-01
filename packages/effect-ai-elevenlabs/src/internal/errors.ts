@@ -16,9 +16,9 @@ import { dual } from "effect/Function";
 import * as Option from "effect/Option";
 import * as Redactable from "effect/Redactable";
 import type * as Schema from "effect/Schema";
-import * as AiError from "effect/unstable/ai/AiError";
-import type * as HttpClientError from "effect/unstable/http/HttpClientError";
-import type * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
+import * as AiError from "effect/ai/AiError";
+import type * as HttpClientError from "effect/http/HttpClientError";
+import type * as HttpClientRequest from "effect/http/HttpClientRequest";
 
 const MODULE = "ElevenLabsClient";
 

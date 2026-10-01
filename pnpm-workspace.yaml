@@ -34,17 +34,17 @@ catalogMode: strict
 catalog:
   "@changesets/cli": ^3.0.3
   "@cloudflare/workers-types": ^5.20260927.1
-  "@effect/ai-anthropic": 4.0.0-rc.117
-  "@effect/language-service": ^0.87.2
-  "@effect/platform-node": 4.0.0-rc.117
+  "@effect/ai-anthropic": 4.0.0-rc.118
+  "@effect/language-service": ^0.87.3
+  "@effect/platform-node": 4.0.0-rc.118
   # Transitive only (via @effect/platform-node's `^` range); pinned and
-  # overridden so it cannot float ahead of `effect` — rc.117 peers on
-  # `effect ^4.0.0-rc.117`, which the singleton override would silently mask.
+  # overridden so it cannot float ahead of `effect` — rc.118 peers on
+  # `effect ^4.0.0-rc.118`, which the singleton override would silently mask.
   # BUMP BY HAND with the rest of the Effect line: no manifest names it, so
   # Dependabot's `effect` group never proposes it, and nothing flags a stale
   # pin — the `effect` override rewrites its peer spec too, so
   # `pnpm peers check` stays silent. Keep it equal to `effect` below.
-  "@effect/platform-node-shared": 4.0.0-rc.117
+  "@effect/platform-node-shared": 4.0.0-rc.118
   # Effect Language Service as a native (TypeScript-Go) binary — the TS7 side
   # of the 6/7 split. `effect-tsgo patch --typescript` (the root `prepare`)
   # overwrites the native `tsc` binary with an Effect-patched build matched by
@@ -58,27 +58,25 @@ catalog:
   "@types/node": ^26.6.3
   "@typescript/native": "npm:typescript@7.0.2"
   "@vitest/coverage-v8": ^5.0.2
-  effect: 4.0.0-rc.117
+  effect: 4.0.0-rc.118
   tsup: ^8.5.1
   typescript: "npm:@typescript/typescript6@6.0.2"
   vitest: ^5.0.2
 
 # Peer ranges the PUBLISHED packages declare: an open floor, never an exact
-# pin (an exact `4.0.0-rc.115` peer would reject a consumer on rc.117), per
+# pin (an exact `4.0.0-rc.115` peer would reject a consumer on rc.118), per
 # the shared Effect-floor policy (effect-jsonapi#115). Kept as a named catalog
 # so `catalogMode: strict` still governs them; `pnpm publish` replaces
 # `catalog:peers` with these ranges in the published manifest. The floor is
-# the lowest rc the code type-checks AND passes the unit suite on — rc.113,
-# which renamed `Config.string` → `Config.String`, the `effect/unstable/cli`
-# constructors (`Flag.String` / `Int` / `Literals` …), and made the
-# `LanguageModel` / `EmbeddingModel` service shapes the module-named
-# interfaces; rc.112 fails on all three (issue #32). Re-verify by pointing the
-# default catalog's Effect line at the floor before lowering or raising it.
+# the rc the code is built and tested on — rc.118, after the
+# `effect/unstable/*` -> `effect/*` path move (issue #51), which older rcs lack.
+# Re-verify by pointing the default catalog's Effect line at the floor before
+# lowering or raising it.
 catalogs:
   peers:
-    "@effect/ai-anthropic": ">=4.0.0-rc.113"
-    "@effect/platform-node": ">=4.0.0-rc.113"
-    effect: ">=4.0.0-rc.113"
+    "@effect/ai-anthropic": ">=4.0.0-rc.118"
+    "@effect/platform-node": ">=4.0.0-rc.118"
+    effect: ">=4.0.0-rc.118"
 
 overrides:
   # `effect` MUST be a singleton (see the header): force every resolution to

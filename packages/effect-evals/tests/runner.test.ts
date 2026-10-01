@@ -13,7 +13,7 @@ import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Schedule from "effect/Schedule";
-import { AiError } from "effect/unstable/ai";
+import { AiError } from "effect/ai";
 import { Cache, Dataset, Metric, Runner, Scorer, Threshold } from "../src/index.ts";
 import { runTest } from "./helpers/effect.ts";
 

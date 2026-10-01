@@ -2,7 +2,7 @@
  * Defines the provider-neutral service for speech-to-text transcription.
  *
  * A `TranscriptionModel` turns audio into text — the sibling of `LanguageModel`
- * and `EmbeddingModel` from `effect/unstable/ai` (which has no transcription
+ * and `EmbeddingModel` from `effect/ai` (which has no transcription
  * module yet). It accepts audio as a byte buffer or a stream, optionally returns
  * per-segment timestamps and a detected language, and represents provider
  * failures as `AiError` values.
@@ -18,7 +18,7 @@ import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import type * as Stream from "effect/Stream";
-import { AiError } from "effect/unstable/ai";
+import { AiError } from "effect/ai";
 
 /**
  * Service tag for transcription (speech-to-text) model operations.

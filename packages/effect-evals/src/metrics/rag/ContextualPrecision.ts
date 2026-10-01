@@ -25,7 +25,7 @@
  */
 
 import * as Effect from "effect/Effect";
-import { LanguageModel } from "effect/unstable/ai";
+import { LanguageModel } from "effect/ai";
 import { makeMetric, type Metric } from "../../Metric.ts";
 import { makeScorer } from "../../Scorer.ts";
 import type { Score } from "../../Score.ts";

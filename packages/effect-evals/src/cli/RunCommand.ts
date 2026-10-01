@@ -14,7 +14,7 @@
 
 import * as Console from "effect/Console";
 import * as Effect from "effect/Effect";
-import { Command } from "effect/unstable/cli";
+import { Command } from "effect/cli";
 import * as Reporter from "../Reporter.ts";
 import * as Flags from "./Flags.ts";
 import * as Report from "./Report.ts";

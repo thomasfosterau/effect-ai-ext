@@ -37,7 +37,7 @@ import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as EffectResult from "effect/Result";
 import * as Schedule from "effect/Schedule";
-import { AiError } from "effect/unstable/ai";
+import { AiError } from "effect/ai";
 import * as Cache from "./Cache.ts";
 import * as Dataset from "./Dataset.ts";
 import * as Metric from "./Metric.ts";

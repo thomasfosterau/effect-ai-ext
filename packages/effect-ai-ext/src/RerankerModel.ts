@@ -2,7 +2,7 @@
  * Defines the provider-neutral service for reranking documents.
  *
  * A `RerankerModel` scores and reorders candidate documents against a query —
- * the sibling of `LanguageModel` and `EmbeddingModel` from `effect/unstable/ai`
+ * the sibling of `LanguageModel` and `EmbeddingModel` from `effect/ai`
  * (which has no reranker module yet). This module also includes the response
  * and usage models, provider contracts, and a constructor that adapts a
  * provider rerank implementation into the service.
@@ -27,7 +27,7 @@
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
-import { AiError } from "effect/unstable/ai";
+import { AiError } from "effect/ai";
 
 /**
  * Service tag for reranker model operations.

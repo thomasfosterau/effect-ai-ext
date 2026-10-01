@@ -16,7 +16,7 @@ import * as Schema from "effect/Schema";
 /**
  * One tool call observed during a run. Deliberately structural (`name` /
  * `params` / `result`, no generic `Toolkit` parameter) rather than typed
- * against a specific `effect/unstable/ai` `Toolkit`, so goldens and cases
+ * against a specific `effect/ai` `Toolkit`, so goldens and cases
  * stay plain, serialisable data — a `Toolkit` type parameter would force
  * every `Golden`/`EvalCase` consumer to close over the same tool set.
  * `scorers/ToolCallCorrectness.ts` (#925) compares against this shape

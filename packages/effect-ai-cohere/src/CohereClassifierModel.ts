@@ -36,7 +36,7 @@
 
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as LanguageModel from "effect/unstable/ai/LanguageModel";
+import * as LanguageModel from "effect/ai/LanguageModel";
 import * as ClassifierModel from "@thomasfosterau/effect-ai-ext/ClassifierModel";
 import { CohereClient } from "./CohereClient";
 import * as CohereLanguageModel from "./CohereLanguageModel";

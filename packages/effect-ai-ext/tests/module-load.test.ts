@@ -18,7 +18,7 @@ import { describe, expect, it } from "vitest";
 const NAMESPACES = ["RerankerModel", "ClassifierModel", "SpeechModel", "TranscriptionModel", "ImageModel", "ModerationModel", "VoiceConversionModel"] as const;
 
 describe("module load", () => {
-  it("imports the package entry and exposes every abstraction plus the effect/unstable/ai re-export", async () => {
+  it("imports the package entry and exposes every abstraction plus the effect/ai re-export", async () => {
     const entry: Record<string, unknown> = await import("@thomasfosterau/effect-ai-ext");
 
     expect(Object.keys(entry)).toEqual(

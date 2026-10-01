@@ -1,14 +1,14 @@
 # @thomasfosterau/effect-ai-ext
 
 Provider-neutral AI service **abstractions** that upstream Effect
-(`effect/unstable/ai`) does not yet ship. `effect/unstable/ai` gives you
+(`effect/ai`) does not yet ship. `effect/ai` gives you
 `LanguageModel`, `EmbeddingModel`, `Tokenizer`, `Tool`/`Toolkit`, `Chat`,
 `Prompt`/`Response`, `Model`, `AiError`, and `Telemetry` — and nothing for
 reranking, classification, speech, transcription, image generation, moderation,
 or voice conversion.
 
 This package fills that gap in upstream's own idiom. Every module is written **as
-if it could merge into `effect/unstable/ai` itself** — the same shape as
+if it could merge into `effect/ai` itself** — the same shape as
 `EmbeddingModel`:
 
 - a `Context.Service` tag (`@thomasfosterau/effect-ai-ext/<Module>`),
@@ -28,11 +28,11 @@ No provider code, no HTTP — abstractions only. First-party provider packages
 pnpm add @thomasfosterau/effect-ai-ext effect
 ```
 
-`effect` (`>=4.0.0-rc.113`) is a peer dependency (it must stay a singleton).
+`effect` (`>=4.0.0-rc.118`) is a peer dependency (it must stay a singleton).
 
-## A superset of `effect/unstable/ai`
+## A superset of `effect/ai`
 
-The package barrel re-exports **every upstream `effect/unstable/ai` module**
+The package barrel re-exports **every upstream `effect/ai` module**
 (`LanguageModel`, `EmbeddingModel`, `AiError`, `Tool`/`Toolkit`, `Chat`,
 `Prompt`/`Response`, `Model`, `Tokenizer`, `Telemetry`, `IdGenerator`, …)
 alongside the abstractions below, so one import reaches the whole AI service
@@ -42,9 +42,9 @@ surface — upstream and extension:
 import { LanguageModel, EmbeddingModel, RerankerModel } from "@thomasfosterau/effect-ai-ext"
 ```
 
-The re-exports are the **same identities** as `effect/unstable/ai` (`effect` is
+The re-exports are the **same identities** as `effect/ai` (`effect` is
 the singleton peer), so mixing the two import styles is safe — nothing is
-wrapped or shadowed. Prefer importing straight from `effect/unstable/ai` when
+wrapped or shadowed. Prefer importing straight from `effect/ai` when
 you only need upstream modules.
 
 ## Modules & their upstream-merge story
@@ -54,13 +54,13 @@ itself ships), e.g. `@thomasfosterau/effect-ai-ext/RerankerModel`.
 
 | Module | Operation(s) | If it merged upstream |
 | --- | --- | --- |
-| `RerankerModel` | `rerank` | `effect/unstable/ai/RerankerModel` — the sibling of `EmbeddingModel` for relevance reordering. Validates indices (in range, unique, count ≤ `topN`), sorts by descending score, short-circuits empty inputs. |
-| `ClassifierModel` | `classify`, `fromLanguageModel` | `effect/unstable/ai/ClassifierModel` — single/multi-label text classification with confidences and optional example-shots. |
-| `SpeechModel` | `generate`, `stream` | `effect/unstable/ai/SpeechModel` — text-to-speech with both a one-shot buffer surface and a streaming surface, like `LanguageModel.generateText`/`streamText`. |
-| `TranscriptionModel` | `transcribe` | `effect/unstable/ai/TranscriptionModel` — speech-to-text with optional segment timestamps and detected language. |
-| `ImageModel` | `generate` | `effect/unstable/ai/ImageModel` — prompt-to-image with base64-or-bytes result parts. |
-| `ModerationModel` | `moderate`, `fromLanguageModel` | `effect/unstable/ai/ModerationModel` — per-category policy scores plus a flagged verdict. |
-| `VoiceConversionModel` | `convert` | `effect/unstable/ai/VoiceConversionModel` — re-voice audio into a target voice. |
+| `RerankerModel` | `rerank` | `effect/ai/RerankerModel` — the sibling of `EmbeddingModel` for relevance reordering. Validates indices (in range, unique, count ≤ `topN`), sorts by descending score, short-circuits empty inputs. |
+| `ClassifierModel` | `classify`, `fromLanguageModel` | `effect/ai/ClassifierModel` — single/multi-label text classification with confidences and optional example-shots. |
+| `SpeechModel` | `generate`, `stream` | `effect/ai/SpeechModel` — text-to-speech with both a one-shot buffer surface and a streaming surface, like `LanguageModel.generateText`/`streamText`. |
+| `TranscriptionModel` | `transcribe` | `effect/ai/TranscriptionModel` — speech-to-text with optional segment timestamps and detected language. |
+| `ImageModel` | `generate` | `effect/ai/ImageModel` — prompt-to-image with base64-or-bytes result parts. |
+| `ModerationModel` | `moderate`, `fromLanguageModel` | `effect/ai/ModerationModel` — per-category policy scores plus a flagged verdict. |
+| `VoiceConversionModel` | `convert` | `effect/ai/VoiceConversionModel` — re-voice audio into a target voice. |
 
 `ClassifierModel` and `ModerationModel` additionally expose a
 `fromLanguageModel` adapter that backs the abstraction with **any**
@@ -90,7 +90,7 @@ Backing a classifier with a language model:
 
 ```ts
 import { Effect, Layer } from "effect"
-import { LanguageModel } from "effect/unstable/ai"
+import { LanguageModel } from "effect/ai"
 import { ClassifierModel } from "@thomasfosterau/effect-ai-ext"
 
 declare const SomeLanguageModelLayer: Layer.Layer<LanguageModel.LanguageModel>

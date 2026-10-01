@@ -20,8 +20,8 @@ import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
-import { AiError, EmbeddingModel, LanguageModel, Tool, Toolkit } from "effect/unstable/ai";
-import { FetchHttpClient, HttpClient, HttpClientRequest } from "effect/unstable/http";
+import { AiError, EmbeddingModel, LanguageModel, Tool, Toolkit } from "effect/ai";
+import { FetchHttpClient, HttpClient, HttpClientRequest } from "effect/http";
 import { ClassifierModel, RerankerModel } from "@thomasfosterau/effect-ai-ext";
 import {
   CohereClient,

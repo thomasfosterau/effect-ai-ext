@@ -3,7 +3,7 @@
  *
  * A `VoiceConversionModel` re-synthesises input audio in a target voice while
  * preserving the spoken content — the sibling of `LanguageModel` and
- * `EmbeddingModel` from `effect/unstable/ai` (which has no voice-conversion
+ * `EmbeddingModel` from `effect/ai` (which has no voice-conversion
  * module yet). It accepts audio as a byte buffer or a stream, and provider
  * failures stay represented as `AiError` values.
  *
@@ -18,7 +18,7 @@ import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import type * as Stream from "effect/Stream";
-import { AiError } from "effect/unstable/ai";
+import { AiError } from "effect/ai";
 
 /**
  * Service tag for voice conversion model operations.

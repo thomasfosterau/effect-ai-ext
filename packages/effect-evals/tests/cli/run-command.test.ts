@@ -13,7 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as Layer from "effect/Layer";
-import { Command } from "effect/unstable/cli";
+import { Command } from "effect/cli";
 import { NodeServices } from "@effect/platform-node";
 import { Cache } from "../../src/index.ts";
 import { runCommand } from "../../src/cli/RunCommand.ts";

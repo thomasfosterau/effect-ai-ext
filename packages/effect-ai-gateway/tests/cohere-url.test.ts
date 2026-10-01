@@ -16,8 +16,8 @@ import { describe, expect, it } from "vitest";
 import * as ConfigProvider from "effect/ConfigProvider";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import { AiError } from "effect/unstable/ai";
-import { FetchHttpClient } from "effect/unstable/http";
+import { AiError } from "effect/ai";
+import { FetchHttpClient } from "effect/http";
 import {
   COHERE_EMBEDDING_MODEL,
   COHERE_RERANK_MODEL,

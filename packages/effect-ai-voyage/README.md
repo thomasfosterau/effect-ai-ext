@@ -9,7 +9,7 @@ abstractions.
   `/v1/rerank`, every failure mapped to `AiError`. Its `apiUrl` override
   targets a proxy or a routing layer (the Cloudflare AI Gateway repoints it
   for BYOK).
-- **`VoyageEmbeddingModel`** — an `effect/unstable/ai` `EmbeddingModel` over
+- **`VoyageEmbeddingModel`** — an `effect/ai` `EmbeddingModel` over
   `/v1/embeddings`, with `model` + `inputType` + `outputDimension` options and
   the current model/dimension matrix exposed as `EMBEDDING_MODELS`.
 - **`VoyageRerankerModel`** — a `@thomasfosterau/effect-ai-ext` `RerankerModel`
@@ -21,7 +21,7 @@ abstractions.
 pnpm add @thomasfosterau/effect-ai-voyage @thomasfosterau/effect-ai-ext effect
 ```
 
-`effect` (`>=4.0.0-rc.113`) is a peer dependency (it must be a singleton).
+`effect` (`>=4.0.0-rc.118`) is a peer dependency (it must be a singleton).
 
 ## Usage
 
@@ -29,8 +29,8 @@ pnpm add @thomasfosterau/effect-ai-voyage @thomasfosterau/effect-ai-ext effect
 
 ```ts
 import { Effect, Layer, Redacted } from "effect";
-import { FetchHttpClient } from "effect/unstable/http";
-import { EmbeddingModel } from "effect/unstable/ai";
+import { FetchHttpClient } from "effect/http";
+import { EmbeddingModel } from "effect/ai";
 import { VoyageClient, VoyageEmbeddingModel } from "@thomasfosterau/effect-ai-voyage";
 
 const ModelLayer = VoyageEmbeddingModel.layer({
@@ -53,7 +53,7 @@ const program = Effect.flatMap(EmbeddingModel.EmbeddingModel, (model) =>
 
 ```ts
 import { Effect, Layer, Redacted } from "effect";
-import { FetchHttpClient } from "effect/unstable/http";
+import { FetchHttpClient } from "effect/http";
 import { RerankerModel } from "@thomasfosterau/effect-ai-ext";
 import { VoyageClient, VoyageRerankerModel } from "@thomasfosterau/effect-ai-voyage";
 

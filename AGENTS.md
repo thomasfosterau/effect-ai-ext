@@ -6,7 +6,7 @@ Always-on context for coding agents working in this repo. Keep it tight.
 
 The long-term home of the **`@thomasfosterau/effect-ai-*`** package family —
 idiomatic, purely-additive extensions to Effect's AI packages
-(`effect/unstable/ai`). Each package is published to npm under the
+(`effect/ai`). Each package is published to npm under the
 `@thomasfosterau/` scope.
 
 Two kinds of package live here:
@@ -21,7 +21,7 @@ Two kinds of package live here:
 
 Plus **`effect-ai-ext`** — provider-neutral service _abstractions_ upstream
 Effect lacks (reranker, classifier, TTS, STT, image, moderation, voice
-conversion), each written as if it could merge into `effect/unstable/ai`.
+conversion), each written as if it could merge into `effect/ai`.
 
 **Upstream boundary:** we do **not** write local packages for providers the
 Effect org already covers (`@effect/ai-anthropic` today; OpenAI/Google
@@ -120,7 +120,7 @@ Versions and changelogs are managed by [Changesets](https://github.com/changeset
   which only the catalog + `overrides` name, so Dependabot never bumps it —
   do it by hand) share one exact rc in the default catalog — the rc the
   consuming apps run. The published peers are an **open floor**
-  (`catalog:peers`, `effect: ">=4.0.0-rc.113"`), never an exact pin, per the
+  (`catalog:peers`, `effect: ">=4.0.0-rc.118"`), never an exact pin, per the
   shared Effect-floor policy (effect-jsonapi#115): the lowest rc the code
   compiles and runs on (issue #32). Raising the floor is a breaking change for
   every package. `@effect/*` packages a published package needs are **peers**
@@ -138,7 +138,7 @@ Versions and changelogs are managed by [Changesets](https://github.com/changeset
 
 Every package mirrors an existing model. Read the reference before writing:
 
-- **A provider-neutral abstraction** mirrors `effect/unstable/ai`'s
+- **A provider-neutral abstraction** mirrors `effect/ai`'s
   `EmbeddingModel`: a `Context.Service` tag + `Service` interface + a
   `make(...)` that validates provider results + a typed `AiError` channel +
   `Effect.withSpan`/Telemetry + options/provider-options interfaces.
@@ -150,7 +150,7 @@ Every package mirrors an existing model. Read the reference before writing:
     convenience** — it is how a routing layer (the gateway) repoints the
     client for BYOK. Every provider gets a test that points `apiUrl` at a stub
     server.
-  - **Per-capability models** implementing the relevant `effect/unstable/ai`
+  - **Per-capability models** implementing the relevant `effect/ai`
     or `effect-ai-ext` service (`LanguageModel`, `EmbeddingModel`,
     `RerankerModel`, …).
   - **Wire discipline:** hand-written request interfaces (plain objects sent
@@ -163,7 +163,7 @@ Every package mirrors an existing model. Read the reference before writing:
   failures escape a provider's public surface.
 - **Single-barrel `src/index.ts`** re-exporting each module as a namespace
   (`export * as MistralClient from "./MistralClient"`), naming/doc style
-  matching `effect/unstable/ai` (`@module`, JSDoc).
+  matching `effect/ai` (`@module`, JSDoc).
 
 ## Testing
 
@@ -194,7 +194,7 @@ Every package mirrors an existing model. Read the reference before writing:
   (registered in `.claude/settings.json`): a frozen `pnpm install`, which also
   applies the tsgo patch, so the three gates run without manual setup.
 - **Stop-and-report is a valid outcome.** On a blocker outside the issue's
-  scope (an upstream `effect/unstable/ai` gap, a design conflict with
+  scope (an upstream `effect/ai` gap, a design conflict with
   `effect-ai-ext`'s interfaces), comment the evidence on the issue and stop —
   don't improvise placements or workarounds the owner never approved.
 - No live credentials, tokens, or secrets in code or fixtures.

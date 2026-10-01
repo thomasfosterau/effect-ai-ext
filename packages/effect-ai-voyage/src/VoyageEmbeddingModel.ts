@@ -18,8 +18,8 @@
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Predicate from "effect/Predicate";
-import * as EmbeddingModel from "effect/unstable/ai/EmbeddingModel";
-import * as AiModel from "effect/unstable/ai/Model";
+import * as EmbeddingModel from "effect/ai/EmbeddingModel";
+import * as AiModel from "effect/ai/Model";
 import { VoyageClient } from "./VoyageClient";
 import type * as Wire from "./internal/wire";
 

@@ -18,8 +18,8 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
-import { LanguageModel } from "effect/unstable/ai";
-import * as Prompt from "effect/unstable/ai/Prompt";
+import { LanguageModel } from "effect/ai";
+import * as Prompt from "effect/ai/Prompt";
 import { EvalCase, GEval, Golden, Metric, Threshold } from "../../src/index.ts";
 import { expectFailureInstanceOf, runTest } from "../helpers/effect.ts";
 

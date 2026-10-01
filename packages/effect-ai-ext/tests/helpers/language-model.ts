@@ -11,7 +11,7 @@
 
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import { AiError, LanguageModel } from "effect/unstable/ai";
+import { AiError, LanguageModel } from "effect/ai";
 
 /**
  * A `LanguageModel` layer whose `generateObject` resolves to the given value,

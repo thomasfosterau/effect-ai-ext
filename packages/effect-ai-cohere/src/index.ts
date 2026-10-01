@@ -23,8 +23,8 @@
  * @example
  * ```ts
  * import { Effect, Layer, Redacted } from "effect"
- * import { FetchHttpClient } from "effect/unstable/http"
- * import { LanguageModel } from "effect/unstable/ai"
+ * import { FetchHttpClient } from "effect/http"
+ * import { LanguageModel } from "effect/ai"
  * import { CohereClient, CohereLanguageModel } from "@thomasfosterau/effect-ai-cohere"
  *
  * const ModelLayer = CohereLanguageModel.layer({ model: "command-a-03-2025" }).pipe(

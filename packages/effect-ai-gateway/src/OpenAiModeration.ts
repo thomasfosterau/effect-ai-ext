@@ -50,7 +50,7 @@ import type * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
 import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
-import { FetchHttpClient, HttpClient } from "effect/unstable/http";
+import { FetchHttpClient, HttpClient } from "effect/http";
 import { ModerationModel } from "@thomasfosterau/effect-ai-ext";
 import type { GatewayBinding } from "./Binding";
 import { requestViaBinding, requestViaUrl } from "./internal/transport";

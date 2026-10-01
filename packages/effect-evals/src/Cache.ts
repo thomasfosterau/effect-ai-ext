@@ -2,7 +2,7 @@
  * @copyright Thomas Foster
  *
  * Content-hash result caching, built directly on `effect`'s own
- * `KeyValueStore` (`effect/unstable/persistence`): a cache hit lets
+ * `KeyValueStore` (`effect/persistence`): a cache hit lets
  * {@link Runner.runSuite} skip both the task (SUT) call and a metric's judge
  * call for that trial. A task-level key hashes the golden, the task's
  * identifier, and the trial number; a metric-level key adds the metric name
@@ -32,7 +32,7 @@
  */
 
 import * as Effect from "effect/Effect";
-import { KeyValueStore } from "effect/unstable/persistence";
+import { KeyValueStore } from "effect/persistence";
 
 export { KeyValueStore };
 

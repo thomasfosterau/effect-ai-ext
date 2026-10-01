@@ -14,7 +14,7 @@
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Stream from "effect/Stream";
-import { LanguageModel } from "effect/unstable/ai";
+import { LanguageModel } from "effect/ai";
 import { Dataset, EvalFile, Runner } from "../../src/index.ts";
 import { exactMatchMetric, languageModelTask } from "./_shared.ts";
 

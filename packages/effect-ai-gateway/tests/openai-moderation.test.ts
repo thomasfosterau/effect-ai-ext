@@ -15,7 +15,7 @@
 import { describe, expect, it } from "vitest";
 import * as Effect from "effect/Effect";
 import * as Redacted from "effect/Redacted";
-import { AiError } from "effect/unstable/ai";
+import { AiError } from "effect/ai";
 import {
   OPENAI_MODERATION_MODEL,
   makeOpenAiModerationModel,

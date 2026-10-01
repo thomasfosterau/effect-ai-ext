@@ -25,8 +25,8 @@ import { AnthropicClient, AnthropicLanguageModel } from "@effect/ai-anthropic";
 import type * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import { LanguageModel } from "effect/unstable/ai";
-import { FetchHttpClient, HttpClient, HttpClientRequest } from "effect/unstable/http";
+import { LanguageModel } from "effect/ai";
+import { FetchHttpClient, HttpClient, HttpClientRequest } from "effect/http";
 import { gatewayUrl, type GatewayBinding } from "./Binding";
 import * as Url from "./Url";
 

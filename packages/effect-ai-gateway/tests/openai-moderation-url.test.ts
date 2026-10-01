@@ -17,8 +17,8 @@ import * as ConfigProvider from "effect/ConfigProvider";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
-import { AiError } from "effect/unstable/ai";
-import { FetchHttpClient } from "effect/unstable/http";
+import { AiError } from "effect/ai";
+import { FetchHttpClient } from "effect/http";
 import {
   OPENAI_MODERATION_MODEL,
   makeOpenAiModerationModelFromUrl,

@@ -17,7 +17,7 @@
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Stream from "effect/Stream";
-import { LanguageModel } from "effect/unstable/ai";
+import { LanguageModel } from "effect/ai";
 import { runTest } from "../../helpers/effect.ts";
 
 /** One captured judge call: the rendered system and user prompt text. */

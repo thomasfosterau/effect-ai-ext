@@ -8,7 +8,7 @@
  * @module cli/Flags
  */
 
-import { Argument, Flag } from "effect/unstable/cli";
+import { Argument, Flag } from "effect/cli";
 import { DEFAULT_OUT_PATH } from "./Report.ts";
 import { DEFAULT_GLOB } from "./Run.ts";
 

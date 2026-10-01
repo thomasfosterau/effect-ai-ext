@@ -7,7 +7,7 @@
 
 import { describe, expect, it } from "vitest";
 import * as Effect from "effect/Effect";
-import { AiError } from "effect/unstable/ai";
+import { AiError } from "effect/ai";
 import {
   make,
   type ProviderOptions,

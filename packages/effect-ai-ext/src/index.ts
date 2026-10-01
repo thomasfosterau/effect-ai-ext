@@ -2,8 +2,8 @@
  * @module effect-ai-ext
  *
  * Provider-neutral AI service _abstractions_ that upstream Effect
- * (`effect/unstable/ai`) does not yet ship. Each module is written as if it
- * could merge into `effect/unstable/ai` itself — a `Context.Service` tag, a
+ * (`effect/ai`) does not yet ship. Each module is written as if it
+ * could merge into `effect/ai` itself — a `Context.Service` tag, a
  * `Service` interface, a `make(...)` that validates provider results, a typed
  * `AiError` channel, and `Effect.withSpan` instrumentation — exactly like
  * `EmbeddingModel`.
@@ -23,7 +23,7 @@
  * Every module is also available as a per-module subpath (mirroring how
  * `effect` itself ships), e.g. `@thomasfosterau/effect-ai-ext/RerankerModel`.
  *
- * For convenience this barrel is a **superset** of `effect/unstable/ai`: it
+ * For convenience this barrel is a **superset** of `effect/ai`: it
  * re-exports every upstream AI module (`LanguageModel`, `EmbeddingModel`,
  * `AiError`, `Tool`, `Toolkit`, `Chat`, `Prompt`, `Response`, `Model`,
  * `Tokenizer`, `Telemetry`, `IdGenerator`, …) alongside the abstractions above,
@@ -35,10 +35,10 @@
  * import { LanguageModel, EmbeddingModel, RerankerModel } from "@thomasfosterau/effect-ai-ext"
  * ```
  *
- * These re-exports are the same identities as `effect/unstable/ai` (`effect` is
+ * These re-exports are the same identities as `effect/ai` (`effect` is
  * a peer dependency, one singleton copy), so mixing the two import styles is
  * safe. To take the upstream modules straight from `effect`, import from
- * `effect/unstable/ai` — nothing here shadows or wraps them.
+ * `effect/ai` — nothing here shadows or wraps them.
  */
 
 // The extension abstractions.
@@ -54,4 +54,4 @@ export * as VoiceConversionModel from "./VoiceConversionModel";
 // The names are disjoint from the abstractions above; a future upstream module
 // that collides would surface here as a build error, signalling it's time to
 // adopt upstream and drop the local one.
-export * from "effect/unstable/ai";
+export * from "effect/ai";

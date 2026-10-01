@@ -26,8 +26,8 @@
 
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
-import { AiError } from "effect/unstable/ai";
-import { HttpBody, HttpClient, HttpClientRequest } from "effect/unstable/http";
+import { AiError } from "effect/ai";
+import { HttpBody, HttpClient, HttpClientRequest } from "effect/http";
 import { gatewayRun, type GatewayBinding } from "../Binding";
 
 /** Which provider module and method an `AiError` is reported from. */
