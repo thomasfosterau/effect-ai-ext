@@ -61,9 +61,10 @@ jobs:
           cache: pnpm
           registry-url: https://registry.npmjs.org
       # Trusted publishing (tokenless OIDC) needs npm >= 11.5.1; the runner's
-      # bundled npm predates it. `changeset publish` shells
-      # out to this `npm publish`, which detects the Actions OIDC environment.
-      - run: npm install -g npm@latest
+      # bundled npm predates it. `changeset publish` shells out to this
+      # `npm publish`, which detects the Actions OIDC environment. Pinned to a
+      # major, never `@latest`: this job holds `id-token: write` (#57).
+      - run: npm install -g npm@11
       - run: pnpm install --frozen-lockfile
       - run: pnpm run check
       - run: pnpm run test
