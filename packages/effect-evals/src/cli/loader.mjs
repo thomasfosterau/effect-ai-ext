@@ -1,11 +1,12 @@
 /**
  * @copyright Thomas Foster
  *
- * A Node module-resolution hook that lets the `effect-evals` CLI load plain
- * TypeScript under Node: its own source (which uses this repo's
- * extensionless-import house style, e.g. `import * as Cache from "../Cache"`)
- * and every `*.eval.ts` file it discovers, wherever in a workspace those
- * live. `bin/effect-evals.js` invokes Node
+ * A Node module-resolution hook that lets the `effect-evals` CLI load the
+ * consumer's plain TypeScript under Node: every `*.eval.ts` file it
+ * discovers, wherever in a workspace those live, which may use this repo's
+ * extensionless-import house style (e.g. `import * as Cache from "../Cache"`).
+ * The CLI itself runs from its built `dist/`, so the hook no longer serves
+ * the CLI's own source. `bin/effect-evals.js` invokes Node
  * (type-stripping) and `--import ./loader.mjs` (this file, self-loaded — see
  * the `register()` call at the bottom) as literal argv on a single `node`
  * invocation, per docs/decisions/run-the-toolchain-under-node.md. Node's
