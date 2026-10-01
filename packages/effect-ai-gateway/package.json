@@ -1,6 +1,6 @@
 {
   "name": "@thomasfosterau/effect-ai-gateway",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Route Effect AI providers (Anthropic, Cohere, OpenAI moderation) through a Cloudflare AI Gateway Worker binding or its public HTTPS endpoint, BYOK.",
   "keywords": [
     "effect",
