@@ -276,7 +276,7 @@ pnpm effect-evals --help                                  # full flag reference
 | [`ToolCallCorrectness`](src/scorers/ToolCallCorrectness.ts) | `toolCallCorrectness` — a case's actual tool calls against its golden's `expectedTools`. |
 | [`EmbeddingSimilarity`](src/scorers/EmbeddingSimilarity.ts) | `embeddingSimilarity` — cosine similarity of `output` and `expected` through the ambient `EmbeddingModel`. |
 | [`Metadata`](src/Metadata.ts) | `Metadata` — the free-form record a golden, scorer or score carries. |
-| [`cli`](src/cli/) | The `effect-evals` bin — see [CLI](#cli-930) above. |
+| [`cli`](src/cli/) | The `effect-evals` bin — see [CLI](#cli) above. |
 
 ## License
 

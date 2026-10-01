@@ -1,19 +1,18 @@
 /**
- * @copyright Thomas Foster
- *
  * Config-driven resolution of the Cloudflare AI Gateway's public HTTPS
  * endpoint (`https://gateway.ai.cloudflare.com/v1/<account>/<gateway>/...`)
  * — the binding-free sibling of `Binding.ts`'s `gatewayUrl`/`gatewayRun`,
  * for callers with no Worker `AI` binding to ask: a local CLI, a plain
- * Node process, or a CI job (docs/decisions/effect-ai-gateway.md's BYOK
- * posture still applies — provider keys live in the gateway, never here).
+ * Node process, or a CI job. The BYOK posture still applies: provider keys
+ * live in the gateway, never here.
  *
- * The gateway's authenticated-gateway feature (docs/onepassword-runbook.md)
- * must be enabled for the `cf-aig-authorization` token this module reads to
- * actually be enforced; without it the gateway accepts unauthenticated
- * requests too.
+ * The gateway's authenticated-gateway feature must be enabled for the
+ * `cf-aig-authorization` token this module reads to actually be enforced;
+ * without it the gateway accepts unauthenticated requests too.
  *
  * @module Url
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Config from "effect/Config";
