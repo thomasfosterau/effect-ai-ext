@@ -14,6 +14,8 @@
  */
 
 import { describe, expect, it } from "vitest";
+import * as Cause from "effect/Cause";
+import * as Config from "effect/Config";
 import * as ConfigProvider from "effect/ConfigProvider";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -126,6 +128,10 @@ describe("anthropicLanguageModelLayerFromUrl", () => {
     );
 
     expect(exit._tag).toBe("Failure");
+    if (exit._tag !== "Failure") return;
+    const error = Cause.squash(exit.cause);
+    expect(error).toBeInstanceOf(Config.ConfigError);
+    expect(String(error)).toContain("CF_AIG_GATEWAY_ID");
   });
 
   it("fails layer construction with a typed ConfigError when CF_ACCOUNT_ID is missing", async () => {
@@ -146,5 +152,9 @@ describe("anthropicLanguageModelLayerFromUrl", () => {
     );
 
     expect(exit._tag).toBe("Failure");
+    if (exit._tag !== "Failure") return;
+    const error = Cause.squash(exit.cause);
+    expect(error).toBeInstanceOf(Config.ConfigError);
+    expect(String(error)).toContain("CF_ACCOUNT_ID");
   });
 });

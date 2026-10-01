@@ -21,10 +21,11 @@ application code or env vars — this package never takes or reads an API key.
 
 Every provider comes in a binding-based (`make…`) and a binding-free
 (`make…FromUrl`, config-resolved: `CF_ACCOUNT_ID`, `CF_AIG_GATEWAY_ID`,
-`CF_AIG_TOKEN`, all required — a missing or empty variable fails layer
-construction with a `ConfigError`; there is no default gateway id) variant, so callers with no Worker `AI` binding — a local
+`CF_AIG_TOKEN`) variant, so callers with no Worker `AI` binding — a local
 CLI, a plain Node process, CI, an offline evaluation harness — can route
-through the gateway's public HTTPS endpoint too:
+through the gateway's public HTTPS endpoint too. All three variables are
+required: a missing or empty one fails layer construction with a
+`ConfigError`, and there is no default gateway id.
 
 | | Worker binding | Public HTTPS endpoint |
 | --- | --- | --- |
