@@ -1,10 +1,10 @@
 /**
  * @copyright Thomas Foster
  *
- * The `effect-evals` bin's real entry point — loaded by `bin/effect-evals.js`
- * after it has already re-invoked Node
- * and this package's own `./loader.mjs` resolution hook on the process argv
- * (see that file, and docs/decisions/run-the-toolchain-under-node.md). Wires
+ * The `effect-evals` bin's real entry point — built to `dist/cli/main.js` and
+ * loaded by `bin/effect-evals.js` after it has re-invoked Node with this
+ * package's own `./loader.mjs` resolution hook on the process argv (the hook
+ * serves the consumer's `*.eval.ts` files; see docs/decisions/run-the-toolchain-under-node.md). Wires
  * the Node platform services and the filesystem-backed result cache, then
  * hands off to `Command.run`.
  *
