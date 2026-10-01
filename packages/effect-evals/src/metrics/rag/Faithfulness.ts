@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * `faithfulness` — the fraction of claims made in `output` that aren't
  * contradicted by `retrievedContext`: a thin configuration of
  * {@link ExtractThenClassify.extractThenClassifyRatio} (extract claims from
@@ -11,6 +9,8 @@
  * guard).
  *
  * @module metrics/rag/Faithfulness
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Effect from "effect/Effect";

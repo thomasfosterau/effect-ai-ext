@@ -1,6 +1,4 @@
 /**
- * @module effect-ai-voyage
- *
  * A first-party Effect AI provider for **Voyage AI** (embeddings + rerankers).
  * Effect ships no `@effect/ai-voyage` package, so this package speaks Voyage's
  * own API directly and implements the relevant service abstractions:
@@ -35,6 +33,8 @@
  *   Effect.provide(ModelLayer),
  * )
  * ```
+ *
+ * @module effect-ai-voyage
  */
 
 export * as VoyageClient from "./VoyageClient";

@@ -1,12 +1,12 @@
 /**
- * @copyright Thomas Foster
- *
  * `contextualRecall` — the fraction of statements in `expected` that are
  * attributable to `retrievedContext`: a thin configuration of
  * {@link ExtractThenClassify.extractThenClassifyRatio} (extract statements
  * from `expected`, classify each against `retrievedContext`).
  *
  * @module metrics/rag/ContextualRecall
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Effect from "effect/Effect";

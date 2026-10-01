@@ -1,14 +1,12 @@
 /**
- * @copyright Thomas Foster
- *
  * `Reporter` — a named sink for a completed {@link Result.SuiteResult}.
  * {@link Runner.runSuite} invokes every reporter it's given after a suite
  * finishes; a reporter never fails the run — each implementation here
  * catches its own errors and logs a warning instead, so `report`'s error
  * channel is always `never`. A reporter's own dependencies (the JSON
  * reporter's `FileSystem`) are provided via `Layer`/`Effect.provide` at the
- * call site, exactly like a {@link Scorer.Scorer}'s judge model — see
- * `docs/decisions/effect-evals-as-the-evaluation-toolkit.md`.
+ * call site, exactly like a {@link Scorer.Scorer}'s judge model — see the
+ * website repo's `docs/decisions/effect-evals-as-the-evaluation-toolkit.md`.
  *
  * `json`'s output is the {@link Result.SuiteResult} shape verbatim, `JSON.stringify`d:
  *
@@ -43,6 +41,8 @@
  * `summary` is `null` when every trial errored (no scores to summarize).
  *
  * @module Reporter
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Effect from "effect/Effect";

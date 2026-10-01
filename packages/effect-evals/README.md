@@ -2,14 +2,16 @@
 
 Effect-native LLM evaluation: goldens, scorers, thresholds, and a runner with trials, bounded concurrency, retry, and caching — expressed as plain Effect values instead of a bolted-on async framework. The core (`"."` barrel) depends on `effect` only.
 
+## Install
+
 ```sh
-npm install @thomasfosterau/effect-evals effect
+pnpm add @thomasfosterau/effect-evals effect
 ```
 
 `effect` (`>=4.0.0-rc.118`) is a peer dependency. The package also ships an `effect-evals` CLI for discovering and running `*.eval.ts` suites — see [CLI](#cli) below. The CLI additionally needs the **optional** peer `@effect/platform-node` (`>=4.0.0-rc.118`): install it at the same version as `effect`, and pin `@effect/platform-node-shared` to that version too (a direct dependency or an `overrides` entry). Upstream's `^` range otherwise floats it to the newest rc, whose own `effect` peer rejects an older `effect`.
 
 ```sh
-npm install @effect/platform-node@<your effect version> @effect/platform-node-shared@<your effect version>
+pnpm add @effect/platform-node@<your effect version> @effect/platform-node-shared@<your effect version>
 ```
 
 ## Core model
@@ -175,19 +177,6 @@ result.cases[0]?.metrics; // the ordinary per-case, per-metric result model
 - **Over-returning ports are truncated** to `k` before scoring, and every metric re-applies `k` — a retrieval that returns more than it was asked for cannot inflate recall.
 - **What stays with the consumer:** dataset validation and content digests (which runs are comparable), per-query latency, persistence, and the run-to-run diff. `Result.aggregate` and `Result.SuiteResult` are plain values a consumer can persist or diff as it likes.
 
-#### Mapping gardeneria's `packages/evaluation` harness onto it
-
-| gardeneria | effect-evals |
-| --- | --- |
-| `EvaluationCase { name, query, relevant, locale?, type? }` | `Runner.RetrievalGolden { name?, query, relevant }`; a port closes over `locale` / `type` (per-case narrowing becomes part of the golden a custom `Dataset` carries, and the port reads it from `query` context or a wrapping golden) |
-| `RankingDataset` + `declareDataset` (validation, digest) | `Dataset.fromArray` / `Dataset.makeDataset`; validation and the digest stay app-side and feed `Result`'s `golden` as-is |
-| `RunConfiguration { limit, reranker, … }` | `k` (= `limit`) and `RetrievalPort.id` (= the reranker / configuration name) |
-| `RetrievalPort.retrieve({ query, limit, type?, locale? })` → `Effect<handles, string>` | `RetrievalPort.retrieve(query, { limit })` → `Effect<handles, E, R>` — any typed `E`, any `R` |
-| `metrics.ts` `ndcgAtK` / `recallAtK` / `precisionAtK` / `mrrAtK` / `scoreCase` / `metricKey` | `Ranking.ndcg` / `recall` / `precision` / `mrr` / `scoreCase` / `metricKey` — same formulas, same fixtures |
-| `aggregateScores` (means over successful cases) | `Result.aggregate` (means over cases that scored; `successfulCases` / `failedCases`) |
-| `runEvaluation` → `EvaluationRun` (`status`, `results`, `averageScores`, `avgLatencyMs`, `usageUnits`) | `Runner.runRetrievalSuite` → `RetrievalSuiteResult` (`passed`, `cases`, `aggregate`); latency and usage are the port's to record |
-| `persistence.ts`, `compare.ts` | app-side, over the plain result value |
-
 ## G-Eval judge metric
 
 `GEval.gEval` builds a `Metric` that scores a case against an arbitrary natural-language criterion using an LLM judge (DeepEval's G-Eval), covering anything from translation quality to a bespoke house style — without writing a new metric per criterion. `GEval.gEvalConversational` is the multi-turn variant: the judge reads the full rendered turn history and scores the exchange holistically.
@@ -280,13 +269,15 @@ pnpm effect-evals --help                                  # full flag reference
 | [`Reporter`](src/Reporter.ts) | `Reporter`, `terminal`, `json`, `formatTerminalTable`. |
 | [`Ranking`](src/metrics/Ranking.ts) | `ndcg` / `recall` / `mrr` / `precision`, `scoreCase`, `metricKey`; `ndcgAtK` … as scorers, `metricAtK` / `metricsAtK`. |
 | [`GEval`](src/metrics/GEval.ts) | `gEval`, `gEvalConversational`, `makeRubric`, `defaultTemplate`. |
-| [`cli`](src/cli/) | The `effect-evals` bin — see [CLI](#cli-930) above. |
+| [`RagCase`](src/metrics/rag/RagCase.ts) | `RagCase` — the case shape the RAG metrics read (`input`, `output`, `expected`, `retrievedContext`); `require…` field lookups, `renderContext`. |
+| [`ExtractThenClassify`](src/metrics/rag/ExtractThenClassify.ts) | The extract → classify → ratio judge primitive the RAG metrics share: `extractStatements`, `classifyStatements`, `extractThenClassifyRatio`. |
+| [`Faithfulness`](src/metrics/rag/Faithfulness.ts) / [`AnswerRelevancy`](src/metrics/rag/AnswerRelevancy.ts) / [`ContextualPrecision`](src/metrics/rag/ContextualPrecision.ts) / [`ContextualRecall`](src/metrics/rag/ContextualRecall.ts) / [`ContextualRelevancy`](src/metrics/rag/ContextualRelevancy.ts) | Judge-based RAG metrics over `RagCase`: `faithfulness`, `answerRelevancy`, `contextualPrecision`, `contextualRecall`, `contextualRelevancy`. |
+| [`ExactMatch`](src/scorers/ExactMatch.ts) / [`Levenshtein`](src/scorers/Levenshtein.ts) / [`JsonValidity`](src/scorers/JsonValidity.ts) / [`SchemaMatch`](src/scorers/SchemaMatch.ts) | Deterministic scorers: `exactMatch` / `normalizedMatch`, `levenshtein` / `levenshteinSimilarity`, `jsonValidity`, `schemaMatch` / `schemaMatchValue`. |
+| [`ToolCallCorrectness`](src/scorers/ToolCallCorrectness.ts) | `toolCallCorrectness` — a case's actual tool calls against its golden's `expectedTools`. |
+| [`EmbeddingSimilarity`](src/scorers/EmbeddingSimilarity.ts) | `embeddingSimilarity` — cosine similarity of `output` and `expected` through the ambient `EmbeddingModel`. |
+| [`Metadata`](src/Metadata.ts) | `Metadata` — the free-form record a golden, scorer or score carries. |
+| [`cli`](src/cli/) | The `effect-evals` bin — see [CLI](#cli) above. |
 
-## Development
+## License
 
-```sh
-pnpm run check           # typecheck (native tsc)
-pnpm run test            # unit tests (vitest)
-pnpm run test:coverage   # with coverage
-pnpm run build           # tsup -> dist/
-```
+MIT

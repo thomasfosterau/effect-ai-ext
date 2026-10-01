@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * `VoyageEmbeddingModel` — the Voyage AI implementation of Effect AI's
  * `EmbeddingModel` service. It maps a batch of inputs onto Voyage's
  * `/v1/embeddings` request (via {@link VoyageClient}), then converts the
@@ -13,6 +11,8 @@
  * ids with their native and selectable dimensions.
  *
  * @module VoyageEmbeddingModel
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Effect from "effect/Effect";

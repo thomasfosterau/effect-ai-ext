@@ -1,12 +1,12 @@
 /**
- * @copyright Thomas Foster
- *
  * `levenshtein` — normalised edit-distance similarity between a case's
  * `output` and its golden's `expected` (autoevals' `Levenshtein`).
  * Implemented in-package (a single-row Wagner–Fischer DP, ~20 lines) rather
  * than pulling in a dependency for it.
  *
  * @module scorers/Levenshtein
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Effect from "effect/Effect";

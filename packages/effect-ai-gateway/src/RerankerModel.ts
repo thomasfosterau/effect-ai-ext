@@ -1,6 +1,4 @@
 /**
- * @module RerankerModel
- *
  * **Moved.** `RerankerModel` now lives in
  * `@thomasfosterau/effect-ai-ext/RerankerModel` — a reranker abstraction never
  * belonged in a routing package. This module is a re-export shim kept for a
@@ -8,7 +6,7 @@
  * (and `Cohere.ts`'s `makeCohereReranker`) keep working; it will be removed in
  * a future release. Import from `@thomasfosterau/effect-ai-ext` instead.
  *
- * @since 4.0.0
+ * @module RerankerModel
  */
 
 export * from "@thomasfosterau/effect-ai-ext/RerankerModel";

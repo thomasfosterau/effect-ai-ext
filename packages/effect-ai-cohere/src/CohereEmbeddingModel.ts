@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * `CohereEmbeddingModel` — the Cohere implementation of Effect AI's
  * `EmbeddingModel` service over Cohere's `/v2/embed` endpoint (via
  * {@link CohereClient}). It embeds a batch of texts into fixed-dimension
@@ -14,6 +12,8 @@
  * every request rather than trusting the model default.
  *
  * @module CohereEmbeddingModel
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Effect from "effect/Effect";

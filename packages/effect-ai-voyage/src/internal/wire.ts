@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * Wire-format definitions for Voyage AI's `/v1/embeddings` and `/v1/rerank`
  * endpoints.
  *
@@ -17,6 +15,8 @@
  * and ignores the rest.
  *
  * @module internal/wire
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Schema from "effect/Schema";

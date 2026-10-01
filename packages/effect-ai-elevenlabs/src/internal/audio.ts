@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * Audio plumbing shared by the ElevenLabs models: collecting a byte stream
  * into a `Blob` for the `multipart/form-data` upload endpoints (Scribe STT and
  * speech-to-speech both require a complete file), resolving the neutral
@@ -12,6 +10,8 @@
  * buffered here.
  *
  * @module internal/audio
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Effect from "effect/Effect";

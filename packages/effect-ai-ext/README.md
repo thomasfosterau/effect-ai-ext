@@ -108,17 +108,6 @@ reranker abstraction never belonged in a routing package. It now lives here;
 the gateway package re-exports it from
 `@thomasfosterau/effect-ai-ext/RerankerModel` through a deprecation shim.
 
-## Development
-
-Part of the [`effect-ai-ext` monorepo](../../README.md). See
-[AGENTS.md](../../AGENTS.md) for the toolchain.
-
-```sh
-pnpm run check   # type-check (native TS7 tsc)
-pnpm run test    # vitest (stubbed fixtures, no live network)
-pnpm run build   # tsup → one dist file per module entry
-```
-
 ## License
 
 MIT

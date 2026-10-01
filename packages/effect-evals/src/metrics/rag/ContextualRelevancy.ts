@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * `contextualRelevancy` — the fraction of statements in `retrievedContext`
  * that are relevant to `input`: a thin configuration of
  * {@link ExtractThenClassify.extractThenClassifyRatio} (extract statements
@@ -11,6 +9,8 @@
  * would otherwise vacuously find zero statements and score a perfect `1`.
  *
  * @module metrics/rag/ContextualRelevancy
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Effect from "effect/Effect";

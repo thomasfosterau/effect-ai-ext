@@ -2,9 +2,9 @@
 #
 # Provision a checkout for NON-INTERACTIVE use — the Claude Code SessionStart
 # hook (`.claude/settings.json`), so an agent session can run the gates
-# (`pnpm run check` / `test` / `build`) without manual setup (issue #30). The
-# same shape as the sibling library repos' hook, minus the Vite+ shims this
-# repo has no use for.
+# (`pnpm run check` / `test` / `build` / `check:dist`) without manual setup
+# (issue #30). The same shape as the sibling library repos' hook, minus the
+# Vite+ shims this repo has no use for.
 #
 # ## What it does
 #
@@ -21,12 +21,13 @@
 # hash already matches its replacement.
 #
 # `packageManager` pins pnpm 11; the session image may ship an older pnpm, so
-# the install goes through Corepack when the installed pnpm predates the pin.
+# the install goes through Corepack whenever it is available (it honours the
+# pin) and falls back to the `pnpm` on PATH.
 #
 # ## Secrets
 #
 # This hook hydrates NO secrets. The suites are recorded/stubbed fixtures only
-# (AGENTS.md → Testing), so nothing here needs a credential.
+# (AGENTS.md → Conventions), so nothing here needs a credential.
 #
 # ## Contract
 #

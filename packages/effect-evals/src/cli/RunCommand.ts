@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * The `run` command: translates parsed flags into a {@link Run.RunConfig},
  * runs {@link Run.runEvals}, and renders the result — skip/fail lines always
  * printed, the terminal table and/or JSON file gated by `--reporter` (both
@@ -10,6 +8,8 @@
  * trace.
  *
  * @module cli/RunCommand
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Console from "effect/Console";

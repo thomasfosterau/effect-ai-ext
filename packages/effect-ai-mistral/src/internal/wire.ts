@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * Wire-format definitions for Mistral's `/v1/chat/completions` endpoint.
  *
  * Request payloads are hand-built plain objects (typed by the `*Request`
@@ -17,6 +15,8 @@
  * and defaults the rest.
  *
  * @module internal/wire
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Schema from "effect/Schema";

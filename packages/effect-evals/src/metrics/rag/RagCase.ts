@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * The structural case shape the RAG metric suite reads from, and the
  * required-field lookup shared by every metric in `metrics/rag/` —
  * `GEval.ts`'s `GEvalCase` / `collectFields` pattern applied to the fields a
@@ -11,6 +9,8 @@
  * same concern regardless of which judge metric is asking.
  *
  * @module metrics/rag/RagCase
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Effect from "effect/Effect";

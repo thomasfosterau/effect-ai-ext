@@ -15,8 +15,8 @@ application code or env vars — this package never takes or reads an API key.
   through the same universal endpoint. BYOK by default; an application that
   holds its own OpenAI key passes it as `apiKey` (a `Redacted`) and it is sent
   as the bearer token. Text inputs only — the abstraction's contract.
-- **`RerankerModel`** — the provider-neutral reranker service abstraction (a
-  sibling of `EmbeddingModel`).¹
+- **`RerankerModel`** — deprecated re-export of
+  `@thomasfosterau/effect-ai-ext/RerankerModel`; import it from there.
 - **`Binding` / `Url`** — the Worker-binding and public-HTTPS transports.
 
 Every provider comes in a binding-based (`make…`) and a binding-free
@@ -39,9 +39,6 @@ provider, and every failure — a rejected call, a non-2xx status, an
 unreadable or undecodable body — is an `AiError` (`effect/ai`)
 naming the provider module and method.
 
-> ¹ `RerankerModel` migrates to `@thomasfosterau/effect-ai-ext` (issue #2),
-> after which this package re-exports it during a deprecation window.
-
 ## Install
 
 ```sh
@@ -55,40 +52,35 @@ dependencies (`effect` must be a singleton).
 ## Usage
 
 ```ts
-import { Effect } from "effect";
+import { Effect, Layer } from "effect";
 import { LanguageModel } from "effect/ai";
-import { anthropicLanguageModelLayer } from "@thomasfosterau/effect-ai-gateway";
-import { AI_GATEWAY_ID } from "@thomasfosterau/bindings"; // your gateway id
-
-// Inside a Worker with an `AI` binding:
-const layer = anthropicLanguageModelLayer(
-  { ai: env.AI, gatewayId: AI_GATEWAY_ID },
-  { model: "claude-…" },
-);
-
-const program = LanguageModel.generateText({ prompt: "…" }).pipe(Effect.provide(layer));
-```
-
-```ts
-import * as Effect from "effect/Effect";
 import { ModerationModel } from "@thomasfosterau/effect-ai-ext";
 import {
+  anthropicLanguageModelLayer,
   makeCohereRerankerFromUrl,
   makeOpenAiModerationModel,
 } from "@thomasfosterau/effect-ai-gateway";
 
+// Inside a Worker with an `AI` binding (`Ai` is from @cloudflare/workers-types):
+declare const env: { AI: Ai };
+const gateway = { ai: env.AI, gatewayId: "my-gateway" };
+
+const layer = anthropicLanguageModelLayer(gateway, { model: "claude-sonnet-4-5" });
+const program = LanguageModel.generateText({ prompt: "Hello" }).pipe(Effect.provide(layer));
+
+// Moderation as a ModerationModel service.
+const moderationLayer = Layer.effect(
+  ModerationModel.ModerationModel,
+  makeOpenAiModerationModel(gateway),
+);
+
 // A plain Node process (an evaluation harness, say): the reranker over the
 // gateway's HTTPS endpoint. Config is read once, at construction.
+declare const documents: ReadonlyArray<string>;
 const rerank = Effect.gen(function* () {
   const reranker = yield* makeCohereRerankerFromUrl;
   return yield* reranker.rerank({ query: "monstera", documents, topN: 20 });
 });
-
-// Inside a Worker: moderation as a ModerationModel service.
-const moderationLayer = Layer.effect(
-  ModerationModel.ModerationModel,
-  makeOpenAiModerationModel({ ai: env.AI, gatewayId: AI_GATEWAY_ID }),
-);
 ```
 
 ## License

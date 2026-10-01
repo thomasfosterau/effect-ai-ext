@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * `Golden` — the static, hand-authored (or dataset-loaded) description of one
  * evaluation case: an input, optionally an expected output, and whatever
  * retrieval/tool context a scorer needs to judge a run. `ConversationalGolden`
@@ -13,6 +11,8 @@
  * golden/test-case split).
  *
  * @module Golden
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Schema from "effect/Schema";

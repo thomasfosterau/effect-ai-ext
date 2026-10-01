@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * `jsonValidity` — does a case's `output` parse as JSON at all? The cheapest
  * possible sanity check before a stricter {@link SchemaMatch.schemaMatch}
  * decode (autoevals' `JSONDiff` family starts from the same "is it even
@@ -8,6 +6,8 @@
  * parse error as `reason`.
  *
  * @module scorers/JsonValidity
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Effect from "effect/Effect";

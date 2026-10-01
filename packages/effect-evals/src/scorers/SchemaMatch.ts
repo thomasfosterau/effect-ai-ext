@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * `schemaMatch` — does a case's `output` decode against a caller-supplied
  * Effect `Schema`? Parses `output` as JSON and decodes it against `schema`
  * in one step via `Schema.fromJsonString` (the {@link JsonValidity.jsonValidity}
@@ -11,6 +9,8 @@
  * decode error's message as `reason`.
  *
  * @module scorers/SchemaMatch
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Effect from "effect/Effect";

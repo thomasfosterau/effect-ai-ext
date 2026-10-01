@@ -16,8 +16,6 @@
  *
  * - `moderate` with an empty `inputs` array returns an empty response without
  *   invoking the provider.
- *
- * @since 4.0.0
  */
 
 import * as Context from "effect/Context";
@@ -38,7 +36,6 @@ import { AiError, LanguageModel } from "effect/ai";
  * @see {@link fromLanguageModel} for backing the service with a `LanguageModel`
  *
  * @category services
- * @since 4.0.0
  */
 export class ModerationModel extends Context.Service<ModerationModel, Service>()(
   "@thomasfosterau/effect-ai-ext/ModerationModel",
@@ -53,7 +50,6 @@ export class ModerationModel extends Context.Service<ModerationModel, Service>()
  * the empty input short-circuit bypassed the provider.
  *
  * @category models
- * @since 4.0.0
  */
 export class ModerationUsage extends Schema.Class<ModerationUsage>(
   "@thomasfosterau/effect-ai-ext/ModerationModel/ModerationUsage",
@@ -71,7 +67,6 @@ export class ModerationUsage extends Schema.Class<ModerationUsage>(
  * more likely to violate that category.
  *
  * @category models
- * @since 4.0.0
  */
 export class ModerationResult extends Schema.Class<ModerationResult>(
   "@thomasfosterau/effect-ai-ext/ModerationModel/ModerationResult",
@@ -92,7 +87,6 @@ export class ModerationResult extends Schema.Class<ModerationResult>(
  * @see {@link ModerationUsage} for usage metadata
  *
  * @category models
- * @since 4.0.0
  */
 export class ModerationResponse extends Schema.Class<ModerationResponse>(
   "@thomasfosterau/effect-ai-ext/ModerationModel/ModerationResponse",
@@ -105,7 +99,6 @@ export class ModerationResponse extends Schema.Class<ModerationResponse>(
  * Caller-facing input options for a moderation request.
  *
  * @category options
- * @since 4.0.0
  */
 export interface ModerationOptions {
   /** The texts to screen. */
@@ -116,7 +109,6 @@ export interface ModerationOptions {
  * Provider input options for moderation requests.
  *
  * @category options
- * @since 4.0.0
  */
 export interface ProviderOptions {
   readonly inputs: ReadonlyArray<string>;
@@ -126,7 +118,6 @@ export interface ProviderOptions {
  * Provider response contract consumed by {@link make}.
  *
  * @category models
- * @since 4.0.0
  */
 export interface ProviderResponse {
   readonly results: ReadonlyArray<{
@@ -140,7 +131,6 @@ export interface ProviderResponse {
  * Defines the service interface for moderation operations.
  *
  * @category models
- * @since 4.0.0
  */
 export interface Service {
   readonly moderate: (
@@ -209,7 +199,6 @@ const mapProviderResponse = (
  * @see {@link ProviderResponse} for the provider response contract consumed by this constructor
  *
  * @category constructors
- * @since 4.0.0
  */
 export const make = (params: {
   readonly moderate: (
@@ -273,7 +262,6 @@ const buildModeratePrompt = (options: ProviderOptions): string => {
  * @see {@link make} for the validation path this adapter reuses
  *
  * @category constructors
- * @since 4.0.0
  */
 export const fromLanguageModel: Effect.Effect<Service, never, LanguageModel.LanguageModel> =
   Effect.gen(function* () {

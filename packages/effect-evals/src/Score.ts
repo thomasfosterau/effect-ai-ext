@@ -1,12 +1,12 @@
 /**
- * @copyright Thomas Foster
- *
  * `Score` — the result of running one {@link Scorer.Scorer} against one
  * {@link EvalCase.EvalCase}: a normalised `0..1` number, an optional
  * human-readable `reason` (a judge's rationale, or a deterministic scorer's
  * diagnostic), and free-form `metadata`.
  *
  * @module Score
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Schema from "effect/Schema";

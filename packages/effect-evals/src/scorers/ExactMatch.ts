@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * `exactMatch` / `normalizedMatch` — the cheapest possible scorers: strict
  * string equality between a case's `output` and its golden's `expected`, and
  * a normalising variant that trims and/or case-folds both sides first
@@ -9,6 +7,8 @@
  * against" is a scoring outcome, not an error.
  *
  * @module scorers/ExactMatch
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Effect from "effect/Effect";

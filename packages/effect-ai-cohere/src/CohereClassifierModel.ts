@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * `CohereClassifierModel` — the Cohere implementation of effect-ai-ext's
  * `ClassifierModel` service. It assigns labelled classes with confidence
  * scores to each input text.
@@ -32,6 +30,8 @@
  * model could be added alongside this without changing the public surface.
  *
  * @module CohereClassifierModel
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Effect from "effect/Effect";

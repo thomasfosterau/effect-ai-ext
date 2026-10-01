@@ -1,12 +1,12 @@
 /**
- * @copyright Thomas Foster
- *
  * `answerRelevancy` — the fraction of statements in `output` that are
  * relevant to `input`: a thin configuration of
  * {@link ExtractThenClassify.extractThenClassifyRatio} (extract statements
  * from `output`, classify each against `input`).
  *
  * @module metrics/rag/AnswerRelevancy
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Effect from "effect/Effect";

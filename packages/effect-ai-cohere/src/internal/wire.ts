@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * Wire-format definitions for Cohere's v2 API — `/v2/chat` (regular and
  * streaming), `/v2/embed`, and `/v2/rerank`.
  *
@@ -20,6 +18,8 @@
  * whichever is present.
  *
  * @module internal/wire
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Schema from "effect/Schema";

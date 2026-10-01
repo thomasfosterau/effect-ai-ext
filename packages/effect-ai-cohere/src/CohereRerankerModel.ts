@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * `CohereRerankerModel` — the Cohere implementation of effect-ai-ext's
  * `RerankerModel` service over Cohere's `/v2/rerank` endpoint (via
  * {@link CohereClient}). It scores and reorders candidate documents against a
@@ -12,6 +10,8 @@
  * Cohere's wire response into the provider-response contract.
  *
  * @module CohereRerankerModel
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Effect from "effect/Effect";

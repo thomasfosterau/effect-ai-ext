@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * The one request/decode pipeline every provider module built directly on
  * the gateway shares — Cohere (`Cohere.ts`) and OpenAI moderation
  * (`OpenAiModeration.ts`) today. Two transports feed it:
@@ -22,6 +20,8 @@
  * Internal — not part of the package's public surface.
  *
  * @module internal/transport
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Effect from "effect/Effect";

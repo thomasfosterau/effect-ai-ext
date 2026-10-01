@@ -10,8 +10,6 @@
  * The shape mirrors `EmbeddingModel`: a provider supplies `generate` and
  * `stream` functions through {@link make}, and the one-shot result is validated
  * (non-empty audio) before being returned.
- *
- * @since 4.0.0
  */
 
 import * as Context from "effect/Context";
@@ -32,7 +30,6 @@ import { AiError } from "effect/ai";
  * @see {@link make} for constructing a speech model service from a provider
  *
  * @category services
- * @since 4.0.0
  */
 export class SpeechModel extends Context.Service<SpeechModel, Service>()(
   "@thomasfosterau/effect-ai-ext/SpeechModel",
@@ -46,7 +43,6 @@ export class SpeechModel extends Context.Service<SpeechModel, Service>()(
  * `inputCharacters` is `undefined` when the provider does not report usage.
  *
  * @category models
- * @since 4.0.0
  */
 export class SpeechUsage extends Schema.Class<SpeechUsage>(
   "@thomasfosterau/effect-ai-ext/SpeechModel/SpeechUsage",
@@ -60,7 +56,6 @@ export class SpeechUsage extends Schema.Class<SpeechUsage>(
  * @see {@link SpeechUsage} for usage metadata
  *
  * @category models
- * @since 4.0.0
  */
 export class SpeechResponse extends Schema.Class<SpeechResponse>(
   "@thomasfosterau/effect-ai-ext/SpeechModel/SpeechResponse",
@@ -76,7 +71,6 @@ export class SpeechResponse extends Schema.Class<SpeechResponse>(
  * Caller-facing input options for a speech synthesis request.
  *
  * @category options
- * @since 4.0.0
  */
 export interface SpeechOptions {
   /** The text to synthesise. */
@@ -93,7 +87,6 @@ export interface SpeechOptions {
  * Provider input options for speech synthesis requests.
  *
  * @category options
- * @since 4.0.0
  */
 export interface ProviderOptions {
   readonly text: string;
@@ -106,7 +99,6 @@ export interface ProviderOptions {
  * Provider response contract for the one-shot surface, consumed by {@link make}.
  *
  * @category models
- * @since 4.0.0
  */
 export interface ProviderResponse {
   readonly audio: Uint8Array;
@@ -118,7 +110,6 @@ export interface ProviderResponse {
  * Defines the service interface for speech operations.
  *
  * @category models
- * @since 4.0.0
  */
 export interface Service {
   readonly generate: (options: SpeechOptions) => Effect.Effect<SpeechResponse, AiError.AiError>;
@@ -170,7 +161,6 @@ const toProviderOptions = (options: SpeechOptions): ProviderOptions => ({
  * @see {@link ProviderResponse} for the one-shot provider response contract
  *
  * @category constructors
- * @since 4.0.0
  */
 export const make = (params: {
   readonly generate: (

@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * Content-hash result caching, built directly on `effect`'s own
  * `KeyValueStore` (`effect/persistence`): a cache hit lets
  * {@link Runner.runSuite} skip both the task (SUT) call and a metric's judge
@@ -22,13 +20,15 @@
  * for cached tasks and scorers.
  *
  * Only `effect` and the platform-standard `crypto.subtle` global (present in
- * Node 19+ and Workers, no import needed) are used here, per
- * `docs/decisions/effect-evals-as-the-evaluation-toolkit.md`: the concrete
- * `FileSystem`/`Path` layer for {@link layerFileSystem} is supplied by the
- * caller (a test or the CLI) — exactly like a
- * judge `LanguageModel` is provided to a {@link Scorer.Scorer}.
+ * Node 19+ and Workers, no import needed) are used here, per the website
+ * repo's `docs/decisions/effect-evals-as-the-evaluation-toolkit.md`: the
+ * concrete `FileSystem`/`Path` layer for {@link layerFileSystem} is supplied
+ * by the caller (a test or the CLI) — exactly like a judge `LanguageModel` is
+ * provided to a {@link Scorer.Scorer}.
  *
  * @module Cache
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Effect from "effect/Effect";

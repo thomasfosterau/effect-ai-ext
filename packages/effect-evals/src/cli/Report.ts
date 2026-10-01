@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * The CLI's own combined report: every executed suite result across every
  * matched file, plus the files skipped for missing credentials and the
  * files that failed to load. Distinct from {@link Reporter.Reporter}
@@ -9,6 +7,8 @@
  * aggregate shape and its own JSON writer.
  *
  * @module cli/Report
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Effect from "effect/Effect";

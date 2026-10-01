@@ -1,6 +1,4 @@
 /**
- * @module effect-evals
- *
  * The core, runner-agnostic model for `@thomasfosterau/effect-evals`: an
  * eval is definable and a scorer writable as plain Effect values, with no
  * dependency beyond `effect` itself. This is the foundation the runner,
@@ -20,8 +18,8 @@
  *   consumes, starting with the CLI.
  * - {@link Runner} — `runSuite`, the Effect program that runs a suite's
  *   goldens through its task and metrics: trials, bounded concurrency,
- *   retry, and caching (#924); `runRetrievalSuite`, the same loop over a
- *   `RetrievalPort` for retrieval-ranking datasets.
+ *   retry, and caching (website#924); `runRetrievalSuite`, the same loop
+ *   over a `RetrievalPort` for retrieval-ranking datasets.
  * - {@link Result} — the typed run → case → trial → metric result model
  *   `Runner` produces.
  * - {@link Cache} — content-hash result caching behind `effect`'s own
@@ -31,7 +29,7 @@
  * - The deterministic scorer catalog ({@link ExactMatch}, {@link Levenshtein},
  *   {@link JsonValidity}, {@link SchemaMatch}, {@link EmbeddingSimilarity},
  *   {@link ToolCallCorrectness}) — judge-free, reproducible {@link Scorer}s
- *   built on the primitive above (#925).
+ *   built on the primitive above (website#925).
  * - {@link Ranking} — nDCG@k, recall@k, MRR@k and precision@k over a
  *   ranked list and a graded-relevance map: deterministic scorers for
  *   retrieval evaluation.
@@ -42,7 +40,9 @@
  *   {@link ContextualRelevancy}) — judge-based metrics for
  *   retrieval-augmented answers, built on the shared {@link RagCase} case
  *   shape and {@link ExtractThenClassify} extract → classify → ratio
- *   primitive (#927).
+ *   primitive (website#927).
+ *
+ * @module effect-evals
  */
 
 export * as AnswerRelevancy from "./metrics/rag/AnswerRelevancy.ts";

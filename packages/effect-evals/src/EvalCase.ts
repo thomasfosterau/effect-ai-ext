@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * `EvalCase` — a {@link Golden.Golden} enriched with the actuals produced by
  * running the system under test: the real `output`, whatever context was
  * retrieved along the way, any tool calls made, and timing/usage. Scorers
@@ -9,6 +7,8 @@
  * `Golden` / `LLMTestCase`).
  *
  * @module EvalCase
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Schema from "effect/Schema";
@@ -19,7 +19,7 @@ import * as Schema from "effect/Schema";
  * against a specific `effect/ai` `Toolkit`, so goldens and cases
  * stay plain, serialisable data — a `Toolkit` type parameter would force
  * every `Golden`/`EvalCase` consumer to close over the same tool set.
- * `scorers/ToolCallCorrectness.ts` (#925) compares against this shape
+ * `scorers/ToolCallCorrectness.ts` (website#925) compares against this shape
  * directly rather than extending it.
  */
 export const ToolCall = Schema.Struct({

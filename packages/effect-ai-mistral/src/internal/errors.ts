@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * Maps the failure channels of the underlying HTTP client — transport
  * failures, non-2xx statuses, and body-decode failures — plus schema
  * decode failures and SSE framing failures, into the unified `AiError`
@@ -10,6 +8,8 @@
  * than a bespoke table.
  *
  * @module internal/errors
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Effect from "effect/Effect";

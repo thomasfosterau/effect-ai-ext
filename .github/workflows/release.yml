@@ -1,31 +1,13 @@
 name: Release
 
-# Changesets-driven release for the @thomasfosterau/effect-ai-* packages,
-# publishing to npm via **Trusted Publishing** (tokenless OIDC).
+# Changesets release for the @thomasfosterau/effect-ai-* packages: opens the
+# version PR (`chore: version packages`) and, once the owner merges it,
+# publishes with npm trusted publishing (OIDC). The flow, the provenance
+# posture and the owner's one-time setup are in PUBLISHING.md. The default
+# branch is `trunk`, not `main` (issue #30).
 #
-# Flow: merge PRs that include a changeset (`pnpm changeset`) into `trunk`
-# (the default branch — not `main`; issue #30). This workflow then opens or
-# updates a "Version Packages" PR that bumps versions and writes changelogs;
-# merging THAT PR publishes the bumped packages. With no pending changesets,
-# any package whose version is not yet on the registry is published (packages
-# already on the registry are skipped, so a no-op run is green).
-#
-# Auth & provenance — no NPM_TOKEN:
-#   npm exchanges this job's GitHub OIDC token (`id-token: write`) for
-#   short-lived publish credentials, so there is no long-lived token to store or
-#   rotate. Provenance is generated automatically by trusted publishing (no
-#   `NPM_CONFIG_PROVENANCE` needed). This requires:
-#     1. npm CLI >= 11.5.1 at publish time (installed below), and
-#     2. a Trusted Publisher configured on npmjs.com for EACH package, pointing
-#        at `thomasfosterau/effect-ai-ext` + this workflow file (`release.yml`).
-#   Until (2) is done for a package, its publish step fails auth — configure the
-#   trusted publishers before cutting a versioned release. See the repo's
-#   release docs (AGENTS.md → Versioning & releases).
-#
-# The job runs in the `release` GitHub Environment (the library standard —
-# see effect-jsonapi's release.yml). GitHub creates the environment on first
-# use; adding required reviewers to it in the repository settings turns every
-# run into a manually approved one.
+# The job runs in the `release` environment (the library standard), so
+# required reviewers added to it gate every publish.
 
 on:
   push:
@@ -46,8 +28,8 @@ jobs:
     timeout-minutes: 15
     environment: release
     permissions:
-      contents: write # create the Version Packages PR / tags
-      pull-requests: write # open/update the Version Packages PR
+      contents: write # push the version branch and tags
+      pull-requests: write # open/update the version PR
       id-token: write # mint the OIDC token npm exchanges for publish creds
     steps:
       # The Changesets action pushes the version branch, so it needs the
@@ -61,10 +43,11 @@ jobs:
           node-version-file: .node-version
           cache: pnpm
           registry-url: https://registry.npmjs.org
-      # Trusted publishing (tokenless OIDC + automatic provenance) needs a recent
-      # npm CLI; the runner's bundled npm predates it. `changeset publish` shells
-      # out to this `npm publish`, which detects the Actions OIDC environment.
-      - run: npm install -g npm@latest
+      # `changeset publish` runs `pnpm publish`, and pnpm 11 performs the
+      # trusted-publishing (OIDC) exchange itself, so the publish path does not
+      # depend on this global npm. It stays pinned to a major, never `@latest`,
+      # because this job holds `id-token: write` (#57).
+      - run: npm install -g npm@11
       - run: pnpm install --frozen-lockfile
       - run: pnpm run check
       - run: pnpm run test

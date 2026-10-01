@@ -1,6 +1,4 @@
 /**
- * @module effect-ai-cohere
- *
  * A first-party Effect AI provider for Cohere. Effect ships no
  * `@effect/ai-cohere` package, so this package implements each capability
  * directly against Cohere's v2 API:
@@ -37,6 +35,8 @@
  *   Effect.provide(ModelLayer),
  * )
  * ```
+ *
+ * @module effect-ai-cohere
  */
 
 export * as CohereClient from "./CohereClient";

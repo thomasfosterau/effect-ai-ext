@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * `ElevenLabsVoiceConversionModel` — the ElevenLabs implementation of
  * `effect-ai-ext`'s `VoiceConversionModel` service (speech-to-speech). It
  * accepts source audio as bytes or a stream, uploads it as
@@ -11,6 +9,8 @@
  * is drained to a `Blob` before upload.
  *
  * @module ElevenLabsVoiceConversionModel
+ *
+ * @copyright Thomas Foster
  */
 
 import { VoiceConversionModel } from "@thomasfosterau/effect-ai-ext";

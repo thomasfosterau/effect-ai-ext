@@ -1,11 +1,11 @@
 /**
- * @copyright Thomas Foster
- *
  * The `run` command's flag and argument definitions, split out from
  * `RunCommand.ts` so unit tests can parse them against a probe handler
  * without exercising real file discovery/loading/execution.
  *
  * @module cli/Flags
+ *
+ * @copyright Thomas Foster
  */
 
 import { Argument, Flag } from "effect/cli";

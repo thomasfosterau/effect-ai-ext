@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * `contextualPrecision` — weighted cumulative precision over the ranked
  * `retrievedContext` chunks: rewards relevant chunks ranked higher, needs
  * `expected` to judge relevance against. Unlike the suite's other four
@@ -22,6 +20,8 @@
  * contributes more than the same chunk ranked later.
  *
  * @module metrics/rag/ContextualPrecision
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Effect from "effect/Effect";

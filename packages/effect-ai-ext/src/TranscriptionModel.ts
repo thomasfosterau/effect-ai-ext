@@ -10,8 +10,6 @@
  * The shape mirrors `EmbeddingModel`: a provider supplies one `transcribe`
  * function through {@link make}, and the result is validated (finite,
  * non-decreasing segment timestamps) before being returned.
- *
- * @since 4.0.0
  */
 
 import * as Context from "effect/Context";
@@ -32,7 +30,6 @@ import { AiError } from "effect/ai";
  * @see {@link make} for constructing a transcription model service from a provider
  *
  * @category services
- * @since 4.0.0
  */
 export class TranscriptionModel extends Context.Service<TranscriptionModel, Service>()(
   "@thomasfosterau/effect-ai-ext/TranscriptionModel",
@@ -47,7 +44,6 @@ export class TranscriptionModel extends Context.Service<TranscriptionModel, Serv
  * transcribed audio duration.
  *
  * @category models
- * @since 4.0.0
  */
 export class TranscriptionUsage extends Schema.Class<TranscriptionUsage>(
   "@thomasfosterau/effect-ai-ext/TranscriptionModel/TranscriptionUsage",
@@ -59,7 +55,6 @@ export class TranscriptionUsage extends Schema.Class<TranscriptionUsage>(
  * One transcribed segment with its start and end offsets in seconds.
  *
  * @category models
- * @since 4.0.0
  */
 export class TranscriptionSegment extends Schema.Class<TranscriptionSegment>(
   "@thomasfosterau/effect-ai-ext/TranscriptionModel/TranscriptionSegment",
@@ -83,7 +78,6 @@ export class TranscriptionSegment extends Schema.Class<TranscriptionSegment>(
  * @see {@link TranscriptionUsage} for usage metadata
  *
  * @category models
- * @since 4.0.0
  */
 export class TranscriptionResponse extends Schema.Class<TranscriptionResponse>(
   "@thomasfosterau/effect-ai-ext/TranscriptionModel/TranscriptionResponse",
@@ -98,7 +92,6 @@ export class TranscriptionResponse extends Schema.Class<TranscriptionResponse>(
  * Caller-facing input options for a transcription request.
  *
  * @category options
- * @since 4.0.0
  */
 export interface TranscriptionOptions {
   /** The audio to transcribe, as a byte buffer or a stream of chunks. */
@@ -113,7 +106,6 @@ export interface TranscriptionOptions {
  * Provider input options for transcription requests.
  *
  * @category options
- * @since 4.0.0
  */
 export interface ProviderOptions {
   readonly audio: Uint8Array | Stream.Stream<Uint8Array>;
@@ -125,7 +117,6 @@ export interface ProviderOptions {
  * Provider response contract consumed by {@link make}.
  *
  * @category models
- * @since 4.0.0
  */
 export interface ProviderResponse {
   readonly text: string;
@@ -140,7 +131,6 @@ export interface ProviderResponse {
  * Defines the service interface for transcription operations.
  *
  * @category models
- * @since 4.0.0
  */
 export interface Service {
   readonly transcribe: (
@@ -207,7 +197,6 @@ const mapProviderResponse = (
  * @see {@link ProviderResponse} for the provider response contract consumed by this constructor
  *
  * @category constructors
- * @since 4.0.0
  */
 export const make = (params: {
   readonly transcribe: (

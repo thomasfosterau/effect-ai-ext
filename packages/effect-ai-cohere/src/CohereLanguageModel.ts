@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * `CohereLanguageModel` — the Cohere implementation of Effect AI's
  * `LanguageModel` service over Command chat models. It translates Effect AI
  * prompts, tools, and structured-output requests into Cohere `/v2/chat`
@@ -26,6 +24,8 @@
  * filtering the `tools` array (plus `REQUIRED` when the mode demands a call).
  *
  * @module CohereLanguageModel
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Context from "effect/Context";

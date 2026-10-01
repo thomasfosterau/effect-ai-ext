@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * Threshold policies — the pass/fail rule applied to a {@link Score.Score}.
  * Three shapes cover the metric catalog this package is building toward:
  * `minScore` for ordinary quality metrics (higher is better), `maxScore` for
@@ -8,6 +6,8 @@
  * pass/fail metrics that only accept a perfect score.
  *
  * @module Threshold
+ *
+ * @copyright Thomas Foster
  */
 
 /** Passes when the score is at least `threshold` (higher is better). */

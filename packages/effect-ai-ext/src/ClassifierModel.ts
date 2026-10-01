@@ -21,8 +21,6 @@
  *   invoking the provider.
  * - Each classification's `classes` are returned sorted by descending `score`
  *   regardless of provider ordering.
- *
- * @since 4.0.0
  */
 
 import * as Context from "effect/Context";
@@ -43,7 +41,6 @@ import { AiError, LanguageModel } from "effect/ai";
  * @see {@link fromLanguageModel} for backing the service with a `LanguageModel`
  *
  * @category services
- * @since 4.0.0
  */
 export class ClassifierModel extends Context.Service<ClassifierModel, Service>()(
   "@thomasfosterau/effect-ai-ext/ClassifierModel",
@@ -58,7 +55,6 @@ export class ClassifierModel extends Context.Service<ClassifierModel, Service>()
  * the empty input short-circuit bypassed the provider.
  *
  * @category models
- * @since 4.0.0
  */
 export class ClassifierUsage extends Schema.Class<ClassifierUsage>(
   "@thomasfosterau/effect-ai-ext/ClassifierModel/ClassifierUsage",
@@ -70,7 +66,6 @@ export class ClassifierUsage extends Schema.Class<ClassifierUsage>(
  * One candidate label with the confidence the model assigned to it.
  *
  * @category models
- * @since 4.0.0
  */
 export class ClassScore extends Schema.Class<ClassScore>(
   "@thomasfosterau/effect-ai-ext/ClassifierModel/ClassScore",
@@ -88,7 +83,6 @@ export class ClassScore extends Schema.Class<ClassScore>(
  * @see {@link ClassScore} for the individual label/score pairs
  *
  * @category models
- * @since 4.0.0
  */
 export class Classification extends Schema.Class<Classification>(
   "@thomasfosterau/effect-ai-ext/ClassifierModel/Classification",
@@ -109,7 +103,6 @@ export class Classification extends Schema.Class<Classification>(
  * @see {@link ClassifierUsage} for token usage metadata
  *
  * @category models
- * @since 4.0.0
  */
 export class ClassifyResponse extends Schema.Class<ClassifyResponse>(
   "@thomasfosterau/effect-ai-ext/ClassifierModel/ClassifyResponse",
@@ -122,7 +115,6 @@ export class ClassifyResponse extends Schema.Class<ClassifyResponse>(
  * A labelled example used for example-shot classification.
  *
  * @category options
- * @since 4.0.0
  */
 export interface ClassifyExample {
   readonly text: string;
@@ -133,7 +125,6 @@ export interface ClassifyExample {
  * Caller-facing input options for a classify request.
  *
  * @category options
- * @since 4.0.0
  */
 export interface ClassifyOptions {
   /** The texts to classify. */
@@ -150,7 +141,6 @@ export interface ClassifyOptions {
  * Provider input options for classify requests.
  *
  * @category options
- * @since 4.0.0
  */
 export interface ProviderOptions {
   readonly inputs: ReadonlyArray<string>;
@@ -163,7 +153,6 @@ export interface ProviderOptions {
  * Provider response contract consumed by {@link make}.
  *
  * @category models
- * @since 4.0.0
  */
 export interface ProviderResponse {
   readonly classifications: ReadonlyArray<{
@@ -176,7 +165,6 @@ export interface ProviderResponse {
  * Defines the service interface for classifier operations.
  *
  * @category models
- * @since 4.0.0
  */
 export interface Service {
   readonly classify: (options: ClassifyOptions) => Effect.Effect<ClassifyResponse, AiError.AiError>;
@@ -260,7 +248,6 @@ const mapProviderResponse = (
  * @see {@link ProviderResponse} for the provider response contract consumed by this constructor
  *
  * @category constructors
- * @since 4.0.0
  */
 export const make = (params: {
   readonly classify: (
@@ -350,7 +337,6 @@ const buildClassifyPrompt = (options: ProviderOptions): string => {
  * @see {@link make} for the validation path this adapter reuses
  *
  * @category constructors
- * @since 4.0.0
  */
 export const fromLanguageModel: Effect.Effect<Service, never, LanguageModel.LanguageModel> =
   Effect.gen(function* () {

@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * `toolCallCorrectness` — deterministic comparison of a case's actual
  * `toolCalls` (`EvalCase.ToolCall`) against its golden's `expectedTools`,
  * mirroring DeepEval's `ToolCorrectnessMetric` knobs: `mode` (`"exact"` — the
@@ -21,6 +19,8 @@
  * Never fails — deterministic comparison has no failure mode of its own.
  *
  * @module scorers/ToolCallCorrectness
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Effect from "effect/Effect";

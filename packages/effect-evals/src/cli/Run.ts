@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * The framework-agnostic orchestration behind the `run` command: discover
  * eval files, load and validate each one, run its (optionally filtered)
  * suites through {@link Runner.runSuite}, and aggregate into a
@@ -28,6 +26,8 @@
  * its threshold, both of which are ordinary, expected results here.
  *
  * @module cli/Run
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Effect from "effect/Effect";

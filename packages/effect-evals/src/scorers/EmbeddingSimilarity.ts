@@ -1,15 +1,15 @@
 /**
- * @copyright Thomas Foster
- *
  * `embeddingSimilarity` — cosine similarity between a case's `output` and
  * its golden's `expected`, both embedded through the ambient `EmbeddingModel`
  * service (`effect/ai`) so any provider layer can back it
  * (autoevals' `EmbeddingSimilarity`). This package takes no provider
  * dependency itself — `EmbeddingModel` lives in `R`, and a caller provides a
- * concrete layer (the Cohere gateway layer is wired at call sites in #931,
- * never here); tests stub the service directly.
+ * concrete layer (the Cohere gateway layer is wired at call sites in
+ * website#931, never here); tests stub the service directly.
  *
  * @module scorers/EmbeddingSimilarity
+ *
+ * @copyright Thomas Foster
  */
 
 import * as Effect from "effect/Effect";
