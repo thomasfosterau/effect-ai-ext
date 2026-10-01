@@ -1,5 +1,17 @@
 # @thomasfosterau/effect-ai-gateway
 
+## 0.4.0
+
+### Minor Changes
+
+- 601c2c2: **Breaking:** `gatewayUrlConfig` (and every `make…FromUrl` / `…LayerFromUrl` that reads it) no longer defaults `CF_AIG_GATEWAY_ID` to `"website"`. The variable is now required: a missing or empty value fails layer construction with a typed `Config.ConfigError`, like `CF_ACCOUNT_ID` and `CF_AIG_TOKEN`. Consumers that relied on the default must now set `CF_AIG_GATEWAY_ID` explicitly before upgrading.
+
+### Patch Changes
+
+- 15080ed: Documentation only. Doc comments now open with their summary (module headers no longer start with `@module` or `@copyright`, so editor hovers show it), the misleading `@since 4.0.0` tags are gone (no 4.0.0 of these packages exists), and comments that cite another repository's issues and decision records say so (`website#NNN`). The `effect-ai-gateway` README examples compile and its barrel has a summary; the `effect-evals` README gains an Install section and the modules its table omitted.
+- Updated dependencies [15080ed]
+  - @thomasfosterau/effect-ai-ext@0.4.1
+
 ## 0.3.0
 
 ### Minor Changes
