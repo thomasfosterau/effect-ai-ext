@@ -26,10 +26,10 @@ export interface GatewayUrlConfig {
   /**
    * The AI Gateway id to route through — the same id passed to
    * `Cloudflare.AI.Gateway("AI", { id })` in `@thomasfosterau/bindings`
-   * (`AI_GATEWAY_ID`, currently `"website"`). Not imported from that
-   * package here — this module stays binding-agnostic — so the default
-   * below is a literal kept in sync by convention, overridable via
-   * `CF_AIG_GATEWAY_ID` for any other gateway.
+   * (`AI_GATEWAY_ID`). Required: read from `CF_AIG_GATEWAY_ID` with no
+   * default, because a library must not bake in one application's gateway
+   * (a forgotten variable would silently route to someone else's, or a
+   * nonexistent, gateway).
    */
   readonly gatewayId: string;
   /**
@@ -42,14 +42,14 @@ export interface GatewayUrlConfig {
 
 /**
  * Loads {@link GatewayUrlConfig} from the environment: `CF_ACCOUNT_ID`,
- * `CF_AIG_GATEWAY_ID` (defaults to `"website"`), `CF_AIG_TOKEN`. A missing
- * `CF_ACCOUNT_ID` or `CF_AIG_TOKEN` fails layer construction with a typed
- * `Config.ConfigError` — never a plain-string fallback standing in for a
- * real credential.
+ * `CF_AIG_GATEWAY_ID`, `CF_AIG_TOKEN`. All three are required: a missing
+ * (or empty — `ConfigProvider` treats `""` as missing) value fails layer
+ * construction with a typed `Config.ConfigError` — never a fallback standing
+ * in for a real credential or gateway id.
  */
 export const gatewayUrlConfig: Config.Config<GatewayUrlConfig> = Config.all({
   accountId: Config.String("CF_ACCOUNT_ID"),
-  gatewayId: Config.String("CF_AIG_GATEWAY_ID").pipe(Config.withDefault("website")),
+  gatewayId: Config.String("CF_AIG_GATEWAY_ID"),
   token: Config.Redacted("CF_AIG_TOKEN"),
 });
 
