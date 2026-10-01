@@ -7,12 +7,16 @@ import { defineConfig } from "tsup";
 // `ignoreDeprecations` silences TS6's `baseUrl` deprecation error raised by the
 // declaration bundler.
 //
-// Only the barrel is bundled. The `effect-evals` bin deliberately runs
-// `src/cli/main.ts` as raw TypeScript through Node's own type-stripping (see
-// `bin/effect-evals.js`), so `src/` ships alongside `dist/` in `files` and the
-// CLI is never built.
+// Two entries: the barrel (`dist/index.js`) and the CLI (`dist/cli/main.js`),
+// which `bin/effect-evals.js` runs. The CLI MUST be built: Node refuses to
+// type-strip anything under `node_modules` (issue #42), so a raw-TypeScript
+// bin only ever worked inside the workspace. esbuild's ESM code splitting puts
+// the modules the two entries share in common chunks, so the library an
+// `*.eval.ts` file imports by package name and the one the CLI runs are the
+// same module instances (one `Cache` service tag, not two).
 export default defineConfig({
-  entry: ["src/index.ts"],
+  entry: { index: "src/index.ts", "cli/main": "src/cli/main.ts" },
+  splitting: true,
   format: ["esm"],
   target: "esnext",
   dts: { compilerOptions: { ignoreDeprecations: "6.0" } },
