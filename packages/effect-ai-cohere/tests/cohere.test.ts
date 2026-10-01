@@ -245,6 +245,33 @@ describe("CohereLanguageModel.generateText", () => {
     expect(calls[0]?.body.messages?.[0]).toEqual({ role: "user", content: "just text" });
   });
 
+  it("base64-encodes Uint8Array image bytes into a data URL", async () => {
+    const { calls, fetch } = makeFetch(() => jsonResponse(chatReply()));
+
+    await runTest(
+      LanguageModel.generateText({
+        prompt: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "file",
+                mediaType: "image/jpeg",
+                data: new Uint8Array([0x41, 0x42, 0x43]),
+              },
+            ],
+          },
+        ],
+      }).pipe(Effect.provide(modelLayer(fetch))),
+    );
+
+    const messages = calls[0]?.body.messages ?? [];
+    expect(messages[0]).toEqual({
+      role: "user",
+      content: [{ type: "image_url", image_url: { url: "data:image/jpeg;base64,QUJD" } }],
+    });
+  });
+
   it("rejects unsupported (non-image) file parts with an AiError", async () => {
     const { fetch } = makeFetch(() => jsonResponse(chatReply()));
 
