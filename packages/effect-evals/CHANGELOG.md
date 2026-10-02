@@ -1,5 +1,12 @@
 # @thomasfosterau/effect-evals
 
+## 0.3.1
+
+### Patch Changes
+
+- 15080ed: Documentation only. Doc comments now open with their summary (module headers no longer start with `@module` or `@copyright`, so editor hovers show it), the misleading `@since 4.0.0` tags are gone (no 4.0.0 of these packages exists), and comments that cite another repository's issues and decision records say so (`website#NNN`). The `effect-ai-gateway` README examples compile and its barrel has a summary; the `effect-evals` README gains an Install section and the modules its table omitted.
+- f625a1a: Fix the `effect-evals` bin failing to start from `node_modules` (`ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING`). The CLI entry is now built to `dist/cli/main.js` and the bin launches that; Node's type stripping and the loader hook apply only to your own `*.eval.ts` files. The CLI still needs the optional peer `@effect/platform-node` installed at the same version as `effect`.
+
 ## 0.3.0
 
 ### Minor Changes
