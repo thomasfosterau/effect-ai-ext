@@ -13,17 +13,22 @@
 #   pnpm-workspace.yaml). `@effect/platform-node-shared` is pinned there only
 #   through the catalog + `overrides` (no manifest names it), so this group
 #   never proposes it: bump it by hand to the same rc in the same PR.
-#   `@effect/tsgo` is excluded: it ships artifacts for
-#   an explicit set of TypeScript versions and hard-errors on any other, so it
-#   belongs with the TypeScript pair below, not the Effect line.
-# - `typescript-toolchain`: `@effect/tsgo` + `@typescript/native` +
-#   `typescript` (the 6/7 side-by-side split) — `effect-tsgo patch` matches the
-#   native `tsc` by package version, so a standalone bump of either side fails
-#   `pnpm install` (UnsupportedTargetPackageVersionError). Grouping does not
-#   make such a bump safe — read the `components` table in
-#   node_modules/@effect/tsgo/dist/effect-tsgo.cjs — but it keeps the three
-#   in one reviewable PR.
+#   `@effect/tsgo` is excluded: it belongs to the TypeScript set below, not
+#   the Effect line.
 # - `vitest-toolchain`: `vitest` + `@vitest/*`.
+#
+# `ignore` keeps Dependabot from proposing the TypeScript toolchain set:
+# `@effect/tsgo` + `@typescript/native` + `typescript` (the 6/7 side-by-side
+# split). `effect-tsgo patch` matches the native `tsc` by package version and
+# ships artifacts for an explicit set of TypeScript versions only, so any
+# pairing it has no artifact for fails `pnpm install`
+# (UnsupportedTargetPackageVersionError). Grouping the three did not make a
+# bump safe, so they move BY HAND, as one set (together with `vite-plus`
+# wherever a workspace uses it; this one does not), after reading the
+# `components` table in node_modules/@effect/tsgo/dist/effect-tsgo.cjs. The
+# ignore covers the `version-update:semver-*` update types only: SECURITY
+# updates for the three stay enabled (a bare `dependency-name` ignore would
+# block them too).
 #
 # `cooldown` mirrors pnpm-workspace.yaml's `minimumReleaseAge` so Dependabot
 # never proposes a version pnpm's own supply-chain gate would then reject at
@@ -48,11 +53,6 @@ updates:
       exclude:
         - "@thomasfosterau/*"
     groups:
-      typescript-toolchain:
-        patterns:
-          - "@effect/tsgo"
-          - "@typescript/native"
-          - "typescript"
       effect:
         patterns:
           - "effect"
@@ -63,6 +63,22 @@ updates:
         patterns:
           - "vitest"
           - "@vitest/*"
+    ignore:
+      - dependency-name: "@effect/tsgo"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+      - dependency-name: "typescript"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+      - dependency-name: "@typescript/native"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
