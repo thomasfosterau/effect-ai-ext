@@ -34,17 +34,17 @@ catalogMode: strict
 catalog:
   "@changesets/cli": ^3.0.3
   "@cloudflare/workers-types": ^5.20260927.1
-  "@effect/ai-anthropic": 4.0.0-rc.118
+  "@effect/ai-anthropic": 4.0.0
   "@effect/language-service": ^0.87.3
-  "@effect/platform-node": 4.0.0-rc.118
+  "@effect/platform-node": 4.0.0
   # Transitive only (via @effect/platform-node's `^` range); pinned and
-  # overridden so it cannot float ahead of `effect` — rc.118 peers on
-  # `effect ^4.0.0-rc.118`, which the singleton override would silently mask.
+  # overridden so it cannot float ahead of `effect` — 4.0.0 peers on
+  # `effect ^4.0.0`, which the singleton override would silently mask.
   # BUMP BY HAND with the rest of the Effect line: no manifest names it, so
   # Dependabot's `effect` group never proposes it, and nothing flags a stale
   # pin — the `effect` override rewrites its peer spec too, so
   # `pnpm peers check` stays silent. Keep it equal to `effect` below.
-  "@effect/platform-node-shared": 4.0.0-rc.118
+  "@effect/platform-node-shared": 4.0.0
   # Effect Language Service as a native (TypeScript-Go) binary — the TS7 side
   # of the 6/7 split. `effect-tsgo patch --typescript` (the root `prepare`)
   # overwrites the native `tsc` binary with an Effect-patched build matched by
@@ -58,7 +58,7 @@ catalog:
   "@types/node": ^26.6.3
   "@typescript/native": "npm:typescript@7.0.2"
   "@vitest/coverage-v8": ^5.0.2
-  effect: 4.0.0-rc.118
+  effect: 4.0.0
   tsup: ^8.5.1
   typescript: "npm:@typescript/typescript6@6.0.2"
   vitest: ^5.0.2
