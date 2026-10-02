@@ -1,5 +1,11 @@
 # @thomasfosterau/effect-ai-ext
 
+## 0.4.2
+
+### Patch Changes
+
+- f900012: Tested against effect 4.0.0 (with @effect/ai-anthropic and @effect/platform-node 4.0.0); peer floor unchanged.
+
 ## 0.4.1
 
 ### Patch Changes
