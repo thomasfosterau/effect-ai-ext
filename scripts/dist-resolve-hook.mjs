@@ -5,17 +5,19 @@
  * a consumer actually installs — instead of the `./src/*.ts` development
  * `exports`. Everything else (`effect`, `@effect/*`, …) goes to Node's default
  * resolver, so the bundles load exactly as they would from `node_modules`.
+ *
+ * `check-dist.mjs` installs it in-thread with `module.registerHooks()` (#72),
+ * which has no `initialize` / `data` channel, so the entries map arrives by
+ * closure.
  */
 import { pathToFileURL } from "node:url";
 
-/** @type {Map<string, string>} specifier → absolute file path */
-let entries = new Map();
-
-export const initialize = (data) => {
-  entries = new Map(data.entries);
-};
-
-export const resolve = async (specifier, context, nextResolve) => {
+/**
+ * Builds a synchronous `resolve` hook over `entries`.
+ *
+ * @param {Map<string, string>} entries specifier → absolute file path
+ */
+export const makeDistResolve = (entries) => (specifier, context, nextResolve) => {
   const target = entries.get(specifier);
   if (target !== undefined) {
     return { url: pathToFileURL(target).href, format: "module", shortCircuit: true };

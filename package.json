@@ -8,7 +8,7 @@
   "author": "Thomas Foster <me@thomasfoster.au>",
   "type": "module",
   "engines": {
-    "node": ">=22",
+    "node": ">=22.18",
     "pnpm": ">=11"
   },
   "packageManager": "pnpm@11.27.0",
