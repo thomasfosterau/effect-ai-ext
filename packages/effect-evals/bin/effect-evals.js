@@ -3,7 +3,7 @@
  * @copyright Thomas Foster
  *
  * The `effect-evals` bin. A plain, flagless `node` launcher that re-execs
- * itself as `node --no-warnings=ExperimentalWarning
+ * itself as `node --disable-warning=ExperimentalWarning
  * --import <loader.mjs> <dist/cli/main.js> …argv`. The CLI itself is BUILT
  * JavaScript (`dist/cli/main.js`) because Node refuses to type-strip anything
  * under `node_modules` (issue #42); the loader hook plus Node's native type
@@ -12,6 +12,12 @@
  * one `node` invocation (never `NODE_OPTIONS` — see
  * docs/decisions/run-the-toolchain-under-node.md for why that distinction is
  * load-bearing), and this is the ONLY hop, so nothing downstream can lose them.
+ *
+ * `--disable-warning=ExperimentalWarning` hides only that warning type: on
+ * Node 23.x and early 24.x, inside the `>=22.18` engines range,
+ * `fs.promises.glob` and type stripping each still print one on every run.
+ * Never `--no-warnings=…`: Node ignores its value and hides every warning,
+ * `DeprecationWarning`s included (#81).
  *
  * Run `pnpm run build` before using the bin from the workspace.
  *
@@ -35,7 +41,7 @@ if (!existsSync(entry)) {
 
 const result = spawnSync(
   process.execPath,
-  ["--no-warnings=ExperimentalWarning", "--import", loader, entry, ...process.argv.slice(2)],
+  ["--disable-warning=ExperimentalWarning", "--import", loader, entry, ...process.argv.slice(2)],
   { stdio: "inherit" },
 );
 

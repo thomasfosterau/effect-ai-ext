@@ -19,8 +19,9 @@ const cjsEntry = fileURLToPath(new URL("../fixtures/loader/cjs/entry.cjs", impor
 
 describe("cli/loader", () => {
   it("resolves extensionless and directory imports without any warning", () => {
-    // No `--no-warnings` flag (the bin passes one): on Node 26 it would also
-    // hide the DEP0205 warning this test exists to catch.
+    // No warning flag at all (the bin passes
+    // `--disable-warning=ExperimentalWarning`), so stderr shows every warning
+    // the hook raises, the DEP0205 one this test exists to catch included.
     const result = spawnSync(process.execPath, ["--import", loader, entry], {
       encoding: "utf8",
     });
