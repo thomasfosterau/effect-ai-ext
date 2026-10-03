@@ -19,6 +19,22 @@
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "noEmit": true,
-    "plugins": [{ "name": "@effect/language-service" }]
+    "plugins": [
+      {
+        "name": "@effect/language-service",
+        // Effect 4 marks much of its surface `@stability unstable` (the
+        // `effect/http*` modules, `AiError`, ...), so at its default
+        // severity `unstableApiUsage` warns on hundreds of uses in the
+        // providers and drowns the warnings that matter. A suggestion keeps
+        // the reminder in the editor (#67).
+        "diagnosticSeverity": {
+          "unstableApiUsage": "suggestion"
+        },
+        // A "warning" fails the patched tsc by default; this keeps Effect
+        // warnings visible but non-blocking in `pnpm run check`, as the
+        // sibling libraries do (#67).
+        "ignoreEffectWarningsInTscExitCode": true
+      }
+    ]
   }
 }
