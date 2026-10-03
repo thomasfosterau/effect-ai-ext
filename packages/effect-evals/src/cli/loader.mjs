@@ -12,8 +12,8 @@
  * invocation, per docs/decisions/run-the-toolchain-under-node.md. Node's
  * transform handles the TypeScript syntax; it does not resolve extensionless
  * or directory specifiers, which is the gap this hook fills — and nothing
- * else: everything under `node_modules` is left to Node's default resolver,
- * untouched.
+ * else: everything under `node_modules`, and every CommonJS `require()`, is
+ * left to Node's default resolver, untouched.
  *
  * The hook is installed with the synchronous, in-thread
  * `module.registerHooks()` (Node 22.15+; the package's `engines.node` floor is
@@ -70,8 +70,21 @@ function resolveRepoFile(specifier, parentURL = "") {
   return probe(fileURLToPath(base));
 }
 
-/** Synchronous `resolve` hook for `module.registerHooks()`. */
+/**
+ * Whether `context` is a CommonJS resolution (`require()`, `createRequire()`,
+ * `require.resolve()`): Node passes the `"require"` condition for those and
+ * `"import"` for ESM. `module.registerHooks()` hooks, unlike the
+ * `module.register()` ones they replaced (#72), also run for CommonJS, so
+ * without this check the `.ts`-first probing below would override Node's own
+ * CommonJS order (`.js`, `.json`, `.node`, then `package.json` `main`) (#79).
+ * On Node 22.18 `conditions` is a `Set` for CommonJS and an array for ESM, so
+ * it is spread before the lookup.
+ */
+const isCommonJsResolution = (context) => [...(context.conditions ?? [])].includes("require");
+
+/** Synchronous `resolve` hook for `module.registerHooks()`; ESM resolutions only. */
 export function resolve(specifier, context, nextResolve) {
+  if (isCommonJsResolution(context)) return nextResolve(specifier, context);
   const hit = resolveRepoFile(specifier, context.parentURL);
   if (hit === null) return nextResolve(specifier, context);
   return { url: pathToFileURL(hit).href, shortCircuit: true };
