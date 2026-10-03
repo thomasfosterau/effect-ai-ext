@@ -1,5 +1,13 @@
 # @thomasfosterau/effect-ai-elevenlabs
 
+## 0.3.2
+
+### Patch Changes
+
+- f900012: Tested against effect 4.0.0 (with @effect/ai-anthropic and @effect/platform-node 4.0.0); peer floor unchanged.
+- Updated dependencies [f900012]
+  - @thomasfosterau/effect-ai-ext@0.4.2
+
 ## 0.3.1
 
 ### Patch Changes

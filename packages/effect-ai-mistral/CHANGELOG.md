@@ -1,5 +1,11 @@
 # @thomasfosterau/effect-ai-mistral
 
+## 0.3.2
+
+### Patch Changes
+
+- f900012: Tested against effect 4.0.0 (with @effect/ai-anthropic and @effect/platform-node 4.0.0); peer floor unchanged.
+
 ## 0.3.1
 
 ### Patch Changes
