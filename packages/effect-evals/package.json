@@ -41,7 +41,7 @@
   ],
   "type": "module",
   "engines": {
-    "node": ">=22.15"
+    "node": ">=22.18"
   },
   "sideEffects": false,
   "exports": {

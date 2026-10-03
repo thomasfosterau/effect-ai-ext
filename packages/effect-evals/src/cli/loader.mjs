@@ -16,7 +16,8 @@
  * untouched.
  *
  * The hook is installed with the synchronous, in-thread
- * `module.registerHooks()` (Node 22.15+, the package's `engines.node` floor),
+ * `module.registerHooks()` (Node 22.15+; the package's `engines.node` floor is
+ * 22.18, for default type stripping),
  * not the off-thread `module.register()`, which Node 26 deprecates (DEP0205,
  * #72).
  *
