@@ -18,7 +18,8 @@
  * only a launch from an installed path proves the bin is built JavaScript.
  *
  * Workspace siblings (`@thomasfosterau/*`) resolve to their own `dist` through
- * `dist-resolve-hook.mjs`; everything else resolves as in a consumer's
+ * `dist-resolve-hook.mjs` (installed in-thread with `module.registerHooks()`,
+ * #72); everything else resolves as in a consumer's
  * `node_modules`. The expected export names come from the TypeScript checker
  * over each emitted declaration file (value symbols only — types and
  * type-only namespaces have no runtime presence).
@@ -34,10 +35,11 @@ import {
   symlinkSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { register } from "node:module";
+import { registerHooks } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
+import { makeDistResolve } from "./dist-resolve-hook.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const packagesDir = path.join(root, "packages");
@@ -57,8 +59,8 @@ for (const dir of readdirSync(packagesDir).sort()) {
   }
 }
 
-register(new URL("./dist-resolve-hook.mjs", import.meta.url), {
-  data: { entries: targets.map((t) => [t.specifier, t.js]) },
+registerHooks({
+  resolve: makeDistResolve(new Map(targets.map((t) => [t.specifier, t.js]))),
 });
 
 /** Value export names the declaration file promises, via the TS checker. */

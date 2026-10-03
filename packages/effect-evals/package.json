@@ -40,6 +40,9 @@
     "README.md"
   ],
   "type": "module",
+  "engines": {
+    "node": ">=22.15"
+  },
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts"
