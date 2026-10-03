@@ -6,6 +6,13 @@
  * deprecation warning — and leaves CommonJS `require()` resolution to Node
  * (#79).
  *
+ * Each child gets the bin's one warning flag,
+ * `--disable-warning=ExperimentalWarning`: Node 23.x and early 24.x, inside
+ * the `>=22.18` engines range, print a type-stripping `ExperimentalWarning`
+ * on every run (#83). That flag hides only that warning type, so a
+ * `DeprecationWarning` such as DEP0205 still fails the empty-stderr checks.
+ * Never `--no-warnings`: Node ignores its value and hides every warning.
+ *
  * @module tests/cli/loader
  */
 
@@ -16,13 +23,13 @@ import { describe, expect, it } from "vitest";
 const loader = fileURLToPath(new URL("../../src/cli/loader.mjs", import.meta.url));
 const entry = fileURLToPath(new URL("../fixtures/loader/entry.mjs", import.meta.url));
 const cjsEntry = fileURLToPath(new URL("../fixtures/loader/cjs/entry.cjs", import.meta.url));
+const nodeFlags = ["--disable-warning=ExperimentalWarning"];
 
 describe("cli/loader", () => {
   it("resolves extensionless and directory imports without any warning", () => {
-    // No warning flag at all (the bin passes
-    // `--disable-warning=ExperimentalWarning`), so stderr shows every warning
-    // the hook raises, the DEP0205 one this test exists to catch included.
-    const result = spawnSync(process.execPath, ["--import", loader, entry], {
+    // Only `ExperimentalWarning`s are hidden, so the DEP0205 warning this
+    // test exists to catch still reaches stderr.
+    const result = spawnSync(process.execPath, [...nodeFlags, "--import", loader, entry], {
       encoding: "utf8",
     });
 
@@ -34,7 +41,7 @@ describe("cli/loader", () => {
   it("leaves CommonJS require() to Node and probes .ts first only for ESM import()", () => {
     // `module.registerHooks()` hooks also run for `require()`; the loader
     // must not apply its `.ts`-first order there (#79).
-    const result = spawnSync(process.execPath, ["--import", loader, cjsEntry], {
+    const result = spawnSync(process.execPath, [...nodeFlags, "--import", loader, cjsEntry], {
       encoding: "utf8",
     });
 
