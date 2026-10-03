@@ -1,15 +1,17 @@
 name: CI
 
-# Three jobs, one per gate, so a failure names the gate. The default branch is
-# `trunk` (not `main`) — the triggers below must say so or the workflow never
-# fires (issue #30).
+# Three jobs, one per gate, so a failure names the gate, plus a Node-floor
+# job. The default branch is `trunk` (not `main`) — the triggers below must say
+# so or the workflow never fires (issue #30).
 #
 # Every third-party action is pinned to a full commit SHA (the tag is a comment
 # for humans and Dependabot's `github-actions` ecosystem keeps both current).
 #
-# CI runs on one Node version, the latest stable (`node-version: latest`), as
-# every repository in the family does (#71). `engines.node` in the published
-# packages is the consumer floor and is deliberately not tied to it.
+# The three gate jobs run on the latest stable Node (`node-version: latest`),
+# as every repository in the family does (#71). `engines.node` in the published
+# packages is the consumer floor and is deliberately not tied to it, so the
+# `node-floor` job reruns the runtime gates (tests, build, check:dist) on that
+# floor, 22.18.0, which `latest` alone never exercises (#83).
 
 on:
   pull_request:
@@ -78,5 +80,27 @@ jobs:
           node-version: latest
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+      - run: pnpm run check:dist
+
+  # The runtime gates on the `engines.node` floor (`>=22.18`). Pinned to the
+  # exact floor version, not `22`, so a newer 22.x can't hide a floor-only
+  # failure. Raise it together with `engines.node` in the root and
+  # `packages/effect-evals` package.json.
+  node-floor:
+    needs: typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.18.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run test
       - run: pnpm run build
       - run: pnpm run check:dist
