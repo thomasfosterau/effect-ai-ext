@@ -33,7 +33,7 @@ catalogMode: strict
 
 catalog:
   "@changesets/cli": ^3.0.3
-  "@cloudflare/workers-types": ^5.20261001.1
+  "@cloudflare/workers-types": ^5.20261004.1
   "@effect/ai-anthropic": 4.0.0
   "@effect/language-service": ^0.87.3
   "@effect/platform-node": 4.0.0
