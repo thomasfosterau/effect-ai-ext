@@ -1,5 +1,16 @@
 # @thomasfosterau/effect-evals
 
+## 0.4.0
+
+### Minor Changes
+
+- 79a1cb0: **Breaking:** `effect-evals` now requires Node `>=22.18` (declared in `engines.node`). The CLI's extensionless-import resolution hook (`src/cli/loader.mjs`) is installed with the synchronous, in-thread `module.registerHooks()` instead of `module.register()`, which Node 26 deprecates (DEP0205), so a direct `node --import …/loader.mjs` run no longer prints a `module.register()` deprecation warning (the `effect-evals` bin already hid it with `--no-warnings=ExperimentalWarning`). `module.registerHooks()` does not exist before Node 22.15.0 / 23.5.0, and the floor goes to 22.18 because `effect-evals run` loads `*.eval.ts` files with Node's type stripping, which is on by default only from 22.18.0 (on 22.15–22.17 every eval file fails with `Unknown file extension ".ts"`); suite discovery also relies on `fs.promises.glob`, stable from 22.17.0. Consumers on an older Node must upgrade Node before upgrading this package. The library API is unchanged.
+
+### Patch Changes
+
+- 4767bfb: The `effect-evals` bin starts Node with `--disable-warning=ExperimentalWarning` instead of `--no-warnings=ExperimentalWarning`. Node ignores the value of `--no-warnings`, so the old flag hid every process warning, `DeprecationWarning`s included (that is how DEP0205 stayed hidden for CLI users); warnings raised by the CLI, its dependencies or a consumer's `*.eval.ts` files now reach stderr. Only `ExperimentalWarning`s stay hidden: on Node 23.x and early 24.x `fs.promises.glob` and type stripping still print one on every run.
+- 4146c51: The CLI's resolution hook (`src/cli/loader.mjs`) leaves CommonJS resolution (`require()`, `createRequire()`, `require.resolve()`) to Node again. Hooks installed with `module.registerHooks()` also run for `require()`, so after the switch from `module.register()` the hook applied its `.ts`-first extension probing to relative `require()` calls too: with both `b.js` and `b.ts` in a directory, `require("./b")` loaded `b.ts` instead of `b.js`. CommonJS now follows Node's own order (`.js`, `.json`, `.node`, then `package.json` `main`); ESM `import` resolution is unchanged.
+
 ## 0.3.2
 
 ### Patch Changes
