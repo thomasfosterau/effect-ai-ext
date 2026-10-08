@@ -42,6 +42,7 @@
   - No live-key or live-network tests: stub at `FetchHttpClient.Fetch` (capture the request, return a canned `Response` or SSE stream) or at the abstraction's `make` seam.
   - Effect helpers live per package in `tests/helpers/effect.ts` (`runTest`, `runTestExit`, `expectFailureInstanceOf`, `recordingTracer`); import from `vite-plus/test` (never `vitest`; the `vite-plus/prefer-vite-plus-imports` lint rule enforces it) and provide layers per test with `Effect.provide`.
   - Streaming providers also prove backpressure (a chunked stub, no unbounded buffering) and interruption (interrupting the Effect cancels the in-flight HTTP stream).
+  - **Coverage is a ratchet (#100).** Each package's `vite.config.ts` exports a `coverageFloor` (lines / branches / functions / statements), set from its measured coverage rounded down to the integer; `vite.package.ts` holds the shared target, effect-web's 90 / 85 / 90 / 90, which a metric the floor omits falls back to. Both `vp run test:coverage` (root, per-package glob thresholds) and `vp run -r test:coverage` fail when a package drops below its floor. When a change raises a package's coverage, raise its floor in the same PR; never lower a floor or exclude files to get a change through, add the tests instead. A new package adds its floor to `coverageFloors` in the root `vite.config.ts`.
 - **No live credentials, tokens or secrets** in code or fixtures.
 
 ## Commands
@@ -51,7 +52,7 @@
 - `vp run -r test:unit` — every package's unit suite (node Vitest; nothing here needs a credential).
 - `vp run -r build` — `vp pack` → every package's `dist/`.
 - `vp run check:dist` — builds every package, then imports every built entry and subpath under Node ESM and fails if a value export the bundled `.d.ts` declares is missing at runtime (which the src-resolving suites cannot see), and launches the `effect-evals` bin from a packed tarball under `node_modules`.
-- `vp run test:coverage` — every package's unit suite under one Istanbul map at `coverage/coverage-final.json`, which `fallow audit` reads for exact per-function CRAP scores. Without the map fallow scores every function as uncovered.
+- `vp run test:coverage` — every package's unit suite under one Istanbul map at `coverage/coverage-final.json`, which `fallow audit` reads for exact per-function CRAP scores (without the map fallow scores every function as uncovered); fails if any package's coverage drops below its `coverageFloor`. CI runs it.
 - `pnpm audit --audit-level high` — the dependency audit CI runs (network).
 - `pnpm changeset` — add a changeset.
 
@@ -65,12 +66,13 @@ Before you report work as done, run the gates below in order and quote each comm
 2. `vp check`
 3. `vp run check`
 4. `vp run -r test:unit`
-5. `vp run -r build`
-6. `vp run check:dist`
-7. `pnpm audit --audit-level high` (network)
-8. `vp run test:coverage`, then `fallow audit --format json --quiet --explain --gate-marker agent` (the fallow gate below; not a CI step). The verdict must not be `fail`.
+5. `vp run test:coverage` (the coverage floors)
+6. `vp run -r build`
+7. `vp run check:dist`
+8. `pnpm audit --audit-level high` (network)
+9. `fallow audit --format json --quiet --explain --gate-marker agent` (the fallow gate below; not a CI step), which reads the map step 5 wrote. The verdict must not be `fail`.
 
-Steps 2–7 are CI's `ci` job, in its order ([ci.yml](.github/workflows/ci.yml)); its `node-floor` job reruns 4–6 on Node 22.18.0.
+Steps 2–8 are CI's `ci` job, in its order ([ci.yml](.github/workflows/ci.yml)); its `node-floor` job reruns 4, 6 and 7 on Node 22.18.0.
 
 ## Branches and pull requests
 

@@ -17,6 +17,31 @@
 import { defineConfig } from "vite-plus";
 import { recommended } from "@effect/tsgo/oxlint-presets";
 import effect from "@mpsuesser/oxlint-plugin-effect";
+import { type CoverageFloor, resolveCoverageThresholds } from "./vite.package.ts";
+import { coverageFloor as cohereFloor } from "./packages/effect-ai-cohere/vite.config.ts";
+import { coverageFloor as elevenlabsFloor } from "./packages/effect-ai-elevenlabs/vite.config.ts";
+import { coverageFloor as extFloor } from "./packages/effect-ai-ext/vite.config.ts";
+import { coverageFloor as gatewayFloor } from "./packages/effect-ai-gateway/vite.config.ts";
+import { coverageFloor as mistralFloor } from "./packages/effect-ai-mistral/vite.config.ts";
+import { coverageFloor as voyageFloor } from "./packages/effect-ai-voyage/vite.config.ts";
+import { coverageFloor as evalsFloor } from "./packages/effect-evals/vite.config.ts";
+
+/**
+ * Each package's coverage ratchet (#100), keyed by its directory. The floors
+ * live next to each package's config; listing them here makes the root
+ * `test:coverage` run enforce them package by package, as glob thresholds,
+ * because Vitest reads `coverage` from the root config only and ignores the
+ * projects' own.
+ */
+const coverageFloors = {
+  "effect-ai-cohere": cohereFloor,
+  "effect-ai-elevenlabs": elevenlabsFloor,
+  "effect-ai-ext": extFloor,
+  "effect-ai-gateway": gatewayFloor,
+  "effect-ai-mistral": mistralFloor,
+  "effect-ai-voyage": voyageFloor,
+  "effect-evals": evalsFloor,
+} satisfies Readonly<Record<string, CoverageFloor>>;
 
 export default defineConfig({
   // Staged-file checks run by `vp staged` (pre-commit).
@@ -233,7 +258,7 @@ export default defineConfig({
       // tsconfig.json`). A pure graph node. The packages are named explicitly
       // — a `from: "dependencies"` edge does not traverse the workspace root's
       // own devDependencies — so a new package adds itself to EVERY list here
-      // (`check`, `check:dist`, `test:coverage`).
+      // (`check`, `check:dist`, and `coverageFloors` above).
       check: {
         command: "echo 'check: every type gate green'",
         dependsOn: [
@@ -290,6 +315,14 @@ export default defineConfig({
       reportsDirectory: "./coverage",
       include: ["packages/*/src/**/*.ts"],
       exclude: ["**/*.d.ts", "packages/effect-evals/src/cli/main.ts"],
+      // Per package, not global: a glob's numbers aggregate only the files it
+      // matches, so one package's surplus never hides another's drop.
+      thresholds: Object.fromEntries(
+        Object.entries(coverageFloors).map(([dir, floor]) => [
+          `packages/${dir}/src/**`,
+          { ...resolveCoverageThresholds(floor) },
+        ]),
+      ),
     },
   },
 });
