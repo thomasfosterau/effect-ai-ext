@@ -72,9 +72,10 @@ catalog:
 # `effect/unstable/*` -> `effect/*` path move (issue #51), which older rcs lack.
 # Re-verify by pointing the default catalog's Effect line at the floor before
 # lowering or raising it. `@cloudflare/workers-types` is the gateway's
-# optional, types-only peer (its binding transports): any v4+ supplies the
-# `Ai` / `AiGateway` declarations, so it stays open at `>=4` while the
-# default catalog pins the version the gateway builds against.
+# optional, types-only peer (its binding transports); its open `>=4` range is
+# carried over unchanged from the published manifest, while the default
+# catalog pins the version the gateway builds against. Whether that floor is
+# high enough for the `Ai` / `AIGatewayProviders` declarations is #93.
 catalogs:
   peers:
     "@cloudflare/workers-types": ">=4"
