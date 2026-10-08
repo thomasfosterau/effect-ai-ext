@@ -3,8 +3,8 @@ import { type CoverageFloor, packageConfig } from "../../vite.package.ts";
 // Coverage ratchet (#100): the measured % at adoption (in the comments),
 // rounded down to the integer. Raise a metric as coverage rises; never lower one.
 export const coverageFloor: CoverageFloor = {
-  lines: 98, // 98.67
-  branches: 93, // 93.16
+  lines: 99, // 99.09
+  branches: 94, // 94.14
   functions: 99, // 99.21
   statements: 98, // 98.11
 };

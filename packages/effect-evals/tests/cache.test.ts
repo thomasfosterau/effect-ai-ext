@@ -6,9 +6,11 @@
  */
 
 import { describe, expect, it } from "vite-plus/test";
+import * as Cause from "effect/Cause";
 import * as Effect from "effect/Effect";
+import * as Exit from "effect/Exit";
 import { Cache } from "../src/index.ts";
-import { runTest } from "./helpers/effect.ts";
+import { runTest, runTestExit } from "./helpers/effect.ts";
 
 describe("Cache.hashKey", () => {
   const base = {
@@ -23,6 +25,13 @@ describe("Cache.hashKey", () => {
 
   it("is a full SHA-256 hex digest, not a small structural hash", async () => {
     expect(await hash(base)).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it("dies on a golden JSON cannot serialise (a BigInt): a caller bug, not a cache miss", async () => {
+    const exit = await runTestExit(Cache.hashKey({ ...base, golden: { input: 1n } }));
+    expect(Exit.isFailure(exit)).toBe(true);
+    if (!Exit.isFailure(exit)) return;
+    expect(Cause.hasDies(exit.cause)).toBe(true);
   });
 
   it("is deterministic for identical inputs", async () => {

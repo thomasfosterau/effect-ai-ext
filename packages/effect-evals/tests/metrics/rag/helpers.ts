@@ -40,7 +40,7 @@ export const makeJudgeStub = (
     const calls: JudgeCall[] = [];
     const model = yield* LanguageModel.make({
       generateText: (options) =>
-        Effect.sync(() => {
+        Effect.suspend(() => {
           const systemMessage = options.prompt.content.find((message) => message.role === "system");
           const userMessage = options.prompt.content.findLast((message) => message.role === "user");
           const system = systemMessage?.role === "system" ? systemMessage.content : "";
@@ -52,11 +52,13 @@ export const makeJudgeStub = (
           const respond = responses[calls.length];
           calls.push(call);
           if (!respond) {
-            throw new Error(
-              `makeJudgeStub: unexpected call ${calls.length} (only ${responses.length} configured)`,
+            return Effect.die(
+              new Error(
+                `makeJudgeStub: unexpected call ${calls.length} (only ${responses.length} configured)`,
+              ),
             );
           }
-          return [{ type: "text" as const, text: JSON.stringify(respond(call)) }];
+          return Effect.succeed([{ type: "text" as const, text: JSON.stringify(respond(call)) }]);
         }),
       streamText: () => Stream.die("streamText is not used by the RAG metrics"),
     });

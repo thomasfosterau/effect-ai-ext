@@ -29,6 +29,7 @@ import * as Effect from "effect/Effect";
 import * as Base64 from "effect/encoding/Base64";
 import { dual } from "effect/Function";
 import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
 import * as Redactable from "effect/Redactable";
 import * as Stream from "effect/Stream";
@@ -43,7 +44,7 @@ import * as Tool from "effect/ai/Tool";
 import type * as HttpClientRequest from "effect/http/HttpClientRequest";
 import type * as HttpClientResponse from "effect/http/HttpClientResponse";
 import { MistralClient } from "./MistralClient";
-import type * as Wire from "./internal/wire";
+import * as Wire from "./internal/wire";
 
 const MODULE = "MistralLanguageModel";
 
@@ -226,7 +227,7 @@ export const withConfigOverride: {
 } = dual(2, <A, E, R>(self: Effect.Effect<A, E, R>, overrides: ConfigService) =>
   Effect.flatMap(Effect.serviceOption(Config), (config) =>
     Effect.provideService(self, Config, {
-      ...(config._tag === "Some" ? config.value : {}),
+      ...Option.getOrUndefined(config),
       ...overrides,
     }),
   ),
@@ -499,14 +500,6 @@ const prepareResponseFormat = (
 // Shared Response Helpers
 // =============================================================================
 
-const parseJsonLenient = (value: string): unknown => {
-  try {
-    return JSON.parse(value);
-  } catch {
-    return value;
-  }
-};
-
 const mapFinishReason = (reason: string | null | undefined): Response.FinishReason => {
   switch (reason) {
     case "stop":
@@ -590,7 +583,7 @@ const makeResponse = (
             type: "tool-call",
             id: toolCall.id ?? (yield* generateId()),
             name: toolCall.function.name,
-            params: parseJsonLenient(toolCall.function.arguments),
+            params: Wire.parseJsonLenient(toolCall.function.arguments),
             providerExecuted: false,
           });
         }
@@ -799,7 +792,7 @@ const finalize = (
       type: "tool-call",
       id: accumulator.id,
       name: accumulator.name,
-      params: parseJsonLenient(accumulator.args.length > 0 ? accumulator.args : "{}"),
+      params: Wire.parseJsonLenient(accumulator.args.length > 0 ? accumulator.args : "{}"),
       providerExecuted: false,
     });
   }

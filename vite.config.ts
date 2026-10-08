@@ -129,18 +129,6 @@ export default defineConfig({
       "effect/prefer-match-over-switch": "warn",
       "effect/yield-in-for-loop": "warn",
       "effect/no-unknown-returns": "warn",
-      "effect/no-conditional-empty-object-spread": "warn",
-      "effect/avoid-try-catch": "warn",
-      "effect/use-path-service": "warn",
-      "effect/avoid-sync-fs": "warn",
-      "effect/use-filesystem-service": "warn",
-      "effect/avoid-node-imports": "warn",
-      "effect/use-temp-file-scoped": "warn",
-      "effect/use-command-executor-service": "warn",
-      "effect/prefer-effect-fn": "warn",
-      "effect/use-console-service": "warn",
-      "effect/throw-in-effect-gen": "warn",
-      "effect/effect-promise-vs-trypromise": "warn",
       // ---- Effect preset: rules this workspace's conventions cut across ----
       // `prefer-option-over-null` also fires on `?: T | undefined`, which is
       // the ONLY spelling of an optional member `exactOptionalPropertyTypes`
@@ -208,6 +196,34 @@ export default defineConfig({
           // `...(process.env.X ? { x } : {})` is how a vitest option is left
           // unset under `exactOptionalPropertyTypes`.
           "effect/no-conditional-empty-object-spread": "off",
+        },
+      },
+      // The bin and loader tests spawn the real plain-Node launcher and
+      // resolution hook as a child `node` with the bin's own flags, in a
+      // scratch package they lay out on disk: what they assert is Node's own
+      // process behaviour (argv, stderr warnings), which only the Node APIs
+      // reproduce. They sit at the same boundary as the plain-Node override
+      // above (#98).
+      {
+        files: [
+          "packages/effect-evals/tests/cli/bin.test.ts",
+          "packages/effect-evals/tests/cli/loader.test.ts",
+        ],
+        rules: {
+          "effect/avoid-node-imports": "off",
+          "effect/avoid-sync-fs": "off",
+          "effect/use-command-executor-service": "off",
+          "effect/use-filesystem-service": "off",
+          "effect/use-path-service": "off",
+          "effect/use-temp-file-scoped": "off",
+        },
+      },
+      // `cli/Discover` globs with Node's `fs.promises.glob`: effect's
+      // `FileSystem` has no glob (its paths go through the `Path` service).
+      {
+        files: ["packages/effect-evals/src/cli/Discover.ts"],
+        rules: {
+          "effect/use-filesystem-service": "off",
         },
       },
       // Type-level tests: the expect-error directives ARE the assertions

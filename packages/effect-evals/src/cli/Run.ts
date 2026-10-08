@@ -33,7 +33,9 @@
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
+import type * as Path from "effect/Path";
 import * as EffectResult from "effect/Result";
+import type * as Types from "effect/Types";
 import * as Cache from "../Cache.ts";
 import type * as EvalFile from "../EvalFile.ts";
 import * as Runner from "../Runner.ts";
@@ -61,24 +63,25 @@ const describeError = (error: unknown): string => {
   if (error instanceof InvalidEvalFileError) return error.reason;
   if (error instanceof Error) return error.message;
   if (typeof error === "string") return error;
-  try {
-    return JSON.stringify(error);
-  } catch {
-    return String(error);
-  }
+  return EffectResult.getOrElse(
+    EffectResult.try(() => JSON.stringify(error)),
+    () => String(error),
+  );
 };
 
 const buildRunnerOptions = (
   config: RunConfig,
   fileOptions: Runner.RunnerOptions | undefined,
-): Runner.RunnerOptions => ({
-  ...fileOptions,
-  ...(Option.isSome(config.trials) ? { trials: config.trials.value } : {}),
-  ...(Option.isSome(config.concurrency)
-    ? { caseConcurrency: config.concurrency.value, metricConcurrency: config.concurrency.value }
-    : {}),
-  ...(config.force ? { bypassCache: true } : {}),
-});
+): Runner.RunnerOptions => {
+  const options: Types.Mutable<Runner.RunnerOptions> = { ...fileOptions };
+  if (Option.isSome(config.trials)) options.trials = config.trials.value;
+  if (Option.isSome(config.concurrency)) {
+    options.caseConcurrency = config.concurrency.value;
+    options.metricConcurrency = config.concurrency.value;
+  }
+  if (config.force) options.bypassCache = true;
+  return options;
+};
 
 /** One matched file's outcome: its suites ran, were skipped (missing credentials), or failed outright. */
 type FileOutcome =
@@ -137,7 +140,7 @@ const processFile = (
   file: string,
   config: RunConfig,
   filterSubstring: string | undefined,
-): Effect.Effect<ProcessedFile, never, Cache.KeyValueStore.KeyValueStore> =>
+): Effect.Effect<ProcessedFile, never, Cache.KeyValueStore.KeyValueStore | Path.Path> =>
   Effect.gen(function* () {
     const loaded = yield* Effect.result(loadEvalFile(file));
     if (EffectResult.isFailure(loaded)) {
@@ -158,7 +161,7 @@ const processFile = (
 /** Discovers, loads, and runs every matched eval file's (optionally filtered) suites; see the module doc for the failure/defect distinction. */
 export const runEvals = (
   config: RunConfig,
-): Effect.Effect<CliReport, never, Cache.KeyValueStore.KeyValueStore> =>
+): Effect.Effect<CliReport, never, Cache.KeyValueStore.KeyValueStore | Path.Path> =>
   Effect.gen(function* () {
     const patterns = config.globs.length > 0 ? config.globs : [DEFAULT_GLOB];
     const filesResult = yield* Effect.result(findEvalFiles(patterns, config.cwd));

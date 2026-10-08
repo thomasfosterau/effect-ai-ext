@@ -269,21 +269,22 @@ const buildModeratePrompt = (options: ProviderOptions): string => {
  * @category constructors
  */
 export const fromLanguageModel: Effect.Effect<Service, never, LanguageModel.LanguageModel> =
-  Effect.gen(function* () {
-    const languageModel = yield* LanguageModel.LanguageModel;
-    return yield* make({
-      moderate: (options) =>
-        languageModel
-          .generateObject({
-            prompt: buildModeratePrompt(options),
-            objectName: "moderation",
-            schema: StructuredModerationOutput,
-          })
-          .pipe(
-            Effect.map((response): ProviderResponse => ({
-              results: response.value.results,
-              usage: { inputTokens: undefined },
-            })),
-          ),
-    });
-  });
+  LanguageModel.LanguageModel.pipe(
+    Effect.flatMap((languageModel) =>
+      make({
+        moderate: (options) =>
+          languageModel
+            .generateObject({
+              prompt: buildModeratePrompt(options),
+              objectName: "moderation",
+              schema: StructuredModerationOutput,
+            })
+            .pipe(
+              Effect.map((response): ProviderResponse => ({
+                results: response.value.results,
+                usage: { inputTokens: undefined },
+              })),
+            ),
+      }),
+    ),
+  );

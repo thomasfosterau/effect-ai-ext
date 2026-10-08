@@ -218,15 +218,7 @@ const buildChunkStream = (
  * error.
  */
 const decodeChunk = (data: string): Effect.Effect<Wire.ChatCompletionChunk, Schema.SchemaError> =>
-  Schema.decodeUnknownEffect(Wire.ChatCompletionChunk)(parseJsonLenient(data));
-
-const parseJsonLenient = (data: string): unknown => {
-  try {
-    return JSON.parse(data);
-  } catch {
-    return data;
-  }
-};
+  Schema.decodeUnknownEffect(Wire.ChatCompletionChunk)(Wire.parseJsonLenient(data));
 
 // =============================================================================
 // Layers

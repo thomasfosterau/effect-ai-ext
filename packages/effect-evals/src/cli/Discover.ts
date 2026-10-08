@@ -3,7 +3,10 @@
  * `fs.promises.glob` (stable as of the pinned Node version — see
  * the `engines.node` floor) rather than a dependency: this module is CLI-only and
  * already Node-coupled (dynamic `import()`, process argv), so pulling in a
- * userland glob package would buy nothing.
+ * userland glob package would buy nothing. Effect's `FileSystem` service has
+ * no glob, so this is the one direct `node:fs` import (the root lint config
+ * exempts this file from `use-filesystem-service`); paths go through the
+ * `Path` service.
  *
  * @module cli/Discover
  *
@@ -11,8 +14,8 @@
  */
 
 import { glob } from "node:fs/promises";
-import * as path from "node:path";
 import * as Effect from "effect/Effect";
+import * as Path from "effect/Path";
 import * as Schema from "effect/Schema";
 
 /** A glob pattern failed to evaluate (a malformed pattern, an unreadable directory, …). */
@@ -21,12 +24,16 @@ export class GlobError extends Schema.TaggedError<GlobError>()("GlobError", {
   cause: Schema.Defect(),
 }) {}
 
-// Matches "node_modules"/".git" as a whole path segment (start, middle, or
-// end of the candidate) without allocating an array per call the way
-// `candidate.split(path.sep)` would on this glob-walk hot path.
-const SEP = path.sep === "\\" ? "\\\\" : path.sep;
-const EXCLUDED_PATTERN = new RegExp(`(^|${SEP})(node_modules|\\.git)(${SEP}|$)`);
-const isExcluded = (candidate: string): boolean => EXCLUDED_PATTERN.test(candidate);
+/**
+ * Matches "node_modules"/".git" as a whole path segment (start, middle, or
+ * end of the candidate) without allocating an array per call the way
+ * `candidate.split(sep)` would on this glob-walk hot path.
+ */
+const excludedMatcher = (sep: string): ((candidate: string) => boolean) => {
+  const escaped = sep === "\\" ? "\\\\" : sep;
+  const pattern = new RegExp(`(^|${escaped})(node_modules|\\.git)(${escaped}|$)`);
+  return (candidate) => pattern.test(candidate);
+};
 
 /**
  * Resolves every file matching any of `patterns` (relative to `cwd`,
@@ -36,14 +43,18 @@ const isExcluded = (candidate: string): boolean => EXCLUDED_PATTERN.test(candida
 export const findEvalFiles = (
   patterns: ReadonlyArray<string>,
   cwd: string = process.cwd(),
-): Effect.Effect<ReadonlyArray<string>, GlobError> =>
-  Effect.tryPromise({
-    try: async () => {
-      const matches = new Set<string>();
-      for await (const match of glob([...patterns], { cwd, exclude: isExcluded })) {
-        matches.add(path.resolve(cwd, match));
-      }
-      return Array.from(matches).sort();
-    },
-    catch: (cause) => new GlobError({ patterns: [...patterns], cause }),
+): Effect.Effect<ReadonlyArray<string>, GlobError, Path.Path> =>
+  Effect.gen(function* () {
+    const path = yield* Path.Path;
+    const exclude = excludedMatcher(path.sep);
+    return yield* Effect.tryPromise({
+      try: async () => {
+        const matches = new Set<string>();
+        for await (const match of glob([...patterns], { cwd, exclude })) {
+          matches.add(path.resolve(cwd, match));
+        }
+        return Array.from(matches).sort();
+      },
+      catch: (cause) => new GlobError({ patterns: [...patterns], cause }),
+    });
   });

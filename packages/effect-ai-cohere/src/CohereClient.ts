@@ -269,15 +269,7 @@ const buildEventStream = (
  * it surfaces as an ordinary `SchemaError` rather than a thrown parse error.
  */
 const decodeEvent = (data: string): Effect.Effect<Wire.ChatStreamEvent, Schema.SchemaError> =>
-  Schema.decodeUnknownEffect(Wire.ChatStreamEvent)(parseJsonLenient(data));
-
-const parseJsonLenient = (data: string): unknown => {
-  try {
-    return JSON.parse(data);
-  } catch {
-    return data;
-  }
-};
+  Schema.decodeUnknownEffect(Wire.ChatStreamEvent)(Wire.parseJsonLenient(data));
 
 // =============================================================================
 // Layers
