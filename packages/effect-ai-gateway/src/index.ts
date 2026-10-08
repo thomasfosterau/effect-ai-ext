@@ -8,6 +8,8 @@
  * @module effect-ai-gateway
  */
 
+import * as RerankerModelExt from "@thomasfosterau/effect-ai-ext/RerankerModel";
+
 export * from "./Anthropic";
 export * from "./Binding";
 export * from "./Cohere";
@@ -16,7 +18,54 @@ export * from "./OpenAiModeration";
 // shim: `Cohere.ts` namespace-imports that shim, so esbuild folds a
 // `export * from "./RerankerModel"` into an internal `__reExport` object and
 // the bundled `dist/index.js` never names `make` / `RerankerModel` / … as real
-// ESM exports (a Node `import { make }` then throws). A direct external
-// `export *` survives bundling verbatim. The shim module stays for `Cohere.ts`.
-export * from "@thomasfosterau/effect-ai-ext/RerankerModel";
+// ESM exports (a Node `import { make }` then throws). Bindings on a direct
+// import of the external module survive bundling as real exports. The shim
+// module stays for `Cohere.ts`.
+//
+// One aliased binding per name, each with its own `@deprecated` tag, so
+// editors strike the gateway import through (#60). Not `export *`, which
+// carries no tag, and not `export { /** @deprecated */ make } from …`:
+// TypeScript honours a tag on an export specifier, but tsup's declaration
+// bundler (rollup-plugin-dts) drops comments on specifiers, so the published
+// `.d.ts` would lose every tag. Each class is re-bound as a value plus a type
+// of the same name, so `RerankerModel` stays both the tag and its instance
+// type, as before. Keep this list equal to effect-ai-ext's `RerankerModel`
+// exports (`tests/module-load.test.ts` checks the value names) until the
+// re-export is removed.
+
+/** @deprecated Import from `@thomasfosterau/effect-ai-ext/RerankerModel`; removed from the gateway in 0.5.0. */
+export const RerankerModel = RerankerModelExt.RerankerModel;
+/** @deprecated Import from `@thomasfosterau/effect-ai-ext/RerankerModel`; removed from the gateway in 0.5.0. */
+export type RerankerModel = RerankerModelExt.RerankerModel;
+
+/** @deprecated Import from `@thomasfosterau/effect-ai-ext/RerankerModel`; removed from the gateway in 0.5.0. */
+export const RerankerUsage = RerankerModelExt.RerankerUsage;
+/** @deprecated Import from `@thomasfosterau/effect-ai-ext/RerankerModel`; removed from the gateway in 0.5.0. */
+export type RerankerUsage = RerankerModelExt.RerankerUsage;
+
+/** @deprecated Import from `@thomasfosterau/effect-ai-ext/RerankerModel`; removed from the gateway in 0.5.0. */
+export const RerankedDocument = RerankerModelExt.RerankedDocument;
+/** @deprecated Import from `@thomasfosterau/effect-ai-ext/RerankerModel`; removed from the gateway in 0.5.0. */
+export type RerankedDocument = RerankerModelExt.RerankedDocument;
+
+/** @deprecated Import from `@thomasfosterau/effect-ai-ext/RerankerModel`; removed from the gateway in 0.5.0. */
+export const RerankResponse = RerankerModelExt.RerankResponse;
+/** @deprecated Import from `@thomasfosterau/effect-ai-ext/RerankerModel`; removed from the gateway in 0.5.0. */
+export type RerankResponse = RerankerModelExt.RerankResponse;
+
+/** @deprecated Import from `@thomasfosterau/effect-ai-ext/RerankerModel`; removed from the gateway in 0.5.0. */
+export const make = RerankerModelExt.make;
+
+/** @deprecated Import from `@thomasfosterau/effect-ai-ext/RerankerModel`; removed from the gateway in 0.5.0. */
+export type RerankOptions = RerankerModelExt.RerankOptions;
+
+/** @deprecated Import from `@thomasfosterau/effect-ai-ext/RerankerModel`; removed from the gateway in 0.5.0. */
+export type ProviderOptions = RerankerModelExt.ProviderOptions;
+
+/** @deprecated Import from `@thomasfosterau/effect-ai-ext/RerankerModel`; removed from the gateway in 0.5.0. */
+export type ProviderResponse = RerankerModelExt.ProviderResponse;
+
+/** @deprecated Import from `@thomasfosterau/effect-ai-ext/RerankerModel`; removed from the gateway in 0.5.0. */
+export type Service = RerankerModelExt.Service;
+
 export * from "./Url";
