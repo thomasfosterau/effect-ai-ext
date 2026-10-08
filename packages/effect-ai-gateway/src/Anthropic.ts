@@ -1,7 +1,6 @@
 /**
  * Anthropic `LanguageModel` provider routed through the Cloudflare AI
- * Gateway Worker binding (the website repo's
- * `docs/decisions/effect-ai-gateway.md`), replacing the direct
+ * Gateway Worker binding (website#847), replacing the direct
  * `api.anthropic.com` call. The provider key is BYOK,
  * configured once on the `website` gateway (Cloudflare dashboard,
  * provider keys) — never an env var, so this module never takes or reads
