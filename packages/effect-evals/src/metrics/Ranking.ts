@@ -44,6 +44,7 @@
  */
 
 import * as Effect from "effect/Effect";
+import * as EffectRecord from "effect/Record";
 import * as Metric from "../Metric.ts";
 import type { Score } from "../Score.ts";
 import * as Scorer from "../Scorer.ts";
@@ -188,13 +189,11 @@ export const metricFunctions: Readonly<Record<RankingMetricName, (evidence: Evid
 export const scoreCase = (
   evidence: Evidence,
   metrics: ReadonlyArray<RankingMetricName> = ALL_METRICS,
-): Record<string, number> => {
-  const scores: Record<string, number> = {};
-  for (const metric of metrics) {
-    scores[metricKey(metric, evidence.k)] = metricFunctions[metric](evidence);
-  }
-  return scores;
-};
+): Record<string, number> =>
+  EffectRecord.fromIterableWith(metrics, (metric) => [
+    metricKey(metric, evidence.k),
+    metricFunctions[metric](evidence),
+  ]);
 
 /** The one-line diagnostic a ranking score carries as its `reason`. */
 const describe = (metric: RankingMetricName, evidence: Evidence, value: number): string => {

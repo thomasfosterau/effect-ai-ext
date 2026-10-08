@@ -33,7 +33,7 @@ interface JudgeCall {
 
 /** Builds a `LanguageModel` service whose structured-output hook returns canned JSON from `respond`. */
 const makeJudgeStub = (
-  respond: (call: JudgeCall) => unknown,
+  respond: (call: JudgeCall) => Schema.Json,
 ): Effect.Effect<{ readonly model: LanguageModel.LanguageModel; readonly calls: JudgeCall[] }> =>
   Effect.gen(function* () {
     const calls: JudgeCall[] = [];

@@ -50,10 +50,6 @@ export interface Settings {
   readonly inputMediaType?: string | undefined;
 }
 
-/** Drops keys whose value is `undefined`, preserving the object's type. */
-const compact = <T extends Record<string, unknown>>(record: T): T =>
-  Object.fromEntries(Object.entries(record).filter(([, value]) => value !== undefined)) as T;
-
 /**
  * Constructs a `VoiceConversionModel.Service` backed by {@link ElevenLabsClient}.
  *
@@ -75,14 +71,14 @@ export const make = (
             format: options.format,
             sampleRate: undefined,
           });
-          const form = compact({
+          const form: Wire.SpeechToSpeechForm = {
             audio: toBlob(bytes, config.inputMediaType),
             model_id: config.modelId,
             voice_settings:
               config.voiceSettings !== undefined ? JSON.stringify(config.voiceSettings) : undefined,
             remove_background_noise: config.removeBackgroundNoise,
             seed: config.seed,
-          }) as unknown as Wire.SpeechToSpeechForm;
+          };
           const result = yield* client.speechToSpeech(options.targetVoice, form, { outputFormat });
           return {
             audio: result.audio,

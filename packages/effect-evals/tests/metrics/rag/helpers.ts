@@ -15,6 +15,7 @@
  */
 
 import * as Effect from "effect/Effect";
+import type * as Schema from "effect/Schema";
 import * as Layer from "effect/Layer";
 import * as Stream from "effect/Stream";
 import { LanguageModel } from "effect/ai";
@@ -34,7 +35,7 @@ export interface JudgeCall {
  * decode `undefined`.
  */
 export const makeJudgeStub = (
-  responses: ReadonlyArray<(call: JudgeCall) => unknown>,
+  responses: ReadonlyArray<(call: JudgeCall) => Schema.Json>,
 ): Effect.Effect<{ readonly model: LanguageModel.LanguageModel; readonly calls: JudgeCall[] }> =>
   Effect.gen(function* () {
     const calls: JudgeCall[] = [];

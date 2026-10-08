@@ -119,16 +119,9 @@ export default defineConfig({
       // deleted once its count reaches zero (#98 tracks the burn-down).
       "effect/prefer-arr-match": "warn",
       "effect/no-length-comparison": "warn",
-      "effect/require-safety-comment-for-type-assertion": "warn",
-      "effect/no-known-value-widening": "warn",
-      "effect/no-chained-type-assertions": "warn",
-      "effect/avoid-any": "warn",
-      "effect/avoid-object-type": "warn",
-      "effect/prefer-effect-is": "warn",
       "effect/prefer-arr-sort": "warn",
       "effect/prefer-match-over-switch": "warn",
       "effect/yield-in-for-loop": "warn",
-      "effect/no-unknown-returns": "warn",
       // ---- Effect preset: rules this workspace's conventions cut across ----
       // `prefer-option-over-null` also fires on `?: T | undefined`, which is
       // the ONLY spelling of an optional member `exactOptionalPropertyTypes`
@@ -144,6 +137,13 @@ export default defineConfig({
       "effect/no-unknown-parameters": "warn",
       "effect/no-unsafe-dictionary-type": "warn",
       "effect/no-runtime-typeof": "warn",
+      // Every `{}` type here is the `(string & {})` half of a model-id
+      // parameter (`Model | (string & {})`): it keeps the known ids in
+      // autocomplete while accepting any string, the spelling upstream
+      // `@effect/ai-anthropic` uses for the same parameter. The rule's
+      // suggested `Record<string, never>` is not assignable from a string, so
+      // it has no satisfiable fix for that idiom (#98).
+      "effect/avoid-object-type": "off",
       "typescript/no-explicit-any": "off",
       "typescript/no-empty-object-type": "off",
       "typescript/ban-ts-comment": "off",
@@ -238,11 +238,16 @@ export default defineConfig({
       },
       // Test fixtures are the seams under test, not domain code: a
       // wall-clock `Date` standing in for a publication stamp, a `CI`
-      // variable toggled to drive a reporter. Each stays visible as a
-      // warning, because a fixture cannot be written another way.
+      // variable toggled to drive a reporter, a stub that implements only
+      // the slice of a platform interface (the Workers `Ai` binding) the code
+      // under test calls, or an input that breaks its type on purpose to
+      // reach a failure path (`as unknown as T`, #98). Each stays visible as
+      // a warning, because a fixture cannot be written another way.
       {
         files: ["**/tests/**/*.ts"],
         rules: {
+          "effect/avoid-any": "warn",
+          "effect/no-chained-type-assertions": "warn",
           "effect/require-safety-comment-for-type-assertion": "warn",
           "effect/use-clock-service": "warn",
           "effect/avoid-process-env": "warn",

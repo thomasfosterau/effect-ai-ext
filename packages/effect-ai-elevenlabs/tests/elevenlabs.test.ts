@@ -385,6 +385,28 @@ describe("ElevenLabsTranscriptionModel.transcribe", () => {
     expect(response.usage.durationSeconds).toBe(1.0);
   });
 
+  it("leaves segments and duration unset for a transcript with no timed words", async () => {
+    const { fetch } = makeFetch(() =>
+      jsonResponse({
+        text: "hi",
+        words: [
+          { text: "hi", type: "word" },
+          { text: "[laughs]", type: "audio_event", start: 0 },
+        ],
+      }),
+    );
+
+    const response = await runTest(
+      Effect.flatMap(TranscriptionModel.TranscriptionModel, (model) =>
+        model.transcribe({ audio: bytes(1) }),
+      ).pipe(Effect.provide(transcriptionLayer(fetch))),
+    );
+
+    expect(response.text).toBe("hi");
+    expect(response.segments).toBeUndefined();
+    expect(response.usage.durationSeconds).toBeUndefined();
+  });
+
   it("collects a streamed audio input into the upload", async () => {
     const { calls, fetch } = makeFetch(() => jsonResponse(scribeResponse()));
 
@@ -404,6 +426,18 @@ describe("ElevenLabsTranscriptionModel.transcribe", () => {
     ]);
     // The per-call language overrides the model default.
     expect(form.get("language_code")).toBe("fr");
+  });
+
+  it("maps a transcript body that does not decode to an AiError", async () => {
+    const { fetch } = makeFetch(() => jsonResponse({ text: 42 }));
+
+    const error = await expectFailureInstanceOf(
+      Effect.flatMap(TranscriptionModel.TranscriptionModel, (model) =>
+        model.transcribe({ audio: bytes(1) }),
+      ).pipe(Effect.provide(transcriptionLayer(fetch))),
+      AiError.AiError,
+    );
+    expect(error.reason._tag).toBe("InvalidOutputError");
   });
 
   it("maps a non-2xx status to an AiError", async () => {
@@ -456,6 +490,39 @@ describe("ElevenLabsVoiceConversionModel.convert", () => {
     expect(calls[0]?.outputFormat).toBe("mp3_44100_128");
     const form = await calls[0]!.request.formData();
     expect(form.get("voice_settings")).toBe(JSON.stringify({ stability: 0.3 }));
+  });
+
+  it.each([
+    ["ulaw_8000", "audio/basic"],
+    ["alaw_8000", "audio/x-alaw-basic"],
+    ["opus_48000_64", "audio/opus"],
+    ["wav_44100", "audio/wav"],
+    ["pcm_16000", "audio/pcm"],
+    ["flac_44100", "application/octet-stream"],
+  ])(
+    "derives the media type from output_format %s when the response has no content type",
+    async (format, mediaType) => {
+      const { fetch } = makeFetch(() => audioResponse(bytes(1), null));
+
+      const response = await runTest(
+        Effect.flatMap(VoiceConversionModel.VoiceConversionModel, (model) =>
+          model.convert({ audio: bytes(1), targetVoice: "v", format }),
+        ).pipe(Effect.provide(voiceConversionLayer(fetch))),
+      );
+
+      expect(response.mediaType).toBe(mediaType);
+    },
+  );
+
+  it("maps a non-2xx status to an AiError", async () => {
+    const { fetch } = makeFetch(() => jsonResponse({ detail: "unknown voice" }, 404));
+
+    await expectFailureInstanceOf(
+      Effect.flatMap(VoiceConversionModel.VoiceConversionModel, (model) =>
+        model.convert({ audio: bytes(1), targetVoice: "v" }),
+      ).pipe(Effect.provide(voiceConversionLayer(fetch))),
+      AiError.AiError,
+    );
   });
 });
 

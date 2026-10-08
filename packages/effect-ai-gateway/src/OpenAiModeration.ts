@@ -49,6 +49,8 @@
 
 import type * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
+import * as Predicate from "effect/Predicate";
+import * as EffectRecord from "effect/Record";
 import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
 import { FetchHttpClient, HttpClient } from "effect/http";
@@ -108,14 +110,8 @@ const OmniModerationResponse = Schema.Struct({
  */
 const definedScores = (
   scores: Readonly<Record<string, number | null>> | undefined,
-): Record<string, number> => {
-  const out: Record<string, number> = {};
-  if (scores === undefined) return out;
-  for (const [category, score] of Object.entries(scores)) {
-    if (score !== null) out[category] = score;
-  }
-  return out;
-};
+): ModerationModel.ProviderResponse["results"][number]["categories"] =>
+  scores === undefined ? {} : EffectRecord.filter(scores, Predicate.isNotNull);
 
 /** The moderations request body, identical on both transports. */
 const moderationQuery = (options: OpenAiModerationOptions, inputs: ReadonlyArray<string>) => ({
@@ -124,12 +120,13 @@ const moderationQuery = (options: OpenAiModerationOptions, inputs: ReadonlyArray
 });
 
 /** The provider-facing headers: JSON, plus the caller's own key when it holds one. */
-const moderationHeaders = (options: OpenAiModerationOptions): Record<string, string> => ({
-  "content-type": "application/json",
-  ...(options.apiKey !== undefined && {
-    authorization: `Bearer ${Redacted.value(options.apiKey)}`,
-  }),
-});
+const moderationHeaders = (options: OpenAiModerationOptions) =>
+  options.apiKey === undefined
+    ? { "content-type": "application/json" }
+    : {
+        "content-type": "application/json",
+        authorization: `Bearer ${Redacted.value(options.apiKey)}`,
+      };
 
 /**
  * Maps a decoded moderations response onto `ModerationModel`'s provider

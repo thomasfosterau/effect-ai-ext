@@ -14,6 +14,7 @@
 
 import { describe, expect, it } from "vite-plus/test";
 import * as Config from "effect/Config";
+import * as Predicate from "effect/Predicate";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
@@ -78,7 +79,7 @@ const jsonResponse = (body: unknown, status = 200): Response =>
 const sseResponse = (frames: ReadonlyArray<unknown>): Response => {
   const text =
     frames
-      .map((frame) => `data: ${typeof frame === "string" ? frame : JSON.stringify(frame)}\n\n`)
+      .map((frame) => `data: ${Predicate.isString(frame) ? frame : JSON.stringify(frame)}\n\n`)
       .join("") + "data: [DONE]\n\n";
   return new Response(text, {
     status: 200,
@@ -256,6 +257,61 @@ describe("MistralLanguageModel.generateText", () => {
       LanguageModel.generateText({ prompt: "hi" }).pipe(Effect.provide(modelLayer(fetch))),
       AiError.AiError,
     );
+  });
+
+  it("sends URL and wildcard-typed images, a tool-call-only turn and a text tool result", async () => {
+    const { calls, fetch } = makeFetch(() => jsonResponse(completion()));
+
+    await runTest(
+      LanguageModel.generateText({
+        prompt: [
+          {
+            role: "user",
+            content: [
+              { type: "file", mediaType: "image/png", data: new URL("https://example.com/a.png") },
+              { type: "file", mediaType: "image/png", data: "https://example.com/b.png" },
+              { type: "file", mediaType: "image/*", data: "QUJD" },
+            ],
+          },
+          {
+            role: "assistant",
+            content: [
+              {
+                type: "tool-call",
+                id: "call_1",
+                name: "get_weather",
+                params: { city: "Paris" },
+                providerExecuted: false,
+              },
+            ],
+          },
+          {
+            role: "tool",
+            content: [
+              {
+                type: "tool-result",
+                id: "call_1",
+                name: "get_weather",
+                isFailure: false,
+                result: "sunny",
+              },
+            ],
+          },
+        ],
+      }).pipe(Effect.provide(modelLayer(fetch))),
+    );
+
+    const messages = calls[0]?.body.messages ?? [];
+    expect(messages[0]).toEqual({
+      role: "user",
+      content: [
+        { type: "image_url", image_url: { url: "https://example.com/a.png" } },
+        { type: "image_url", image_url: { url: "https://example.com/b.png" } },
+        { type: "image_url", image_url: { url: "data:image/jpeg;base64,QUJD" } },
+      ],
+    });
+    expect(messages[1]).toMatchObject({ role: "assistant", content: null });
+    expect(messages[2]).toMatchObject({ role: "tool", tool_call_id: "call_1", content: "sunny" });
   });
 
   it("maps an undecodable success body to an AiError", async () => {

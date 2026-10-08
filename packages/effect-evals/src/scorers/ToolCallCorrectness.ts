@@ -24,6 +24,7 @@
  */
 
 import * as Effect from "effect/Effect";
+import * as Predicate from "effect/Predicate";
 import * as Equal from "effect/Equal";
 import type { ToolCall } from "../EvalCase.ts";
 import * as Scorer from "../Scorer.ts";
@@ -53,7 +54,7 @@ export interface ToolCallCorrectnessOptions {
 }
 
 const normalizeExpected = (entry: string | ExpectedToolCall): ExpectedToolCall =>
-  typeof entry === "string" ? { name: entry } : entry;
+  Predicate.isString(entry) ? { name: entry } : entry;
 
 /**
  * `matchParams` only applies when the expected call actually declares

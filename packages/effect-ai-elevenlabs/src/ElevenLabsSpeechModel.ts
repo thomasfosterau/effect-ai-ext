@@ -79,12 +79,16 @@ const missingVoice = (method: string): AiError.AiError =>
 
 /** Drops keys whose value is `undefined`, preserving the object's type. */
 const compact = <T extends Record<string, unknown>>(record: T): T =>
+  // SAFETY: only keys whose value is `undefined` are dropped; every other key
+  // keeps the value, and so the type, it had in `record`.
   Object.fromEntries(Object.entries(record).filter(([, value]) => value !== undefined)) as T;
 
 const buildBody = (
   options: SpeechModel.ProviderOptions,
   settings: Settings,
 ): Wire.TextToSpeechRequest =>
+  // SAFETY: `compact` removes every `undefined` field, so each optional
+  // `TextToSpeechRequest` field is either absent or set, as the wire type requires.
   compact({
     text: options.text,
     model_id: settings.modelId,

@@ -132,7 +132,7 @@ export const requestViaBinding = <S extends Schema.Top>(
         status: response.status,
         text: Effect.tryPromise(() => response.text()).pipe(Effect.orElseSucceed(() => "")),
         json: Effect.tryPromise({
-          try: () => response.json() as Promise<unknown>,
+          try: () => response.json<unknown>(),
           catch: (cause) => bodyReadFailure(origin, cause),
         }),
       })),

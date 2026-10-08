@@ -33,6 +33,8 @@
  */
 
 import * as Effect from "effect/Effect";
+import * as Option from "effect/Option";
+import * as Predicate from "effect/Predicate";
 import * as Schema from "effect/Schema";
 import { AiError, LanguageModel } from "effect/ai";
 import * as Prompt from "effect/ai/Prompt";
@@ -264,6 +266,12 @@ export const judge = (
     };
   });
 
+/** A metric definition's judging instructions: exactly one of the two is set. */
+interface ResolvedCriteria {
+  readonly criteria: string | undefined;
+  readonly evaluationSteps: ReadonlyArray<string> | undefined;
+}
+
 /**
  * Normalises `criteria` / `evaluationSteps` (an empty string or empty array
  * counts as not provided) and validates that exactly one of the two ends up
@@ -274,10 +282,7 @@ const resolveCriteria = (
   name: string,
   rawCriteria: string | undefined,
   rawEvaluationSteps: ReadonlyArray<string> | undefined,
-): {
-  readonly criteria: string | undefined;
-  readonly evaluationSteps: ReadonlyArray<string> | undefined;
-} => {
+): ResolvedCriteria => {
   const criteria = rawCriteria !== undefined && rawCriteria.length > 0 ? rawCriteria : undefined;
   const evaluationSteps =
     rawEvaluationSteps !== undefined && rawEvaluationSteps.length > 0
@@ -293,30 +298,34 @@ const resolveCriteria = (
 
 /** Renders an arbitrary case field (which may not be a string) as text for a judge prompt. Exported for reuse by `metrics/rag/RagCase.ts`. */
 export const renderValue = (value: unknown): string => {
-  if (typeof value === "string") return value;
+  if (Predicate.isString(value)) return value;
   if (Array.isArray(value)) {
-    return value.map((item) => (typeof item === "string" ? item : JSON.stringify(item))).join("\n");
+    return value.map((item) => (Predicate.isString(item) ? item : JSON.stringify(item))).join("\n");
   }
   return JSON.stringify(value);
 };
 
 type Field = { readonly label: string; readonly value: string };
 
-/** Extracts the fields named by `params` from a case, failing with the typed error on the first missing one. */
+/** A case field rendered for the judge, or `None` when it is missing (see {@link isMissing}). */
+const renderField = (value: unknown): Option.Option<string> =>
+  isMissing(value) ? Option.none() : Option.some(renderValue(value));
+
+/** Collects the fields named by `params` (each already rendered by `extract`), failing with the typed error on the first missing one. */
 const collectFields = <Param extends string>(
   metricName: string,
   seed: ReadonlyArray<Field>,
   params: ReadonlyArray<Param>,
-  extract: (param: Param) => unknown,
+  extract: (param: Param) => Option.Option<string>,
 ): Effect.Effect<ReadonlyArray<Field>, MissingEvaluationParamError> =>
   Effect.gen(function* () {
     const fields = [...seed];
     for (const param of params) {
       const value = extract(param);
-      if (isMissing(value)) {
+      if (Option.isNone(value)) {
         return yield* new MissingEvaluationParamError({ metric: metricName, param });
       }
-      fields.push({ label: param, value: renderValue(value) });
+      fields.push({ label: param, value: value.value });
     }
     return fields;
   });
@@ -351,18 +360,18 @@ export interface GEvalCase {
   readonly retrievedContext?: ReadonlyArray<string> | undefined;
 }
 
-const extractParam = (evalCase: GEvalCase, param: EvaluationParam): unknown => {
+const extractParam = (evalCase: GEvalCase, param: EvaluationParam): Option.Option<string> => {
   switch (param) {
     case "input":
-      return evalCase.golden.input;
+      return renderField(evalCase.golden.input);
     case "output":
-      return evalCase.output;
+      return renderField(evalCase.output);
     case "expected":
-      return evalCase.golden.expected;
+      return renderField(evalCase.golden.expected);
     case "context":
-      return evalCase.golden.context;
+      return renderField(evalCase.golden.context);
     case "retrievedContext":
-      return evalCase.retrievedContext;
+      return renderField(evalCase.retrievedContext);
   }
 };
 
@@ -438,14 +447,14 @@ export const renderTurns = (turns: Prompt.Prompt): string =>
 const extractConversationalParam = (
   evalCase: GEvalConversationalCase,
   param: ConversationalEvaluationParam,
-): unknown => {
+): Option.Option<string> => {
   switch (param) {
     case "scenario":
-      return evalCase.scenario;
+      return renderField(evalCase.scenario);
     case "expectedOutcome":
-      return evalCase.expectedOutcome;
+      return renderField(evalCase.expectedOutcome);
     case "context":
-      return evalCase.context;
+      return renderField(evalCase.context);
   }
 };
 

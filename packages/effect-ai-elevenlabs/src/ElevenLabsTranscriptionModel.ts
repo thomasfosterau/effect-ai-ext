@@ -15,8 +15,12 @@
  */
 
 import { TranscriptionModel } from "@thomasfosterau/effect-ai-ext";
+import * as Arr from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
+import * as Order from "effect/Order";
+import * as Predicate from "effect/Predicate";
 import { ElevenLabsClient } from "./ElevenLabsClient";
 import { collectBytes, toBlob } from "./internal/audio";
 import type * as Wire from "./internal/wire";
@@ -44,44 +48,47 @@ export interface Settings {
   readonly tagAudioEvents?: boolean | undefined;
 }
 
-/** Drops keys whose value is `undefined`, preserving the object's type. */
-const compact = <T extends Record<string, unknown>>(record: T): T =>
-  Object.fromEntries(Object.entries(record).filter(([, value]) => value !== undefined)) as T;
+/** One spoken word's span in the transcript. */
+interface Segment {
+  readonly text: string;
+  readonly start: number;
+  readonly end: number;
+}
+
+/**
+ * A token as a segment: only spoken words carry meaningful segment offsets, so
+ * `spacing` / `audio_event` tokens and any word missing a timestamp pair map
+ * to `None`.
+ */
+const toSegment = (word: Wire.TranscriptWord): Option.Option<Segment> =>
+  (Predicate.isNullish(word.type) || word.type === "word") &&
+  Predicate.isNumber(word.start) &&
+  Predicate.isNumber(word.end)
+    ? Option.some({ text: word.text ?? "", start: word.start, end: word.end })
+    : Option.none();
+
+/** The latest end offset any token reports: the transcript's duration. */
+const latestEnd = (words: ReadonlyArray<Wire.TranscriptWord>): number | undefined =>
+  Arr.match(
+    Arr.filter(
+      Arr.map(words, (word) => word.end),
+      Predicate.isNumber,
+    ),
+    {
+      onEmpty: () => undefined,
+      onNonEmpty: (ends) => Arr.max(ends, Order.Number),
+    },
+  );
 
 /** Maps a Scribe transcript into the neutral provider response. */
 const mapTranscript = (body: Wire.SpeechToTextResponse): TranscriptionModel.ProviderResponse => {
-  const words = body.words ?? undefined;
-
-  let segments:
-    | ReadonlyArray<{ readonly text: string; readonly start: number; readonly end: number }>
-    | undefined;
-  let maxEnd: number | undefined;
-
-  if (words !== undefined) {
-    const mapped: Array<{ readonly text: string; readonly start: number; readonly end: number }> =
-      [];
-    for (const word of words) {
-      if (typeof word.end === "number") {
-        maxEnd = maxEnd === undefined ? word.end : Math.max(maxEnd, word.end);
-      }
-      // Only spoken words carry meaningful segment offsets; skip `spacing` /
-      // `audio_event` tokens and any word missing a timestamp pair.
-      if (word.type !== undefined && word.type !== null && word.type !== "word") {
-        continue;
-      }
-      if (typeof word.start !== "number" || typeof word.end !== "number") {
-        continue;
-      }
-      mapped.push({ text: word.text ?? "", start: word.start, end: word.end });
-    }
-    segments = mapped.length > 0 ? mapped : undefined;
-  }
-
+  const words = body.words ?? [];
+  const segments = Arr.getSomes(Arr.map(words, toSegment));
   return {
     text: body.text ?? "",
-    segments,
+    segments: Arr.isReadonlyArrayNonEmpty(segments) ? segments : undefined,
     language: body.language_code ?? undefined,
-    usage: { durationSeconds: maxEnd },
+    usage: { durationSeconds: latestEnd(words) },
   };
 };
 
@@ -101,14 +108,14 @@ export const make = (
       transcribe: (options) =>
         Effect.gen(function* () {
           const bytes = yield* collectBytes(options.audio);
-          const form = compact({
+          const form: Wire.SpeechToTextForm = {
             file: toBlob(bytes, options.mediaType),
             model_id: config.modelId ?? DEFAULT_MODEL_ID,
             language_code: options.language ?? config.languageCode,
             timestamps_granularity: config.timestampsGranularity,
             diarize: config.diarize,
             tag_audio_events: config.tagAudioEvents,
-          }) as unknown as Wire.SpeechToTextForm;
+          };
           const [body] = yield* client.speechToText(form);
           return mapTranscript(body);
         }),

@@ -68,6 +68,6 @@ export const gatewayBaseUrl = (
  * The `cf-aig-authorization` header Cloudflare's authenticated-gateway
  * feature requires on every request once enabled.
  */
-export const cfAigAuthorizationHeader = (config: GatewayUrlConfig): Record<string, string> => ({
+export const cfAigAuthorizationHeader = (config: GatewayUrlConfig) => ({
   "cf-aig-authorization": `Bearer ${Redacted.value(config.token)}`,
 });
