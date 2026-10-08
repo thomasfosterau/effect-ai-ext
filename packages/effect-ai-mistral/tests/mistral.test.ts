@@ -14,6 +14,7 @@
 
 import { describe, expect, it } from "vite-plus/test";
 import * as Config from "effect/Config";
+import * as Predicate from "effect/Predicate";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
@@ -78,7 +79,7 @@ const jsonResponse = (body: unknown, status = 200): Response =>
 const sseResponse = (frames: ReadonlyArray<unknown>): Response => {
   const text =
     frames
-      .map((frame) => `data: ${typeof frame === "string" ? frame : JSON.stringify(frame)}\n\n`)
+      .map((frame) => `data: ${Predicate.isString(frame) ? frame : JSON.stringify(frame)}\n\n`)
       .join("") + "data: [DONE]\n\n";
   return new Response(text, {
     status: 200,

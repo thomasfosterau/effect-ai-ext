@@ -28,7 +28,9 @@ export const jsonValidity: Scorer.Scorer<JsonCase> = Scorer.makeScorer({
   name: "json-validity",
   evaluate: (evalCase) =>
     Effect.try({
-      try: (): unknown => JSON.parse(evalCase.output),
+      try: (): void => {
+        JSON.parse(evalCase.output);
+      },
       catch: (cause) => cause,
     }).pipe(
       Effect.map(() => ({ score: 1 })),

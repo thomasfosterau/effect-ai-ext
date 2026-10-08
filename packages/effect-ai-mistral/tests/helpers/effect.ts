@@ -15,7 +15,7 @@
  * @module tests/unit/helpers/effect
  */
 
-import { expect } from "vite-plus/test";
+import { assert, expect } from "vite-plus/test";
 import * as Cause from "effect/Cause";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
@@ -45,13 +45,20 @@ export const expectFailureInstanceOf = async <A, E, T>(
   if (!Exit.isFailure(exit)) throw new Error("Expected a failure exit");
   const failure = Option.getOrThrow(Cause.findErrorOption(exit.cause));
   expect(failure).toBeInstanceOf(errorClass);
-  return failure as unknown as T;
+  assert(failure instanceof errorClass);
+  return failure;
 };
 
 /** A span captured by {@link recordingTracer}: its name and its attributes. */
 export interface RecordedSpan {
   readonly name: string;
   readonly attributes: Map<string, unknown>;
+}
+
+/** A {@link Tracer.Tracer} and the spans it has recorded so far. */
+export interface RecordingTracer {
+  readonly tracer: Tracer.Tracer;
+  readonly spans: RecordedSpan[];
 }
 
 /**
@@ -65,7 +72,7 @@ export interface RecordedSpan {
  * (the default) — independent of the sampling decision — so a span is
  * recorded for each instrumented phase even though nothing is exported.
  */
-export const recordingTracer = (): { tracer: Tracer.Tracer; spans: RecordedSpan[] } => {
+export const recordingTracer = (): RecordingTracer => {
   const spans: RecordedSpan[] = [];
   const tracer = Tracer.make({
     span(options) {

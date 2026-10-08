@@ -15,6 +15,7 @@
  */
 
 import * as Effect from "effect/Effect";
+import * as Predicate from "effect/Predicate";
 import * as Layer from "effect/Layer";
 import * as Path from "effect/Path";
 import * as Schema from "effect/Schema";
@@ -39,11 +40,11 @@ export class InvalidEvalFileError extends Schema.TaggedError<InvalidEvalFileErro
 ) {}
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
+  Predicate.isObjectOrArray(value);
 
 const isAnySuite = (value: unknown): value is EvalFile.AnySuite =>
   isPlainObject(value) &&
-  typeof value.name === "string" &&
+  Predicate.isString(value.name) &&
   isPlainObject(value.dataset) &&
   isPlainObject(value.task) &&
   Array.isArray(value.metrics);
@@ -51,10 +52,9 @@ const isAnySuite = (value: unknown): value is EvalFile.AnySuite =>
 /** Validates a loaded module's default export against the {@link EvalFile.EvalFile} contract, or gives a reason it doesn't. */
 export const validateEvalFile = (value: unknown): value is EvalFile.EvalFile => {
   if (!isPlainObject(value)) return false;
-  const candidate = value as Partial<EvalFile.EvalFile>;
-  if (!Array.isArray(candidate.suites) || !candidate.suites.every(isAnySuite)) return false;
-  if (!Layer.isLayer(candidate.layer)) return false;
-  if (candidate.options !== undefined && !isPlainObject(candidate.options)) return false;
+  if (!Array.isArray(value.suites) || !value.suites.every(isAnySuite)) return false;
+  if (!Layer.isLayer(value.layer)) return false;
+  if (value.options !== undefined && !isPlainObject(value.options)) return false;
   return true;
 };
 
@@ -62,12 +62,11 @@ const describeInvalid = (value: unknown): string => {
   if (!isPlainObject(value)) {
     return "default export must be an object with { suites, layer, options? }";
   }
-  const candidate = value as Partial<EvalFile.EvalFile>;
-  if (!Array.isArray(candidate.suites)) return 'default export\'s "suites" must be an array';
-  if (!candidate.suites.every(isAnySuite)) {
+  if (!Array.isArray(value.suites)) return 'default export\'s "suites" must be an array';
+  if (!value.suites.every(isAnySuite)) {
     return 'default export\'s "suites" must contain only Runner.Suite values (from Runner.makeSuite)';
   }
-  if (!Layer.isLayer(candidate.layer))
+  if (!Layer.isLayer(value.layer))
     return 'default export\'s "layer" must be a Layer (from Layer.*)';
   return 'default export\'s "options", if present, must be an object';
 };

@@ -31,6 +31,7 @@
  */
 
 import * as Effect from "effect/Effect";
+import * as Predicate from "effect/Predicate";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import type * as Path from "effect/Path";
@@ -62,7 +63,7 @@ const describeError = (error: unknown): string => {
   if (error instanceof EvalFileImportError) return `import failed: ${describeError(error.cause)}`;
   if (error instanceof InvalidEvalFileError) return error.reason;
   if (error instanceof Error) return error.message;
-  if (typeof error === "string") return error;
+  if (Predicate.isString(error)) return error;
   return EffectResult.getOrElse(
     EffectResult.try(() => JSON.stringify(error)),
     () => String(error),

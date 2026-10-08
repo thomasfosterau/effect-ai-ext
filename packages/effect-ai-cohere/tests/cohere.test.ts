@@ -15,6 +15,7 @@
 
 import { describe, expect, it } from "vite-plus/test";
 import * as Config from "effect/Config";
+import * as Predicate from "effect/Predicate";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
@@ -91,7 +92,7 @@ const jsonResponse = (body: unknown, status = 200): Response =>
 /** Builds a Cohere v2 SSE stream — `data:`-framed events, closed (no sentinel). */
 const sseResponse = (frames: ReadonlyArray<unknown>): Response => {
   const text = frames
-    .map((frame) => `data: ${typeof frame === "string" ? frame : JSON.stringify(frame)}\n\n`)
+    .map((frame) => `data: ${Predicate.isString(frame) ? frame : JSON.stringify(frame)}\n\n`)
     .join("");
   return new Response(text, {
     status: 200,
@@ -557,6 +558,21 @@ describe("CohereLanguageModel tool calling", () => {
     );
 
     expect(calls[0]?.body.tool_choice).toBe("REQUIRED");
+    expect(calls[0]?.body.tools).toHaveLength(1);
+  });
+
+  it("restricts tools to an auto oneOf subset, leaving tool_choice unset", async () => {
+    const { calls, fetch } = makeFetch(() => jsonResponse(toolCallReply()));
+
+    await runTest(
+      LanguageModel.generateText({
+        prompt: "weather?",
+        toolkit: weatherToolkit,
+        toolChoice: { mode: "auto", oneOf: ["get_weather"] },
+      }).pipe(Effect.provide(modelLayer(fetch)), Effect.provide(weatherHandlers)),
+    );
+
+    expect(calls[0]?.body.tool_choice).toBeUndefined();
     expect(calls[0]?.body.tools).toHaveLength(1);
   });
 

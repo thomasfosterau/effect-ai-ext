@@ -15,12 +15,27 @@ import * as Effect from "effect/Effect";
 import { dual } from "effect/Function";
 import * as Option from "effect/Option";
 import * as Redactable from "effect/Redactable";
+import type * as Redacted from "effect/Redacted";
 import type * as Schema from "effect/Schema";
 import * as AiError from "effect/ai/AiError";
 import type * as HttpClientError from "effect/http/HttpClientError";
+import type * as Headers from "effect/http/Headers";
 import type * as HttpClientRequest from "effect/http/HttpClientRequest";
 
 const MODULE = "ElevenLabsClient";
+
+/**
+ * `headers` as `AiError` and `Response` record them: the `Headers` redactable
+ * form, in which each sensitive header (authorization, cookies, API keys) is a
+ * `Redacted` value instead of its string.
+ */
+const redactHeaders = (
+  headers: Headers.Headers,
+): Record<string, string | Redacted.Redacted<string>> =>
+  // SAFETY: `Headers` implements `Redactable` with `Headers.redact`, whose
+  // result maps each header name to its string value, or to that value
+  // wrapped in `Redacted` for a sensitive header.
+  Redactable.redact(headers) as Record<string, string | Redacted.Redacted<string>>;
 
 const buildRequestDetails = (
   request: HttpClientRequest.HttpClientRequest,
@@ -29,7 +44,7 @@ const buildRequestDetails = (
   url: request.url,
   urlParams: Array.from(request.urlParams),
   hash: Option.getOrUndefined(request.hash),
-  headers: Redactable.redact(request.headers) as Record<string, string>,
+  headers: redactHeaders(request.headers),
 });
 
 /** Wraps a schema decode failure as an `InvalidOutputError`. */
@@ -106,7 +121,7 @@ const mapStatusCodeError = Effect.fnUntraced(function* (
       request: buildRequestDetails(request),
       response: {
         status: response.status,
-        headers: Redactable.redact(response.headers) as Record<string, string>,
+        headers: redactHeaders(response.headers),
       },
       body,
     },

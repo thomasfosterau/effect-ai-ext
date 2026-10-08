@@ -93,7 +93,10 @@ export type Model = keyof typeof EMBEDDING_MODELS;
  * an unrecognised id (Voyage then applies the model's own default).
  */
 export const defaultDimension = (model: string): number | undefined =>
-  model in EMBEDDING_MODELS ? EMBEDDING_MODELS[model as Model].defaultDimension : undefined;
+  isKnownModel(model) ? EMBEDDING_MODELS[model].defaultDimension : undefined;
+
+/** Whether `model` is one of the ids in {@link EMBEDDING_MODELS}. */
+const isKnownModel = (model: string): model is Model => model in EMBEDDING_MODELS;
 
 // =============================================================================
 // Options

@@ -19,6 +19,7 @@ import { AiError } from "effect/ai";
 import {
   OPENAI_MODERATION_MODEL,
   makeOpenAiModerationModel,
+  type OpenAiModerationOptions,
 } from "@thomasfosterau/effect-ai-gateway";
 import { expectFailureInstanceOf, runTest } from "./helpers/effect";
 
@@ -55,9 +56,12 @@ const omniBody = (results: ReadonlyArray<unknown>, extra: Record<string, unknown
   ...extra,
 });
 
-const moderate = (ai: Ai, inputs: ReadonlyArray<string>, options = {}) =>
+/** Moderates `inputs`; with no `options`, through the constructor's own default. */
+const moderate = (ai: Ai, inputs: ReadonlyArray<string>, options?: OpenAiModerationOptions) =>
   Effect.gen(function* () {
-    const model = yield* makeOpenAiModerationModel(binding(ai), options);
+    const model = yield* options === undefined
+      ? makeOpenAiModerationModel(binding(ai))
+      : makeOpenAiModerationModel(binding(ai), options);
     return yield* model.moderate({ inputs });
   });
 

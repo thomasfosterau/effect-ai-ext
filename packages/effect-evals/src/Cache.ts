@@ -32,6 +32,7 @@
  */
 
 import * as Effect from "effect/Effect";
+import * as Predicate from "effect/Predicate";
 import { KeyValueStore } from "effect/persistence";
 
 export { KeyValueStore };
@@ -58,6 +59,16 @@ export interface CacheKeyInput {
   readonly judgeModelId?: string | undefined;
 }
 
+/** A value `canonicalize` hands to `JSON.stringify` as it came. */
+type CanonicalLeaf = string | number | boolean | bigint | symbol | null | undefined;
+
+/** {@link canonicalize}'s output: leaves, and arrays and key-sorted records of them. */
+type Canonical = CanonicalLeaf | ReadonlyArray<Canonical> | { readonly [key: string]: Canonical };
+
+/** Every value but an object or a function is a {@link CanonicalLeaf}. */
+const isCanonicalLeaf = (value: unknown): value is CanonicalLeaf =>
+  !Predicate.isObjectKeyword(value);
+
 /**
  * Normalises a value into a plain JSON-compatible shape with every object's
  * keys sorted, so `JSON.stringify` afterwards is stable across key
@@ -66,19 +77,21 @@ export interface CacheKeyInput {
  * value as an enumerable own property), which would collide two otherwise-
  * distinct cache keys that differ only in one of these fields.
  */
-const canonicalize = (value: unknown): unknown => {
+const canonicalize = (value: unknown): Canonical => {
+  if (isCanonicalLeaf(value)) return value;
   if (value instanceof Date) return { __date: value.toISOString() };
   if (value instanceof Map)
     return { __map: Array.from(value, ([k, v]) => [canonicalize(k), canonicalize(v)]) };
   if (value instanceof Set) return { __set: Array.from(value, canonicalize) };
   if (Array.isArray(value)) return value.map(canonicalize);
-  if (value !== null && typeof value === "object") {
-    const record = value as Record<string, unknown>;
-    const sorted: Record<string, unknown> = {};
-    for (const key of Object.keys(record).sort()) sorted[key] = canonicalize(record[key]);
+  if (Predicate.isObject(value)) {
+    const sorted: Record<string, Canonical> = {};
+    for (const key of Object.keys(value).sort()) sorted[key] = canonicalize(value[key]);
     return sorted;
   }
-  return value;
+  // Only a function is left. `JSON.stringify` drops one exactly as it drops
+  // `undefined` (an omitted key, a `null` array slot), so the key is unchanged.
+  return undefined;
 };
 
 const encoder = new TextEncoder();

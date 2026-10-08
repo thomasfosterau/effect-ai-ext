@@ -36,7 +36,6 @@ import { dual } from "effect/Function";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
-import * as Redactable from "effect/Redactable";
 import * as Stream from "effect/Stream";
 import type * as AiError from "effect/ai/AiError";
 import * as AiErrorNs from "effect/ai/AiError";
@@ -49,6 +48,7 @@ import * as Tool from "effect/ai/Tool";
 import type * as HttpClientRequest from "effect/http/HttpClientRequest";
 import type * as HttpClientResponse from "effect/http/HttpClientResponse";
 import { CohereClient } from "./CohereClient";
+import * as Errors from "./internal/errors";
 import * as Wire from "./internal/wire";
 
 const MODULE = "CohereLanguageModel";
@@ -151,6 +151,8 @@ export const make = Effect.fnUntraced(function* ({
       const responseFormat = yield* prepareResponseFormat(options);
       // Assemble every field (undefined for those unset) and drop the
       // undefined keys in one pass, rather than branching per field.
+      // SAFETY: `compact` removes every `undefined` field, so each optional
+      // `ChatRequest` field is either absent or set, as the wire type requires.
       return compact({
         model: config.model,
         messages,
@@ -248,15 +250,10 @@ export const withConfigOverride: {
 const failure = (method: string, reason: AiError.AiErrorReason): AiError.AiError =>
   AiErrorNs.make({ module: MODULE, method, reason });
 
-/** Type-guard narrowing away both `null` and `undefined`. */
-const isPresent = <A>(value: A): value is NonNullable<A> => value !== null && value !== undefined;
-
-/** Type-guard for a `null` or `undefined` value. */
-const isAbsent = (value: unknown): value is null | undefined =>
-  value === null || value === undefined;
-
 /** Drops keys whose value is `undefined`, preserving the object's type. */
 const compact = <T extends Record<string, unknown>>(record: T): T =>
+  // SAFETY: only keys whose value is `undefined` are dropped; every other key
+  // keeps the value, and so the type, it had in `record`.
   Object.fromEntries(Object.entries(record).filter(([, value]) => value !== undefined)) as T;
 
 const normalizeImageMediaType = (mediaType: string): string =>
@@ -267,7 +264,7 @@ const fileToImageUrl = (part: Prompt.FilePart): string => {
   if (data instanceof URL) {
     return data.href;
   }
-  if (typeof data === "string") {
+  if (Predicate.isString(data)) {
     return data.startsWith("data:") || data.startsWith("http")
       ? data
       : `data:${normalizeImageMediaType(part.mediaType)};base64,${data}`;
@@ -350,7 +347,7 @@ const convertToolMessage = (message: Prompt.ToolMessage): Array<Wire.ToolMessage
     messages.push({
       role: "tool",
       tool_call_id: part.id,
-      content: typeof part.result === "string" ? part.result : JSON.stringify(part.result),
+      content: Predicate.isString(part.result) ? part.result : JSON.stringify(part.result),
     });
   }
   return messages;
@@ -428,6 +425,12 @@ const buildToolRequest = (tool: Tool.Any): Effect.Effect<Wire.ToolRequest, AiErr
     };
   });
 
+/** The tool set and tool-choice directive a request is sent with. */
+interface ResolvedToolChoice {
+  readonly tools: ReadonlyArray<Wire.ToolRequest>;
+  readonly toolChoice: Wire.ToolChoiceRequest | undefined;
+}
+
 /**
  * Maps Effect AI's tool-choice directive onto Cohere's, filtering the tool set
  * for a specific-tool or `oneOf` subset. Cohere expresses only `REQUIRED` /
@@ -437,10 +440,7 @@ const buildToolRequest = (tool: Tool.Any): Effect.Effect<Wire.ToolRequest, AiErr
 const resolveToolChoice = (
   toolChoice: LanguageModel.ProviderOptions["toolChoice"],
   tools: ReadonlyArray<Wire.ToolRequest>,
-): {
-  readonly tools: ReadonlyArray<Wire.ToolRequest>;
-  readonly toolChoice: Wire.ToolChoiceRequest | undefined;
-} => {
+): ResolvedToolChoice => {
   if (toolChoice === "auto") {
     return { tools, toolChoice: undefined };
   }
@@ -518,7 +518,7 @@ const prepareResponseFormat = (
  * used lowercase (`tool_calls`) in places, so both are accepted.
  */
 const mapFinishReason = (reason: string | null | undefined): Response.FinishReason => {
-  if (isAbsent(reason)) {
+  if (Predicate.isNullish(reason)) {
     return "unknown";
   }
   switch (reason.toLowerCase()) {
@@ -570,14 +570,14 @@ const buildRequestDetails = (
   url: request.url,
   urlParams: Array.from(request.urlParams),
   hash: request.hash._tag === "Some" ? request.hash.value : undefined,
-  headers: Redactable.redact(request.headers) as Record<string, string>,
+  headers: Errors.redactHeaders(request.headers),
 });
 
 const buildResponseDetails = (
   response: HttpClientResponse.HttpClientResponse,
 ): typeof Response.HttpResponseDetails.Encoded => ({
   status: response.status,
-  headers: Redactable.redact(response.headers) as Record<string, string>,
+  headers: Errors.redactHeaders(response.headers),
 });
 
 // =============================================================================
@@ -585,12 +585,12 @@ const buildResponseDetails = (
 // =============================================================================
 
 const collectText = (content: Wire.ChatResponse["message"]["content"]): string => {
-  if (isAbsent(content)) {
+  if (Predicate.isNullish(content)) {
     return "";
   }
   let text = "";
   for (const part of content) {
-    if ((part.type === undefined || part.type === "text") && isPresent(part.text)) {
+    if ((part.type === undefined || part.type === "text") && Predicate.isNotNullish(part.text)) {
       text += part.text;
     }
   }
@@ -621,7 +621,7 @@ const makeResponse = (
     }
 
     const toolCalls = body.message.tool_calls;
-    if (isPresent(toolCalls)) {
+    if (Predicate.isNotNullish(toolCalls)) {
       for (const toolCall of toolCalls) {
         parts.push({
           type: "tool-call",
@@ -683,6 +683,8 @@ const firstToolCall = (
     NonNullable<NonNullable<Wire.ChatStreamEvent["delta"]>["message"]>["tool_calls"]
   >,
 ): Wire.StreamToolCall =>
+  // SAFETY: `tool_calls` is one fragment or an array of them, and
+  // `Array.isArray` does not narrow a readonly array out of the union.
   Array.isArray(toolCalls) ? toolCalls[0] : (toolCalls as Wire.StreamToolCall);
 
 const emitResponseMetadata = (
@@ -714,7 +716,7 @@ const handleTextDelta = (
     state.textStarted = true;
     out.push({ type: "text-start", id: context.textId });
   }
-  if (isPresent(text) && text.length > 0) {
+  if (Predicate.isNotNullish(text) && text.length > 0) {
     out.push({ type: "text-delta", id: context.textId, delta: text });
   }
 };
@@ -751,7 +753,7 @@ const handleToolCallDelta = (
   out: Array<Response.StreamPartEncoded>,
 ): void => {
   const toolCalls = event.delta?.message?.tool_calls;
-  if (isAbsent(toolCalls)) {
+  if (Predicate.isNullish(toolCalls)) {
     return;
   }
   const toolCall = firstToolCall(toolCalls);
@@ -764,7 +766,7 @@ const handleToolCallDelta = (
   }
 
   const argsFragment = toolCall.function?.arguments;
-  if (isPresent(argsFragment) && argsFragment.length > 0) {
+  if (Predicate.isNotNullish(argsFragment) && argsFragment.length > 0) {
     accumulator.args += argsFragment;
     out.push({ type: "tool-params-delta", id: accumulator.id, delta: argsFragment });
   }
@@ -791,7 +793,7 @@ const handleEvent = (
   switch (event.type) {
     case "content-start":
     case "content-delta": {
-      if (isAbsent(content) || content.type === undefined || content.type === "text") {
+      if (Predicate.isNullish(content) || content.type === undefined || content.type === "text") {
         handleTextDelta(content?.text, state, context, out);
       }
       break;

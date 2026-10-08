@@ -224,7 +224,12 @@ const cacheGetJson = <A>(
     if (raw === undefined) return undefined;
     // An unparseable entry (`JSON.parse`'s `SyntaxError`) is a cache miss;
     // anything else is a defect, not a reason to re-run silently (#98).
-    return yield* Effect.try({ try: () => JSON.parse(raw) as A, catch: (cause) => cause }).pipe(
+    return yield* Effect.try({
+      // SAFETY: the entry under this content-hash key was written by
+      // `cacheSetJson` from a value of type `A`.
+      try: () => JSON.parse(raw) as A,
+      catch: (cause) => cause,
+    }).pipe(
       Effect.catchIf(isSyntaxError, () => Effect.succeed<A | undefined>(undefined)),
       Effect.orDie,
     );

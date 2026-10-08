@@ -28,10 +28,13 @@ import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import { identity } from "effect/Function";
 import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
 import * as Redacted from "effect/Redacted";
 import * as Stream from "effect/Stream";
+import * as Str from "effect/String";
 import type * as AiError from "effect/ai/AiError";
+import * as Headers from "effect/http/Headers";
 import * as HttpBody from "effect/http/HttpBody";
 import * as HttpClient from "effect/http/HttpClient";
 import type * as HttpClientError from "effect/http/HttpClientError";
@@ -167,14 +170,12 @@ const speechToSpeechPath = (voiceId: string): string =>
   `${SPEECH_TO_SPEECH_PATH}/${encodeURIComponent(voiceId)}`;
 
 /** Reads the response's content type, stripping any `; charset=…` parameters. */
-const contentTypeOf = (response: HttpClientResponse.HttpClientResponse): string | undefined => {
-  const raw = response.headers["content-type"] as string | undefined;
-  if (raw === undefined) {
-    return undefined;
-  }
-  const base = raw.split(";")[0].trim();
-  return base.length > 0 ? base : undefined;
-};
+const contentTypeOf = (response: HttpClientResponse.HttpClientResponse): string | undefined =>
+  Headers.get(response.headers, "content-type").pipe(
+    Option.map((raw) => raw.split(";")[0].trim()),
+    Option.filter(Str.isNonEmpty),
+    Option.getOrUndefined,
+  );
 
 /**
  * Constructs a {@link Service} from explicit {@link Options}. Requires an
@@ -257,7 +258,7 @@ export const make = Effect.fnUntraced(function* (
 
   const speechToText: Service["speechToText"] = (request) => {
     const httpRequest = HttpClientRequest.post(SPEECH_TO_TEXT_PATH).pipe(
-      HttpClientRequest.bodyFormDataRecord(request as unknown as HttpBody.FormDataInput),
+      HttpClientRequest.bodyFormDataRecord(request),
       HttpClientRequest.acceptJson,
     );
     return httpClientOk.execute(httpRequest).pipe(
@@ -277,7 +278,7 @@ export const make = Effect.fnUntraced(function* (
   const speechToSpeech: Service["speechToSpeech"] = (voiceId, request, options) => {
     const httpRequest = withOutputFormat(
       HttpClientRequest.post(speechToSpeechPath(voiceId)).pipe(
-        HttpClientRequest.bodyFormDataRecord(request as unknown as HttpBody.FormDataInput),
+        HttpClientRequest.bodyFormDataRecord(request),
       ),
       options,
     );

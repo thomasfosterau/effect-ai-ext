@@ -31,7 +31,6 @@ import { dual } from "effect/Function";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
-import * as Redactable from "effect/Redactable";
 import * as Stream from "effect/Stream";
 import type * as AiError from "effect/ai/AiError";
 import * as AiErrorNs from "effect/ai/AiError";
@@ -44,6 +43,7 @@ import * as Tool from "effect/ai/Tool";
 import type * as HttpClientRequest from "effect/http/HttpClientRequest";
 import type * as HttpClientResponse from "effect/http/HttpClientResponse";
 import { MistralClient } from "./MistralClient";
+import * as Errors from "./internal/errors";
 import * as Wire from "./internal/wire";
 
 const MODULE = "MistralLanguageModel";
@@ -145,6 +145,9 @@ export const make = Effect.fnUntraced(function* ({
       const responseFormat = yield* prepareResponseFormat(options);
       // Assemble every field (undefined for those unset) and drop the
       // undefined keys in one pass, rather than branching per field.
+      // SAFETY: `compact` removes every `undefined` field, so each optional
+      // `ChatCompletionRequest` field is either absent or set, as the wire
+      // type requires.
       return compact({
         model: config.model,
         messages,
@@ -240,15 +243,10 @@ export const withConfigOverride: {
 const failure = (method: string, reason: AiError.AiErrorReason): AiError.AiError =>
   AiErrorNs.make({ module: MODULE, method, reason });
 
-/** Type-guard narrowing away both `null` and `undefined`. */
-const isPresent = <A>(value: A): value is NonNullable<A> => value !== null && value !== undefined;
-
-/** Type-guard for a `null` or `undefined` value. */
-const isAbsent = (value: unknown): value is null | undefined =>
-  value === null || value === undefined;
-
 /** Drops keys whose value is `undefined`, preserving the object's type. */
 const compact = <T extends Record<string, unknown>>(record: T): T =>
+  // SAFETY: only keys whose value is `undefined` are dropped; every other key
+  // keeps the value, and so the type, it had in `record`.
   Object.fromEntries(Object.entries(record).filter(([, value]) => value !== undefined)) as T;
 
 const normalizeImageMediaType = (mediaType: string): string =>
@@ -259,7 +257,7 @@ const fileToImageUrl = (part: Prompt.FilePart): string => {
   if (data instanceof URL) {
     return data.href;
   }
-  if (typeof data === "string") {
+  if (Predicate.isString(data)) {
     return data.startsWith("data:") || data.startsWith("http")
       ? data
       : `data:${normalizeImageMediaType(part.mediaType)};base64,${data}`;
@@ -343,7 +341,7 @@ const convertToolMessage = (message: Prompt.ToolMessage): Array<Wire.ToolMessage
       role: "tool",
       tool_call_id: part.id,
       name: part.name,
-      content: typeof part.result === "string" ? part.result : JSON.stringify(part.result),
+      content: Predicate.isString(part.result) ? part.result : JSON.stringify(part.result),
     });
   }
   return messages;
@@ -421,6 +419,12 @@ const buildToolRequest = (tool: Tool.Any): Effect.Effect<Wire.ToolRequest, AiErr
     };
   });
 
+/** The tool set and tool-choice directive a request is sent with. */
+interface ResolvedToolChoice {
+  readonly tools: ReadonlyArray<Wire.ToolRequest>;
+  readonly toolChoice: Wire.ToolChoiceRequest;
+}
+
 /**
  * Maps Effect AI's tool-choice directive onto Mistral's, filtering the tool
  * set for a `oneOf` subset. `required` becomes Mistral's `"any"`.
@@ -428,10 +432,7 @@ const buildToolRequest = (tool: Tool.Any): Effect.Effect<Wire.ToolRequest, AiErr
 const resolveToolChoice = (
   toolChoice: LanguageModel.ProviderOptions["toolChoice"],
   tools: ReadonlyArray<Wire.ToolRequest>,
-): {
-  readonly tools: ReadonlyArray<Wire.ToolRequest>;
-  readonly toolChoice: Wire.ToolChoiceRequest;
-} => {
+): ResolvedToolChoice => {
   if (toolChoice === "auto" || toolChoice === "none") {
     return { tools, toolChoice };
   }
@@ -514,7 +515,7 @@ const mapFinishReason = (reason: string | null | undefined): Response.FinishReas
     case "error":
       return "error";
     default:
-      return isAbsent(reason) ? "unknown" : "other";
+      return Predicate.isNullish(reason) ? "unknown" : "other";
   }
 };
 
@@ -539,14 +540,14 @@ const buildRequestDetails = (
   url: request.url,
   urlParams: Array.from(request.urlParams),
   hash: request.hash._tag === "Some" ? request.hash.value : undefined,
-  headers: Redactable.redact(request.headers) as Record<string, string>,
+  headers: Errors.redactHeaders(request.headers),
 });
 
 const buildResponseDetails = (
   response: HttpClientResponse.HttpClientResponse,
 ): typeof Response.HttpResponseDetails.Encoded => ({
   status: response.status,
-  headers: Redactable.redact(response.headers) as Record<string, string>,
+  headers: Errors.redactHeaders(response.headers),
 });
 
 // =============================================================================
@@ -573,11 +574,11 @@ const makeResponse = (
     const choice = body.choices[0];
     if (Predicate.isNotUndefined(choice)) {
       const content = choice.message.content;
-      if (isPresent(content) && content.length > 0) {
+      if (Predicate.isNotNullish(content) && content.length > 0) {
         parts.push({ type: "text", text: content });
       }
       const toolCalls = choice.message.tool_calls;
-      if (isPresent(toolCalls)) {
+      if (Predicate.isNotNullish(toolCalls)) {
         for (const toolCall of toolCalls) {
           parts.push({
             type: "tool-call",
@@ -672,7 +673,7 @@ const handleTextDelta = (
   context: StreamContext,
   out: Array<Response.StreamPartEncoded>,
 ): void => {
-  if (!isPresent(content) || content.length === 0) {
+  if (!Predicate.isNotNullish(content) || content.length === 0) {
     return;
   }
   if (!state.textStarted) {
@@ -742,7 +743,7 @@ const handleChunk = (
 
   const choice = chunk.choices[0];
   if (Predicate.isUndefined(choice)) {
-    if (!state.finished && isPresent(chunk.usage)) {
+    if (!state.finished && Predicate.isNotNullish(chunk.usage)) {
       finalize(state, context, out, chunk, "stop");
     }
     return out;
@@ -751,13 +752,13 @@ const handleChunk = (
   handleTextDelta(choice.delta.content, state, context, out);
 
   const toolCalls = choice.delta.tool_calls;
-  if (isPresent(toolCalls)) {
+  if (Predicate.isNotNullish(toolCalls)) {
     for (const toolCall of toolCalls) {
       handleToolCallDelta(toolCall, state, context, out);
     }
   }
 
-  if (isPresent(choice.finish_reason)) {
+  if (Predicate.isNotNullish(choice.finish_reason)) {
     finalize(state, context, out, chunk, choice.finish_reason);
   }
 

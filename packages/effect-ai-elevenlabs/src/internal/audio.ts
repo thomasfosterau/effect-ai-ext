@@ -47,6 +47,8 @@ export const collectBytes = (
 
 /** Wraps bytes in a `Blob` carrying the given media type (default octet-stream). */
 export const toBlob = (bytes: Uint8Array, mediaType: string | undefined): Blob =>
+  // SAFETY: `Blob` copies the bytes of any `Uint8Array`; the lib typing of
+  // `BlobPart` only rejects one whose buffer may be a `SharedArrayBuffer`.
   new Blob([bytes as BlobPart], { type: mediaType ?? "application/octet-stream" });
 
 /**
