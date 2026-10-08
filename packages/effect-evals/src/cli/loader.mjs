@@ -1,6 +1,4 @@
 /**
- * @copyright Thomas Foster
- *
  * A Node module-resolution hook that lets the `effect-evals` CLI load the
  * consumer's plain TypeScript under Node: every `*.eval.ts` file it
  * discovers, wherever in a workspace those live, which may use this repo's
@@ -9,7 +7,8 @@
  * the CLI's own source. `bin/effect-evals.js` invokes Node
  * (type-stripping) and `--import ./loader.mjs` (this file, self-installing —
  * see the `registerHooks()` call at the bottom) as literal argv on a single `node`
- * invocation, per docs/decisions/run-the-toolchain-under-node.md. Node's
+ * invocation — never tsx and never `NODE_OPTIONS`, because the Node flags
+ * must be literal argv on that one `node` hop. Node's
  * transform handles the TypeScript syntax; it does not resolve extensionless
  * or directory specifiers, which is the gap this hook fills — and nothing
  * else: everything under `node_modules`, and every CommonJS `require()`, is
@@ -29,6 +28,7 @@
  * dependency on this repo's root tooling.
  *
  * @module cli/loader
+ * @copyright Thomas Foster
  */
 import { statSync } from "node:fs";
 import { registerHooks } from "node:module";

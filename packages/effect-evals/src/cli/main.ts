@@ -1,18 +1,17 @@
 /**
- * @copyright Thomas Foster
- *
  * The `effect-evals` bin's real entry point — built to `dist/cli/main.js` and
  * loaded by `bin/effect-evals.js` after it has re-invoked Node with this
  * package's own `./loader.mjs` resolution hook on the process argv (the hook
- * serves the consumer's `*.eval.ts` files; see docs/decisions/run-the-toolchain-under-node.md). Wires
+ * serves the consumer's `*.eval.ts` files). Wires
  * the Node platform services and the filesystem-backed result cache, then
  * hands off to `Command.run`.
  *
- * Excluded from coverage (`vite.config.ts`) — this is a thin, side-effecting
+ * Excluded from coverage (`vitest.config.ts`) — this is a thin, side-effecting
  * wire-up with nothing worth unit-testing; `Cli.ts`, `RunCommand.ts`, and
  * `Run.ts` carry the actual logic, exercised directly in `tests/cli/`.
  *
  * @module cli/main
+ * @copyright Thomas Foster
  */
 
 import * as Effect from "effect/Effect";
