@@ -54,7 +54,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "peerDependencies": {
-    "@cloudflare/workers-types": ">=4",
+    "@cloudflare/workers-types": "catalog:peers",
     "@effect/ai-anthropic": "catalog:peers",
     "effect": "catalog:peers"
   },

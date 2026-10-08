@@ -71,9 +71,13 @@ catalog:
 # the rc the code is built and tested on — rc.118, after the
 # `effect/unstable/*` -> `effect/*` path move (issue #51), which older rcs lack.
 # Re-verify by pointing the default catalog's Effect line at the floor before
-# lowering or raising it.
+# lowering or raising it. `@cloudflare/workers-types` is the gateway's
+# optional, types-only peer (its binding transports): any v4+ supplies the
+# `Ai` / `AiGateway` declarations, so it stays open at `>=4` while the
+# default catalog pins the version the gateway builds against.
 catalogs:
   peers:
+    "@cloudflare/workers-types": ">=4"
     "@effect/ai-anthropic": ">=4.0.0-rc.118"
     "@effect/platform-node": ">=4.0.0-rc.118"
     effect: ">=4.0.0-rc.118"
