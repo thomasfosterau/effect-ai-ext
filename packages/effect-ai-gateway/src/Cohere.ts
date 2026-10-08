@@ -1,10 +1,10 @@
 /**
  * Cohere `EmbeddingModel` and `RerankerModel` providers routed through the
- * Cloudflare AI Gateway Worker binding (the website repo's
- * `docs/decisions/effect-ai-gateway.md`), replacing the dormant Voyage
- * client. The provider key is BYOK, configured once on the `website` gateway
- * (Cloudflare dashboard, provider keys) — never an env var, so this module
- * never takes or reads an API key.
+ * Cloudflare AI Gateway Worker binding (website#847), replacing the dormant
+ * Voyage client, which the gateway can't front (website#472). The provider
+ * key is BYOK, configured once on the `website` gateway (Cloudflare
+ * dashboard, provider keys) — never an env var, so this module never takes
+ * or reads an API key.
  *
  * Unlike `Anthropic.ts` (which repoints `@effect/ai-anthropic`'s existing
  * client at the gateway), Cohere has no `@effect/ai-*` package to repoint —
