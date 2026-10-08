@@ -1,8 +1,8 @@
 name: CI
 
 # One gate job, `ci`: the pipeline's task graph lives in vite.config.ts (the
-# root `check` and `check:dist` tasks and every package's `test:unit` /
-# `build`), not in GitHub Actions `needs:`. Copied in shape from the effect-web
+# root `check`, `check:dist` and `docgen` tasks and every package's
+# `test:unit` / `build`), not in GitHub Actions `needs:`. Copied in shape from the effect-web
 # library (#58), which took it from effect-drizzle-ext and the gardeneria
 # application. Nothing here needs a database, a stage or a credential, so
 # every PR class runs the whole gate.
@@ -81,6 +81,10 @@ jobs:
       # #32, #42).
       - name: Dist import check
         run: vp run check:dist
+      # Type-checks AND runs every JSDoc @example against the built dist/
+      # (#99).
+      - name: Verify documentation examples (docgen)
+        run: vp run docgen
       - name: Audit
         run: pnpm audit --audit-level high
 
