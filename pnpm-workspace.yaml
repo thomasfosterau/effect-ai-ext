@@ -99,17 +99,22 @@ catalog:
 # `effect/unstable/*` -> `effect/*` path move (issue #51), which older rcs lack.
 # Re-verify by pointing the default catalog's Effect line at the floor before
 # lowering or raising it. `@cloudflare/workers-types` is the gateway's
-# optional, types-only peer (its binding transports), while the default
-# catalog pins the version the gateway builds against. Its floor (#93) is
-# 4.20260410.1, the first release in which the gateway's source type-checks:
-# `Ai` and `AIGatewayProviders` / `AIGatewayUniversalRequest` arrive in
-# 4.20241214.0, `AiGateway.getUrl()` in 4.20250312.0, and the `signal` option
-# on `AiGateway.run()` (which `gatewayRun` passes so interruption cancels the
-# subrequest) in 4.20260410.1. Re-verify by pointing the default catalog's
-# entry at the floor and running the gateway's `check`.
+# optional, types-only peer (its binding transports; the package ships no
+# runtime code), and it has two floors (#93). The declaration floor is the peer
+# range below: consumers type-check only the gateway's `dist/index.d.ts`, which
+# names just `Ai`, `AIGatewayProviders` and `AIGatewayUniversalRequest`, all
+# first declared in 4.20241214.0. The build floor is higher: the gateway's own
+# source needs `AiGateway.getUrl()` (4.20250312.0) and the `signal` option on
+# `AiGateway.run()` (4.20260410.1, which `gatewayRun` passes so interruption
+# cancels the subrequest); the default catalog's dev pin above already covers
+# it. Raising the peer to the build floor would make `npm install` fail with
+# ERESOLVE for consumers on an older types release, for no type-safety gain.
+# Re-verify the declaration floor by type-checking a consumer of the built
+# dist (packed tarball, `skipLibCheck: false`) against the floor release, not
+# with the gateway's own `check`.
 catalogs:
   peers:
-    "@cloudflare/workers-types": ">=4.20260410.1"
+    "@cloudflare/workers-types": ">=4.20241214.0"
     "@effect/ai-anthropic": ">=4.0.0-rc.118"
     "@effect/platform-node": ">=4.0.0-rc.118"
     effect: ">=4.0.0-rc.118"

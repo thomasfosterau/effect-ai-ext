@@ -25,7 +25,7 @@ pnpm add @thomasfosterau/effect-ai-gateway effect @effect/ai-anthropic
 # @cloudflare/workers-types is a peer for the binding-based transports (types only)
 ```
 
-`effect` and `@effect/ai-anthropic` (both `>=4.0.0-rc.118`) are peer dependencies (`effect` must be a singleton). `@cloudflare/workers-types` is an optional peer, needed only for the binding-based transports' types: `>=4.20260410.1`, the first release whose `AiGateway` declares both `getUrl()` and the `signal` option on `run()`, which the binding transport calls.
+`effect` and `@effect/ai-anthropic` (both `>=4.0.0-rc.118`) are peer dependencies (`effect` must be a singleton). `@cloudflare/workers-types` is an optional peer, needed only for the binding-based transports' types: `>=4.20241214.0`, the first release declaring `AIGatewayProviders` / `AIGatewayUniversalRequest`, which the gateway's published types reference.
 
 ## Usage
 
