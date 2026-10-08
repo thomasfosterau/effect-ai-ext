@@ -82,7 +82,7 @@ const ClassifierLayer = Layer.effect(
 
 ## `RerankerModel` moved here
 
-`RerankerModel` previously lived in `@thomasfosterau/effect-ai-gateway` — a reranker abstraction never belonged in a routing package. It now lives here; the gateway package re-exports it from `@thomasfosterau/effect-ai-ext/RerankerModel` through a deprecation shim.
+`RerankerModel` previously lived in `@thomasfosterau/effect-ai-gateway` — a reranker abstraction never belonged in a routing package. It now lives here: import it from `@thomasfosterau/effect-ai-ext/RerankerModel`. The gateway kept a deprecated re-export through 0.4.x and removed it in 0.5.0, so `@thomasfosterau/effect-ai-gateway` no longer exports any `RerankerModel` name; its Cohere reranker (`makeCohereReranker`) returns this module's `Service`.
 
 ## License
 
