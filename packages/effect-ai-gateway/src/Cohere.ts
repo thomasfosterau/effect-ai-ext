@@ -28,9 +28,9 @@ import * as Schema from "effect/Schema";
 import type { AiError } from "effect/ai";
 import { EmbeddingModel } from "effect/ai";
 import { FetchHttpClient, HttpClient } from "effect/http";
+import * as RerankerModel from "@thomasfosterau/effect-ai-ext/RerankerModel";
 import type { GatewayBinding } from "./Binding";
 import { requestViaBinding, requestViaUrl } from "./internal/transport";
-import * as RerankerModel from "./RerankerModel";
 import * as Url from "./Url";
 
 /** The AI Gateway provider slug for Cohere (`AIGatewayProviders["cohere"]`). */

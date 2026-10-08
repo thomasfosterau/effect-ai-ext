@@ -3,9 +3,8 @@
 Route [Effect](https://effect.website) AI providers through a **Cloudflare AI Gateway** Worker binding, BYOK (bring-your-own-key). Provider keys are configured once on the gateway (Cloudflare dashboard) and never live in application code or env vars — this package never takes or reads an API key.
 
 - **`Anthropic`** — repoints `@effect/ai-anthropic`'s client at the gateway's Anthropic route. Drop-in for `AnthropicLanguageModel.layer` + `AnthropicClient.layer`.
-- **`Cohere`** — `EmbeddingModel` (`embed-v4.0`) and `RerankerModel` (`rerank-v3.5`) built directly on the gateway's universal `run()` endpoint.
+- **`Cohere`** — `EmbeddingModel` (`embed-v4.0`) and `RerankerModel` (`rerank-v3.5`) built directly on the gateway's universal `run()` endpoint. The `RerankerModel` abstraction itself comes from `@thomasfosterau/effect-ai-ext/RerankerModel`; the gateway re-exports none of its names (its deprecated re-export was removed in 0.5.0), so import `RerankerModel`, `make`, `RerankResponse` and the rest from there.
 - **`OpenAiModeration`** — `ModerationModel` (from `@thomasfosterau/effect-ai-ext`) backed by OpenAI `omni-moderation-latest` through the same universal endpoint. BYOK by default; an application that holds its own OpenAI key passes it as `apiKey` (a `Redacted`) and it is sent as the bearer token. Text inputs only — the abstraction's contract.
-- **`RerankerModel`** — deprecated re-export of `@thomasfosterau/effect-ai-ext/RerankerModel` (`RerankerModel`, `make`, `RerankResponse`, … are each tagged `@deprecated`); import it from there. It is removed from the gateway in 0.5.0.
 - **`Binding` / `Url`** — the Worker-binding and public-HTTPS transports.
 
 Every provider comes in a binding-based (`make…`) and a binding-free (`make…FromUrl`, config-resolved: `CF_ACCOUNT_ID`, `CF_AIG_GATEWAY_ID`, `CF_AIG_TOKEN`) variant, so callers with no Worker `AI` binding — a local CLI, a plain Node process, CI, an offline evaluation harness — can route through the gateway's public HTTPS endpoint too. All three variables are required: a missing or empty one fails layer construction with a `ConfigError`, and there is no default gateway id.
@@ -26,7 +25,7 @@ pnpm add @thomasfosterau/effect-ai-gateway effect @effect/ai-anthropic
 # @cloudflare/workers-types is a peer for the binding-based transports (types only)
 ```
 
-`effect` and `@effect/ai-anthropic` (both `>=4.0.0-rc.118`) are peer dependencies (`effect` must be a singleton).
+`effect` and `@effect/ai-anthropic` (both `>=4.0.0-rc.118`) are peer dependencies (`effect` must be a singleton). `@cloudflare/workers-types` is an optional peer, needed only for the binding-based transports' types: `>=4.20241214.0`, the first release declaring `AIGatewayProviders` / `AIGatewayUniversalRequest`, which the gateway's published types reference.
 
 ## Usage
 
