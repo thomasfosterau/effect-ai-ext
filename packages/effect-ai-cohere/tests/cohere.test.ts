@@ -295,6 +295,74 @@ describe("CohereLanguageModel.generateText", () => {
     );
   });
 
+  it("sends URL and wildcard-typed images, a tool-call-only turn and a text tool result", async () => {
+    const { calls, fetch } = makeFetch(() => jsonResponse(chatReply()));
+
+    await runTest(
+      LanguageModel.generateText({
+        prompt: [
+          {
+            role: "user",
+            content: [
+              { type: "file", mediaType: "image/png", data: new URL("https://example.com/a.png") },
+              { type: "file", mediaType: "image/png", data: "https://example.com/b.png" },
+              { type: "file", mediaType: "image/*", data: "QUJD" },
+            ],
+          },
+          {
+            role: "assistant",
+            content: [
+              {
+                type: "tool-call",
+                id: "call_1",
+                name: "get_weather",
+                params: { city: "Paris" },
+                providerExecuted: false,
+              },
+            ],
+          },
+          {
+            role: "tool",
+            content: [
+              {
+                type: "tool-result",
+                id: "call_1",
+                name: "get_weather",
+                isFailure: false,
+                result: "sunny",
+              },
+            ],
+          },
+        ],
+      }).pipe(Effect.provide(modelLayer(fetch))),
+    );
+
+    const messages = calls[0]?.body.messages ?? [];
+    expect(messages[0]).toEqual({
+      role: "user",
+      content: [
+        { type: "image_url", image_url: { url: "https://example.com/a.png" } },
+        { type: "image_url", image_url: { url: "https://example.com/b.png" } },
+        { type: "image_url", image_url: { url: "data:image/jpeg;base64,QUJD" } },
+      ],
+    });
+    expect(messages[1]).toMatchObject({ role: "assistant", content: null });
+    expect(messages[2]).toMatchObject({ role: "tool", tool_call_id: "call_1", content: "sunny" });
+  });
+
+  it("maps a success body that is not JSON at all to an InvalidOutputError", async () => {
+    const { fetch } = makeFetch(
+      () =>
+        new Response("not json", { status: 200, headers: { "content-type": "application/json" } }),
+    );
+
+    const error = await expectFailureInstanceOf(
+      LanguageModel.generateText({ prompt: "hi" }).pipe(Effect.provide(modelLayer(fetch))),
+      AiError.AiError,
+    );
+    expect(error.reason._tag).toBe("InvalidOutputError");
+  });
+
   it("maps an undecodable success body to an AiError", async () => {
     const { fetch } = makeFetch(() => jsonResponse({ not: "a chat reply" }));
 

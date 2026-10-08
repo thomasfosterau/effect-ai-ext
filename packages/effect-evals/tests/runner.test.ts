@@ -8,6 +8,8 @@
  */
 
 import { describe, expect, it } from "vite-plus/test";
+import * as Arr from "effect/Array";
+import * as Order from "effect/Order";
 import * as Config from "effect/Config";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
@@ -520,10 +522,9 @@ describe("Runner.makeSuite — heterogeneous metrics", () => {
     );
 
     expect(result.passed).toBe(true);
-    expect(result.cases[0]?.metrics.map((metric) => metric.metric).sort()).toEqual([
-      "metric-a",
-      "metric-b",
-    ]);
+    expect(
+      Arr.sort(result.cases[0]?.metrics.map((metric) => metric.metric) ?? [], Order.String),
+    ).toEqual(["metric-a", "metric-b"]);
   });
 });
 
@@ -552,7 +553,7 @@ describe("Runner.runSuite — reporters", () => {
       }).pipe(Effect.provide(Cache.layerMemory)),
     );
 
-    expect(reports.sort()).toEqual(["a:reported", "b:reported"]);
+    expect(Arr.sort(reports, Order.String)).toEqual(["a:reported", "b:reported"]);
   });
 });
 

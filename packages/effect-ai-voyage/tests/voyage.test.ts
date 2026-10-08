@@ -249,6 +249,19 @@ describe("VoyageEmbeddingModel", () => {
       AiError.AiError,
     );
   });
+
+  it("maps a success body that is not JSON at all to an InvalidOutputError", async () => {
+    const { fetch } = makeFetch(
+      () =>
+        new Response("not json", { status: 200, headers: { "content-type": "application/json" } }),
+    );
+
+    const error = await expectFailureInstanceOf(
+      embedMany(["x"]).pipe(Effect.provide(embeddingLayer(fetch))),
+      AiError.AiError,
+    );
+    expect(error.reason._tag).toBe("InvalidOutputError");
+  });
 });
 
 // ── apiUrl override (BYOK routing contract) ───────────────────────────
@@ -373,6 +386,16 @@ describe("VoyageRerankerModel", () => {
       rerank({ query: "q", documents: ["a"] }).pipe(Effect.provide(rerankerLayer(fetch))),
       AiError.AiError,
     );
+  });
+
+  it("maps an undecodable success body to an InvalidOutputError", async () => {
+    const { fetch } = makeFetch(() => jsonResponse({ not: "a rerank response" }));
+
+    const error = await expectFailureInstanceOf(
+      rerank({ query: "q", documents: ["a"] }).pipe(Effect.provide(rerankerLayer(fetch))),
+      AiError.AiError,
+    );
+    expect(error.reason._tag).toBe("InvalidOutputError");
   });
 });
 

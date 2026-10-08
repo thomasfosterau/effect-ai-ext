@@ -13,6 +13,7 @@
  * @copyright Thomas Foster
  */
 
+import * as Arr from "effect/Array";
 import * as Effect from "effect/Effect";
 import { LanguageModel } from "effect/ai";
 import * as Metric from "../../Metric.ts";
@@ -56,7 +57,7 @@ export const faithfulness = <Case extends RagCase = RagCase>(
         const output = yield* requireOutput(name, evalCase);
         const retrievedContext = yield* requireRetrievedContext(name, evalCase);
 
-        if (retrievedContext.length === 0) {
+        if (Arr.isReadonlyArrayEmpty(retrievedContext)) {
           return {
             score: 0,
             reason: "No retrieved context to evaluate.",

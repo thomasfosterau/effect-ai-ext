@@ -24,6 +24,7 @@
  * @copyright Thomas Foster
  */
 
+import * as Arr from "effect/Array";
 import * as Effect from "effect/Effect";
 import { LanguageModel } from "effect/ai";
 import * as Metric from "../../Metric.ts";
@@ -64,7 +65,7 @@ export const weightedCumulativePrecision = (relevance: ReadonlyArray<boolean>): 
 };
 
 const summarizePrecisionVerdicts = (verdicts: ReadonlyArray<Verdict>): string => {
-  if (verdicts.length === 0) return "No retrieved context to evaluate.";
+  if (Arr.isReadonlyArrayEmpty(verdicts)) return "No retrieved context to evaluate.";
 
   let relevantCount = 0;
   const irrelevant: string[] = [];
@@ -82,7 +83,7 @@ const summarizePrecisionVerdicts = (verdicts: ReadonlyArray<Verdict>): string =>
   });
 
   const summary = `${relevantCount}/${verdicts.length} retrieved chunks relevant.`;
-  return irrelevant.length > 0 ? [summary, ...irrelevant].join("\n") : summary;
+  return Arr.isReadonlyArrayNonEmpty(irrelevant) ? [summary, ...irrelevant].join("\n") : summary;
 };
 
 /** Options for {@link contextualPrecision}. */
@@ -107,7 +108,7 @@ export const contextualPrecision = <Case extends RagCase = RagCase>(
         const expected = yield* requireExpected(name, evalCase);
         const retrievedContext = yield* requireRetrievedContext(name, evalCase);
 
-        if (retrievedContext.length === 0) {
+        if (Arr.isReadonlyArrayEmpty(retrievedContext)) {
           return {
             score: 0,
             reason: "No retrieved context to evaluate.",

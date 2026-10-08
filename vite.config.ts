@@ -112,16 +112,6 @@ export default defineConfig({
       "effect/effect-run-in-body": "warn",
       "effect/avoid-direct-tag-checks": "warn",
       "effect/avoid-option-getorthrow": "warn",
-      // ---- Effect preset: this repo's adoption allowances ------------------
-      // Same shape as the block above, for the rules that first ran here when
-      // this repo moved onto the Vite+ toolchain (#58): every pre-existing site
-      // stays reported as a warning, a new site is a defect, and each line is
-      // deleted once its count reaches zero (#98 tracks the burn-down).
-      "effect/prefer-arr-match": "warn",
-      "effect/no-length-comparison": "warn",
-      "effect/prefer-arr-sort": "warn",
-      "effect/prefer-match-over-switch": "warn",
-      "effect/yield-in-for-loop": "warn",
       // ---- Effect preset: rules this workspace's conventions cut across ----
       // `prefer-option-over-null` also fires on `?: T | undefined`, which is
       // the ONLY spelling of an optional member `exactOptionalPropertyTypes`

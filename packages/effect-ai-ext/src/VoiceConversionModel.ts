@@ -125,7 +125,7 @@ const invalidProviderResponse = (description: string): AiError.AiError =>
 const mapProviderResponse = (
   response: ProviderResponse,
 ): Effect.Effect<VoiceConversionResponse, AiError.AiError> => {
-  if (response.audio.length === 0) {
+  if (response.audio.byteLength === 0) {
     return Effect.fail(invalidProviderResponse("Provider returned an empty audio buffer"));
   }
   return Effect.succeed(

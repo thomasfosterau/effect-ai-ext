@@ -407,7 +407,7 @@ const runCase = <Golden, Output, TaskE, TaskR, MetricE, MetricR>(
         .filter((outcome) => outcome._tag === "Scored")
         .map((outcome) => outcome.score.score);
       const errorCount = outcomes.length - scores.length;
-      const summary = scores.length > 0 ? Result.summarize(scores) : undefined;
+      const summary = Arr.isReadonlyArrayNonEmpty(scores) ? Result.summarize(scores) : undefined;
       const passed =
         summary !== undefined &&
         Threshold.passes(metric.threshold, summary.mean) &&
@@ -416,8 +416,8 @@ const runCase = <Golden, Output, TaskE, TaskR, MetricE, MetricR>(
     });
 
     const passed =
-      successes.length > 0 &&
-      (config.ignoreErrors || taskFailures.length === 0) &&
+      Arr.isReadonlyArrayNonEmpty(successes) &&
+      (config.ignoreErrors || Arr.isReadonlyArrayEmpty(taskFailures)) &&
       metricAggregates.every((aggregate) => aggregate.passed);
 
     return { golden, trials: config.trials, taskFailures, metrics: metricAggregates, passed };

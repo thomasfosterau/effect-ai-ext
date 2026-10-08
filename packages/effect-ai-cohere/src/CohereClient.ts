@@ -22,6 +22,7 @@
  * @copyright Thomas Foster
  */
 
+import * as Str from "effect/String";
 import type * as Config from "effect/Config";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
@@ -248,7 +249,7 @@ const buildEventStream = (
   response.stream.pipe(
     Stream.decodeText,
     Stream.pipeThroughChannel(Sse.decode()),
-    Stream.filter((event) => event.data.length > 0 && event.data !== STREAM_DONE),
+    Stream.filter((event) => Str.isNonEmpty(event.data) && event.data !== STREAM_DONE),
     Stream.mapEffect((event) =>
       decodeEvent(event.data).pipe(
         Effect.mapError((error) => Errors.mapSchemaError(error, "chatStream")),

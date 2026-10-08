@@ -30,6 +30,7 @@
  * @copyright Thomas Foster
  */
 
+import * as Arr from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Predicate from "effect/Predicate";
 import * as Layer from "effect/Layer";
@@ -153,7 +154,7 @@ const processFile = (
       filterSubstring === undefined
         ? evalFile.suites
         : evalFile.suites.filter((suite) => suite.name.includes(filterSubstring));
-    if (suites.length === 0) return { _tag: "NoMatch" as const };
+    if (Arr.isReadonlyArrayEmpty(suites)) return { _tag: "NoMatch" as const };
 
     const runnerOptions = buildRunnerOptions(config, evalFile.options);
     return yield* runFile(file, suites, evalFile.layer, runnerOptions);
@@ -164,7 +165,7 @@ export const runEvals = (
   config: RunConfig,
 ): Effect.Effect<CliReport, never, Cache.KeyValueStore.KeyValueStore | Path.Path> =>
   Effect.gen(function* () {
-    const patterns = config.globs.length > 0 ? config.globs : [DEFAULT_GLOB];
+    const patterns = Arr.isReadonlyArrayNonEmpty(config.globs) ? config.globs : [DEFAULT_GLOB];
     const filesResult = yield* Effect.result(findEvalFiles(patterns, config.cwd));
 
     if (EffectResult.isFailure(filesResult)) {
@@ -181,14 +182,19 @@ export const runEvals = (
     const skipped: Array<SkippedFile> = [];
     const failed: Array<FailedFile> = [];
 
-    for (const file of filesResult.success) {
-      const outcome = yield* processFile(file, config, filterSubstring);
+    const outcomes = yield* Effect.forEach(
+      filesResult.success,
+      (file) => processFile(file, config, filterSubstring),
+      { concurrency: 1 },
+    );
+    for (const outcome of outcomes) {
       if (outcome._tag === "Ran") ran.push(outcome.result);
       else if (outcome._tag === "Skipped") skipped.push(outcome.result);
       else if (outcome._tag === "Failed") failed.push(outcome.result);
     }
 
-    const passed = failed.length === 0 && ran.every((f) => f.suites.every((s) => s.passed));
+    const passed =
+      Arr.isReadonlyArrayEmpty(failed) && ran.every((f) => f.suites.every((s) => s.passed));
 
     return { ran, skipped, failed, passed };
   });

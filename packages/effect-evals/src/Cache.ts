@@ -31,6 +31,8 @@
  * @copyright Thomas Foster
  */
 
+import * as Order from "effect/Order";
+import * as Arr from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Predicate from "effect/Predicate";
 import { KeyValueStore } from "effect/persistence";
@@ -86,7 +88,8 @@ const canonicalize = (value: unknown): Canonical => {
   if (Array.isArray(value)) return value.map(canonicalize);
   if (Predicate.isObject(value)) {
     const sorted: Record<string, Canonical> = {};
-    for (const key of Object.keys(value).sort()) sorted[key] = canonicalize(value[key]);
+    for (const key of Arr.sort(Object.keys(value), Order.String))
+      sorted[key] = canonicalize(value[key]);
     return sorted;
   }
   // Only a function is left. `JSON.stringify` drops one exactly as it drops

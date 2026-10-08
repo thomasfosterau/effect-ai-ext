@@ -15,6 +15,8 @@
  * @copyright Thomas Foster
  */
 
+import * as Order from "effect/Order";
+import * as Arr from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Predicate from "effect/Predicate";
@@ -193,9 +195,10 @@ export const model = (
  * input.
  */
 const mapResponse = (body: Wire.EmbeddingResponse): EmbeddingModel.ProviderResponse => {
-  const data = body.data
-    .map((datum, arrivalOrder) => ({ datum, order: datum.index ?? arrivalOrder }))
-    .sort((a, b) => a.order - b.order);
+  const data = Arr.sort(
+    body.data.map((datum, arrivalOrder) => ({ datum, order: datum.index ?? arrivalOrder })),
+    Order.mapInput(Order.Number, (entry: { readonly order: number }) => entry.order),
+  );
   return {
     results: data.map(({ datum }) => [...datum.embedding]),
     usage: { inputTokens: body.usage?.total_tokens },

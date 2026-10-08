@@ -22,6 +22,8 @@
  *   regardless of provider ordering.
  */
 
+import * as Order from "effect/Order";
+import * as Arr from "effect/Array";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
@@ -159,6 +161,11 @@ const emptyResponse = (): RerankResponse =>
  * Validates a provider response against the request it answered and normalises
  * it to a {@link RerankResponse} sorted by descending relevance.
  */
+/** Most relevant document first. */
+const byRelevanceDescending: Order.Order<RerankedDocument> = Order.flip(
+  Order.mapInput(Order.Number, (document: RerankedDocument) => document.relevanceScore),
+);
+
 const mapProviderResponse = (
   documentCount: number,
   topN: number | undefined,
@@ -188,12 +195,13 @@ const mapProviderResponse = (
     }
     seen.add(result.index);
   }
-  const results = response.results
-    .map(
+  const results = Arr.sort(
+    response.results.map(
       (result) =>
         new RerankedDocument({ index: result.index, relevanceScore: result.relevanceScore }),
-    )
-    .sort((a, b) => b.relevanceScore - a.relevanceScore);
+    ),
+    byRelevanceDescending,
+  );
   return Effect.succeed(
     new RerankResponse({
       results,
@@ -226,7 +234,7 @@ export const make = (params: {
   Effect.sync(() =>
     RerankerModel.of({
       rerank: (options) =>
-        (options.documents.length === 0
+        (Arr.isReadonlyArrayEmpty(options.documents)
           ? Effect.succeed(emptyResponse())
           : params
               .rerank({

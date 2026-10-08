@@ -23,6 +23,8 @@
  *   regardless of provider ordering.
  */
 
+import * as Order from "effect/Order";
+import * as Arr from "effect/Array";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
@@ -187,6 +189,11 @@ const emptyResponse = (): ClassifyResponse =>
  * Validates a provider response against the request it answered and normalises
  * each classification to descending score order.
  */
+/** Highest-scoring class first. */
+const byScoreDescending: Order.Order<ClassScore> = Order.flip(
+  Order.mapInput(Order.Number, (cls: ClassScore) => cls.score),
+);
+
 const mapProviderResponse = (
   inputCount: number,
   labels: ReadonlyArray<string> | undefined,
@@ -218,9 +225,10 @@ const mapProviderResponse = (
         );
       }
     }
-    const classes = classification.classes
-      .map((cls) => new ClassScore({ label: cls.label, score: cls.score }))
-      .sort((a, b) => b.score - a.score);
+    const classes = Arr.sort(
+      classification.classes.map((cls) => new ClassScore({ label: cls.label, score: cls.score })),
+      byScoreDescending,
+    );
     classifications.push(new Classification({ classes }));
   }
   return Effect.succeed(
@@ -255,7 +263,7 @@ export const make = (params: {
   Effect.sync(() =>
     ClassifierModel.of({
       classify: (options) =>
-        (options.inputs.length === 0
+        (Arr.isReadonlyArrayEmpty(options.inputs)
           ? Effect.succeed(emptyResponse())
           : params
               .classify({
@@ -298,7 +306,7 @@ const buildClassifyPrompt = (options: ProviderOptions): string => {
   } else {
     lines.push("Choose concise, descriptive labels.");
   }
-  if (options.examples !== undefined && options.examples.length > 0) {
+  if (options.examples !== undefined && Arr.isReadonlyArrayNonEmpty(options.examples)) {
     lines.push("Examples:");
     for (const example of options.examples) {
       lines.push(`- ${JSON.stringify(example.text)} => ${example.label}`);

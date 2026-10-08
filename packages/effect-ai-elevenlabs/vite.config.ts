@@ -4,7 +4,7 @@ import { type CoverageFloor, packageConfig } from "../../vite.package.ts";
 // rounded down to the integer. Raise a metric as coverage rises; never lower one.
 export const coverageFloor: CoverageFloor = {
   lines: 97, // 97.14
-  branches: 84, // 84.26
+  branches: 86, // 86.9
   functions: 98, // 98.38
   statements: 97, // 97.17
 };

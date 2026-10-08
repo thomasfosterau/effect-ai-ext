@@ -12,6 +12,7 @@
  * image, no more than the requested `count`) before being returned.
  */
 
+import * as Arr from "effect/Array";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
@@ -139,7 +140,7 @@ const mapProviderResponse = (
   count: number | undefined,
   response: ProviderResponse,
 ): Effect.Effect<ImageResponse, AiError.AiError> => {
-  if (response.images.length === 0) {
+  if (Arr.isReadonlyArrayEmpty(response.images)) {
     return Effect.fail(invalidProviderResponse("Provider returned no images"));
   }
   if (count !== undefined && response.images.length > count) {

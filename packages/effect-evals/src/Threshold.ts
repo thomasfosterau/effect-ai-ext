@@ -10,6 +10,8 @@
  * @copyright Thomas Foster
  */
 
+import * as Match from "effect/Match";
+
 /** Passes when the score is at least `threshold` (higher is better). */
 export interface MinScore {
   readonly _tag: "MinScore";
@@ -40,25 +42,17 @@ export const maxScore = (threshold: number): MaxScore => ({ _tag: "MaxScore", th
 export const strict: Strict = { _tag: "Strict" };
 
 /** Applies a threshold policy to a raw score, returning the pass/fail verdict. */
-export const passes = (policy: Threshold, score: number): boolean => {
-  switch (policy._tag) {
-    case "MinScore":
-      return score >= policy.threshold;
-    case "MaxScore":
-      return score <= policy.threshold;
-    case "Strict":
-      return score === 1;
-  }
-};
+export const passes = (policy: Threshold, score: number): boolean =>
+  Match.valueTags(policy, {
+    MinScore: ({ threshold }) => score >= threshold,
+    MaxScore: ({ threshold }) => score <= threshold,
+    Strict: () => score === 1,
+  });
 
 /** Renders a threshold policy as a short human-readable comparison, for reporters and failure messages. */
-export const describe = (policy: Threshold): string => {
-  switch (policy._tag) {
-    case "MinScore":
-      return `>= ${policy.threshold}`;
-    case "MaxScore":
-      return `<= ${policy.threshold}`;
-    case "Strict":
-      return "== 1 (strict)";
-  }
-};
+export const describe = (policy: Threshold): string =>
+  Match.valueTags(policy, {
+    MinScore: ({ threshold }) => `>= ${threshold}`,
+    MaxScore: ({ threshold }) => `<= ${threshold}`,
+    Strict: () => "== 1 (strict)",
+  });
