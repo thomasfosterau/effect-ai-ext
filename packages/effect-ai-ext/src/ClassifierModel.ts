@@ -337,21 +337,22 @@ const buildClassifyPrompt = (options: ProviderOptions): string => {
  * @category constructors
  */
 export const fromLanguageModel: Effect.Effect<Service, never, LanguageModel.LanguageModel> =
-  Effect.gen(function* () {
-    const languageModel = yield* LanguageModel.LanguageModel;
-    return yield* make({
-      classify: (options) =>
-        languageModel
-          .generateObject({
-            prompt: buildClassifyPrompt(options),
-            objectName: "classification",
-            schema: StructuredClassifyResult,
-          })
-          .pipe(
-            Effect.map((response): ProviderResponse => ({
-              classifications: response.value.classifications,
-              usage: { inputTokens: undefined },
-            })),
-          ),
-    });
-  });
+  LanguageModel.LanguageModel.pipe(
+    Effect.flatMap((languageModel) =>
+      make({
+        classify: (options) =>
+          languageModel
+            .generateObject({
+              prompt: buildClassifyPrompt(options),
+              objectName: "classification",
+              schema: StructuredClassifyResult,
+            })
+            .pipe(
+              Effect.map((response): ProviderResponse => ({
+                classifications: response.value.classifications,
+                usage: { inputTokens: undefined },
+              })),
+            ),
+      }),
+    ),
+  );

@@ -45,6 +45,7 @@
  * @copyright Thomas Foster
  */
 
+import * as Console from "effect/Console";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as Result from "./Result.ts";
@@ -84,7 +85,7 @@ export const formatTerminalTable = (result: Result.SuiteResult): string => {
 /** Writes {@link formatTerminalTable}'s output to stdout. */
 export const terminal: Reporter = makeReporter({
   name: "terminal",
-  report: (result) => Effect.sync(() => console.log(formatTerminalTable(result))),
+  report: (result) => Console.log(formatTerminalTable(result)),
 });
 
 /** Writes the full {@link Result.SuiteResult} as JSON to `path` — see this module's doc comment for the schema. */

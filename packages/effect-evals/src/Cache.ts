@@ -93,10 +93,17 @@ const toHex = (bytes: ArrayBuffer): string =>
  * theoretical one).
  */
 export const hashKey = (input: CacheKeyInput): Effect.Effect<string> =>
-  Effect.promise(async () => {
-    const digest = await crypto.subtle.digest(
-      "SHA-256",
-      encoder.encode(JSON.stringify(canonicalize(input))),
-    );
-    return toHex(digest);
-  });
+  Effect.tryPromise({
+    try: async () => {
+      const digest = await crypto.subtle.digest(
+        "SHA-256",
+        encoder.encode(JSON.stringify(canonicalize(input))),
+      );
+      return toHex(digest);
+    },
+    catch: (cause) => cause,
+  }).pipe(
+    // An input `JSON.stringify` cannot serialise (a cycle, a `BigInt`) is a
+    // caller bug, and SHA-256 over bytes cannot fail, so either is a defect.
+    Effect.orDie,
+  );

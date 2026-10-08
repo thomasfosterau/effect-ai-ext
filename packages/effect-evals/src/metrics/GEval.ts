@@ -260,10 +260,7 @@ export const judge = (
     return {
       score: normalized,
       reason,
-      metadata: {
-        evaluationSteps,
-        ...(params.rubric ? { rubric: params.rubric } : {}),
-      },
+      metadata: params.rubric ? { evaluationSteps, rubric: params.rubric } : { evaluationSteps },
     };
   });
 

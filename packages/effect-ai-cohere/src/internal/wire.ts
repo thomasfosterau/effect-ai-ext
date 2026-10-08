@@ -22,6 +22,7 @@
  * @copyright Thomas Foster
  */
 
+import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
 
 // ── Chat request ──────────────────────────────────────────────────────
@@ -296,3 +297,15 @@ export const RerankResponse = Schema.Struct({
 
 /** Decoded rerank response type. */
 export type RerankResponse = typeof RerankResponse.Type;
+
+const decodeJson = Schema.decodeUnknownOption(Schema.fromJsonString(Schema.Json));
+
+/**
+ * Parses `text` as JSON, or returns `text` itself when it is not JSON. Used
+ * for SSE frames and tool-call arguments: a frame that is not JSON reaches
+ * the schema decoder as a plain string and fails there as an ordinary
+ * `SchemaError`, and a malformed tool-argument string is handed on as-is
+ * rather than thrown.
+ */
+export const parseJsonLenient = (text: string): Schema.Json =>
+  Option.getOrElse(decodeJson(text), () => text);

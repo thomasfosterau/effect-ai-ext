@@ -14,10 +14,9 @@
  * @copyright Thomas Foster
  */
 
-import * as path from "node:path";
-import { pathToFileURL } from "node:url";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import * as Path from "effect/Path";
 import * as Schema from "effect/Schema";
 import type * as EvalFile from "../EvalFile.ts";
 
@@ -76,11 +75,14 @@ const describeInvalid = (value: unknown): string => {
 /** Dynamically imports `file` and validates its default export against the eval-file contract. */
 export const loadEvalFile = (
   file: string,
-): Effect.Effect<EvalFile.EvalFile, EvalFileImportError | InvalidEvalFileError> =>
+): Effect.Effect<EvalFile.EvalFile, EvalFileImportError | InvalidEvalFileError, Path.Path> =>
   Effect.gen(function* () {
-    const url = pathToFileURL(path.resolve(file)).href;
+    const path = yield* Path.Path;
+    const url = yield* path
+      .toFileUrl(path.resolve(file))
+      .pipe(Effect.mapError((cause) => new EvalFileImportError({ file, cause })));
     const moduleExports = yield* Effect.tryPromise({
-      try: () => import(/* @vite-ignore */ url),
+      try: () => import(/* @vite-ignore */ url.href),
       catch: (cause) => new EvalFileImportError({ file, cause }),
     });
 

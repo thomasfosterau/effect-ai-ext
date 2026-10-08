@@ -11,10 +11,15 @@
 
 import { describe, expect, it } from "vite-plus/test";
 import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
+import { NodePath } from "@effect/platform-node";
 import { Cache } from "../../src/index.ts";
 import { runEvals } from "../../src/cli/Run.ts";
 import { runTest } from "../helpers/effect.ts";
+
+/** The in-memory result cache plus the `Path` service discovery and loading read. */
+const testLayer = Layer.merge(Cache.layerMemory, NodePath.layer);
 
 const FIXTURES = new URL("../fixtures/", import.meta.url);
 const fixture = (name: string): string => new URL(name, FIXTURES).pathname;
@@ -30,7 +35,7 @@ describe("cli/Run.runEvals", () => {
   it("runs a passing suite through a stubbed LanguageModel layer", async () => {
     const report = await runTest(
       runEvals({ ...baseConfig, globs: [fixture("sample.eval.ts")] }).pipe(
-        Effect.provide(Cache.layerMemory),
+        Effect.provide(testLayer),
       ),
     );
 
@@ -42,10 +47,33 @@ describe("cli/Run.runEvals", () => {
     expect(report.ran[0]?.suites[0]?.passed).toBe(true);
   });
 
+  it("reports a layer failure that is neither an Error nor a string as JSON", async () => {
+    const report = await runTest(
+      runEvals({ ...baseConfig, globs: [fixture("object-layer-failure.eval.ts")] }).pipe(
+        Effect.provide(testLayer),
+      ),
+    );
+
+    expect(report.passed).toBe(false);
+    expect(report.failed).toEqual([
+      { file: fixture("object-layer-failure.eval.ts"), error: '{"code":42}' },
+    ]);
+  });
+
+  it("falls back to String(value) for a layer failure JSON cannot serialise", async () => {
+    const report = await runTest(
+      runEvals({ ...baseConfig, globs: [fixture("bigint-layer-failure.eval.ts")] }).pipe(
+        Effect.provide(testLayer),
+      ),
+    );
+
+    expect(report.failed).toEqual([{ file: fixture("bigint-layer-failure.eval.ts"), error: "1" }]);
+  });
+
   it("marks the run failed when an executed suite misses its threshold", async () => {
     const report = await runTest(
       runEvals({ ...baseConfig, globs: [fixture("failing.eval.ts")] }).pipe(
-        Effect.provide(Cache.layerMemory),
+        Effect.provide(testLayer),
       ),
     );
 
@@ -59,7 +87,7 @@ describe("cli/Run.runEvals", () => {
   it("skips a file whose layer fails with a ConfigError, naming the missing config, and does not fail the run", async () => {
     const report = await runTest(
       runEvals({ ...baseConfig, globs: [fixture("config-gated.eval.ts")] }).pipe(
-        Effect.provide(Cache.layerMemory),
+        Effect.provide(testLayer),
       ),
     );
 
@@ -74,7 +102,7 @@ describe("cli/Run.runEvals", () => {
   it("records a file that fails to load/validate as failed, and fails the run", async () => {
     const report = await runTest(
       runEvals({ ...baseConfig, globs: [fixture("invalid.eval.ts")] }).pipe(
-        Effect.provide(Cache.layerMemory),
+        Effect.provide(testLayer),
       ),
     );
 
@@ -90,7 +118,7 @@ describe("cli/Run.runEvals", () => {
         ...baseConfig,
         globs: [fixture("sample.eval.ts")],
         filter: Option.some("does-not-match-anything"),
-      }).pipe(Effect.provide(Cache.layerMemory)),
+      }).pipe(Effect.provide(testLayer)),
     );
 
     expect(report.ran).toEqual([]);
@@ -105,7 +133,7 @@ describe("cli/Run.runEvals", () => {
         ...baseConfig,
         globs: [fixture("sample.eval.ts")],
         filter: Option.some("fixture-greet"),
-      }).pipe(Effect.provide(Cache.layerMemory)),
+      }).pipe(Effect.provide(testLayer)),
     );
 
     expect(report.ran).toHaveLength(1);
@@ -118,7 +146,7 @@ describe("cli/Run.runEvals", () => {
         ...baseConfig,
         globs: [fixture("sample.eval.ts")],
         trials: Option.some(3),
-      }).pipe(Effect.provide(Cache.layerMemory)),
+      }).pipe(Effect.provide(testLayer)),
     );
 
     expect(report.ran[0]?.suites[0]?.cases[0]?.trials).toBe(3);
@@ -133,7 +161,7 @@ describe("cli/Run.runEvals", () => {
         const r2 = yield* runEvals(config);
         const r3 = yield* runEvals({ ...config, force: true });
         return [r1, r2, r3] as const;
-      }).pipe(Effect.provide(Cache.layerMemory)),
+      }).pipe(Effect.provide(testLayer)),
     );
 
     const trialOf = (report: typeof first) =>
@@ -154,7 +182,7 @@ describe("cli/Run.runEvals", () => {
         ...baseConfig,
         globs: [fixture("sample.eval.ts")],
         cwd: malformedCwd,
-      }).pipe(Effect.provide(Cache.layerMemory)),
+      }).pipe(Effect.provide(testLayer)),
     );
 
     expect(report.passed).toBe(false);
