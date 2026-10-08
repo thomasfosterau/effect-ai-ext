@@ -135,12 +135,12 @@ peerDependencyRules:
 
 # pnpm 11 fails the install on dependency build scripts that are neither
 # allowed nor denied here (pnpm 10 only warned). esbuild (an optional
-# dependency of vite-plus's core) and fallow each place their platform binary
-# in a postinstall; msgpackr-extract arrives via @effect/platform-node and
-# builds an optional native accelerator.
+# dependency of vite-plus's core) places its platform binary in a
+# postinstall; msgpackr-extract arrives via @effect/platform-node and builds an
+# optional native accelerator. fallow needs no entry: it has no install script
+# and takes its binary from its `@fallow-cli/*` optional dependencies.
 allowBuilds:
   esbuild: true
-  fallow: true
   msgpackr-extract: true
 
 # Supply-chain delay (the owner's policy, gardeneria #1149): hold newly
