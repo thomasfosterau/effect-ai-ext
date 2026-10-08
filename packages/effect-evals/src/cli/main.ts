@@ -11,6 +11,7 @@
  * `Run.ts` carry the actual logic, exercised directly in `tests/cli/`.
  *
  * @module cli/main
+ *
  * @copyright Thomas Foster
  */
 

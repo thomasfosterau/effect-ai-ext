@@ -20,6 +20,7 @@
  * Run `pnpm run build` before using the bin from the workspace.
  *
  * @module bin/effect-evals
+ *
  * @copyright Thomas Foster
  */
 import { spawnSync } from "node:child_process";

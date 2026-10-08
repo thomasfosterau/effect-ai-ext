@@ -28,6 +28,7 @@
  * dependency on this repo's root tooling.
  *
  * @module cli/loader
+ *
  * @copyright Thomas Foster
  */
 import { statSync } from "node:fs";
