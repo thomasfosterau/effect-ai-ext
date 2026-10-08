@@ -31,6 +31,21 @@ jobs:
       contents: write # push the version branch and tags
       pull-requests: write # open/update the version PR
       id-token: write # mint the OIDC token npm exchanges for publish creds
+    env:
+      # pnpm 11 defaults `verify-deps-before-run` to `install`: before any
+      # `pnpm run` / `pnpm exec` it compares node_modules with the manifests
+      # and, if a manifest looks newer than the last install, re-installs
+      # WITH lifecycle scripts, ignoring the `--ignore-scripts` of the install
+      # step below. That re-install runs the root `prepare` (`vp config` +
+      # `effect-tsgo patch`) and every `allowBuilds` dependency's build script
+      # inside this job, which holds `id-token: write`. It triggers whenever
+      # a manifest's mtime moves after the install step, e.g. when the
+      # Changesets action checks out an existing `changeset-release/trunk`
+      # and `git reset --hard`s it back before `pnpm run changeset:version`.
+      # Scoped to this job: CI and local runs keep the default. pnpm 11 reads
+      # only the `pnpm_config_*` spelling; `npm_config_verify_deps_before_run`
+      # is ignored. Copied from effect-web's release job (#105).
+      pnpm_config_verify_deps_before_run: "false"
     steps:
       # The Changesets action pushes the version branch, so it needs the
       # checkout's git credentials (the ephemeral, job-scoped GITHUB_TOKEN).
@@ -43,12 +58,23 @@ jobs:
           node-version: latest
           cache: pnpm
           registry-url: https://registry.npmjs.org
-      - run: pnpm install --frozen-lockfile
-      # The Vite+ gates (#58): the type gate and every package's unit suite.
-      # `changeset:publish` builds every package (`vp run -r build`) before
-      # publishing.
-      - run: pnpm exec vp run check
-      - run: pnpm exec vp run -r test:unit
+      # --ignore-scripts stops a compromised dependency from running install
+      # scripts in the privileged publish job (the Shai-Hulud vector). It also
+      # skips this workspace's own `prepare` (`vp config`'s git hooks and the
+      # `effect-tsgo` patch of tsc/oxlint), neither of which the `vp pack`
+      # build, `changeset version` or `vp fmt` needs: the packed tarballs are
+      # byte-identical to a build from a scripted install (#105). The
+      # `allowBuilds` scripts (esbuild, msgpackr-extract) are skipped too,
+      # and that same comparison shows neither is needed. It only holds because
+      # `pnpm_config_verify_deps_before_run` is off for this job (see the job
+      # `env` above); otherwise a later `pnpm run` could re-install with
+      # scripts.
+      #
+      # No check or test step: CI (ci.yml) runs every gate on each PR into
+      # `trunk`, the version PR included, and again on each push to `trunk`,
+      # so this job runs only what publishing needs. `changeset:publish` builds
+      # every package (`vp run -r build`) before publishing.
+      - run: pnpm install --frozen-lockfile --ignore-scripts
       # The job installs no npm CLI of its own: `changeset publish` runs
       # `pnpm publish` (pnpm 11 publishes natively, never via npm) and pnpm
       # performs the trusted-publishing (OIDC) exchange itself (#63).

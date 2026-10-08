@@ -55,7 +55,7 @@
 - `pnpm audit --audit-level high` — the dependency audit CI runs (network).
 - `pnpm changeset` — add a changeset.
 
-Invoke everything through `vp` (`vp exec` instead of `npx`; `vp run <task>` instead of bare `pnpm`). The sanctioned non-`vp` invocations: `pnpm install` (and `pnpm install --frozen-lockfile` in CI), `pnpm audit`, `pnpm changeset` / `pnpm publish` on the release path. `vp` is `node_modules/.bin/vp`; the SessionStart hook puts it on PATH.
+Invoke everything through `vp` (`vp exec` instead of `npx`; `vp run <task>` instead of bare `pnpm`). The sanctioned non-`vp` invocations: `pnpm install` (and `pnpm install --frozen-lockfile` in CI; the Release job adds `--ignore-scripts`, see [PUBLISHING.md](PUBLISHING.md#release-job-hardening)), `pnpm audit`, `pnpm changeset` / `pnpm publish` on the release path. `vp` is `node_modules/.bin/vp`; the SessionStart hook puts it on PATH.
 
 ## Verification
 
