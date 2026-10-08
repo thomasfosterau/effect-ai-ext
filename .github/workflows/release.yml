@@ -71,9 +71,12 @@ jobs:
       # scripts.
       #
       # No check or test step: CI (ci.yml) runs every gate on each PR into
-      # `trunk`, the version PR included, and again on each push to `trunk`,
-      # so this job runs only what publishing needs. `changeset:publish` builds
-      # every package (`vp run -r build`) before publishing.
+      # `trunk` and on each push to `trunk`, so this job runs only what
+      # publishing needs. On the version PR, which github-actions[bot] pushes,
+      # the CI run waits for the owner's "Approve and run"; approve it and let
+      # it pass before merging. Nothing enforces that: `trunk` has no required
+      # checks. `changeset:publish` builds every package (`vp run -r build`)
+      # before publishing, so a build break still stops the publish.
       - run: pnpm install --frozen-lockfile --ignore-scripts
       # The job installs no npm CLI of its own: `changeset publish` runs
       # `pnpm publish` (pnpm 11 publishes natively, never via npm) and pnpm
