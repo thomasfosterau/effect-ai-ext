@@ -1,7 +1,7 @@
 /**
  * Root workspace config. Owns the repo-wide format/lint/staged passes (read
  * statically by `vp fmt` / `vp lint` / `vp staged`) and the root aggregates
- * (`check`, `check:dist`, `test:coverage`). Every package's own tasks are
+ * (`check`, `docgen`, `check:dist`, `test:coverage`). Every package's own tasks are
  * defined once in `vite.package.ts` and instantiated by each package's
  * `vite.config.ts`; this file compiles nothing, but a new package adds itself
  * to the aggregate lists below.
@@ -9,7 +9,7 @@
  * Copied from the effect-web library's root config (itself from
  * effect-drizzle-ext and the gardeneria application): every comment that
  * explains a load-bearing decision is part of the standard and travels with
- * the config. This repo has no `docgen` task yet (#99).
+ * the config.
  *
  * @copyright Thomas Foster
  */
@@ -258,7 +258,7 @@ export default defineConfig({
       // tsconfig.json`). A pure graph node. The packages are named explicitly
       // — a `from: "dependencies"` edge does not traverse the workspace root's
       // own devDependencies — so a new package adds itself to EVERY list here
-      // (`check`, `check:dist`, and `coverageFloors` above).
+      // (`check`, `docgen`, `check:dist`, and `coverageFloors` above).
       check: {
         command: "echo 'check: every type gate green'",
         dependsOn: [
@@ -269,6 +269,22 @@ export default defineConfig({
           "@thomasfosterau/effect-ai-mistral#check",
           "@thomasfosterau/effect-ai-voyage#check",
           "@thomasfosterau/effect-evals#check",
+        ],
+        cache: false,
+      },
+      // Every package's docgen (#99): compiles AND RUNS each JSDoc `@example`
+      // against the built `dist/`, then writes the API reference under that
+      // package's (git-ignored) `docs/`. Same pure-graph-node shape.
+      docgen: {
+        command: "echo 'docgen: every example compiled and ran'",
+        dependsOn: [
+          "@thomasfosterau/effect-ai-cohere#docgen",
+          "@thomasfosterau/effect-ai-elevenlabs#docgen",
+          "@thomasfosterau/effect-ai-ext#docgen",
+          "@thomasfosterau/effect-ai-gateway#docgen",
+          "@thomasfosterau/effect-ai-mistral#docgen",
+          "@thomasfosterau/effect-ai-voyage#docgen",
+          "@thomasfosterau/effect-evals#docgen",
         ],
         cache: false,
       },

@@ -2,7 +2,7 @@
 
 `CLAUDE.md` is a symlink to this file. This repo publishes the `@thomasfosterau/effect-ai-*` family and `effect-evals`: purely additive extensions to Effect's AI module (`effect/ai`), consumed by the owner's applications.
 
-**Toolchain:** the Vite+ library standard the sibling libraries share, copied from effect-web (#58): `vp` runs every task, `vp check` is the format (Oxfmt) and lint (Oxlint with the Effect preset) gate, `vp pack` (tsdown) builds, tests import from `vite-plus/test`, and the fallow gate runs before every agent commit and push. There is no `docgen` task yet (#99).
+**Toolchain:** the Vite+ library standard the sibling libraries share, copied from effect-web (#58): `vp` runs every task, `vp check` is the format (Oxfmt) and lint (Oxlint with the Effect preset) gate, `vp pack` (tsdown) builds, tests import from `vite-plus/test`, `docgen` compiles and runs every JSDoc `@example` against the built `dist/`, and the fallow gate runs before every agent commit and push.
 
 | Package | Directory | Purpose · peers |
 | --- | --- | --- |
@@ -34,7 +34,7 @@
   - Per-capability models implementing the relevant `effect/ai` or `effect-ai-ext` service (`LanguageModel`, `EmbeddingModel`, `RerankerModel`, …).
   - Wire discipline: hand-written request interfaces (plain objects sent as JSON); lenient response decoding (`Schema.optional` + `Schema.NullOr`, free strings for enums the mapper narrows) so a new vendor field never fails an otherwise-valid response; `internal/errors.ts` maps `HttpClientError` / `SchemaError` to `AiError` through `AiError.reasonFromHttpStatus`.
 - **Barrels re-export each module as a namespace** (`export * as MistralClient from "./MistralClient"`). The gateway's barrel is flat (`export *` of each module) and re-exports no `RerankerModel` name; consumers import it from `@thomasfosterau/effect-ai-ext/RerankerModel` (#97).
-- **Doc comments put the description first, including module headers:** summary sentence, details, then tags (`@module`, `@copyright`, `@category`, …). Hovers show only the text before the first tag, so a header that opens with `@module` or `@copyright` shows no summary. Don't add `@since`; no docgen reads it here.
+- **Doc comments put the description first, including module headers:** summary sentence, details, then tags (`@module`, `@copyright`, `@category`, …). Hovers show only the text before the first tag, so a header that opens with `@module` or `@copyright` shows no summary. Don't add `@since`: each `docgen.json` sets `enforceVersion: false`, so docgen never asks for it. Every `@example` is compiled and run (`vp run docgen`), so it must type-check and run offline: build layers and programs, but don't execute anything that calls a vendor API.
 - **Builds:** `vp pack` (tsdown: rolldown ESM + rolldown-plugin-dts on TS6), configured once in `vite.package.ts` and instantiated by each package's one-call `vite.config.ts`. `effect-ai-ext` builds one entry per module (its subpath exports), each from a build-only facade under `packages/effect-ai-ext/entries/` (its `vite.config.ts` says why); `effect-evals` builds `src/index.ts` and its CLI (`dist/cli/main.js`); the others build `src/index.ts` only. `effect`, `@effect/*`, `@thomasfosterau/*`, `@cloudflare/*` and `node:*` stay external so consumers share one copy. Packages develop with `exports` → `./src/index.ts`; `publishConfig` rewrites `exports` / `main` / `types` to `dist` on publish, so tests and type checks resolve a sibling to its `src/` and no task needs a build first.
 - **TypeScript 6/7 split:** `@typescript/native` (TS7, bin `tsc`, patched by `@effect/tsgo` so it also reports Effect diagnostics) runs `vp run check`; `typescript` (aliased to `@typescript/typescript6`, bin `tsc6`) is the JS-API compiler the language service and `vp pack`'s declaration bundler load. Only Effect `error` diagnostics fail `tsc`: `suggestion` never affects the exit code, and `tsconfig.base.json` sets `ignoreEffectWarningsInTscExitCode` so `warning` diagnostics stay visible but don't fail `vp run check` either, as in the sibling libraries (#67).
 - **Format and lint:** `vp check` runs Oxfmt and Oxlint (config in the root `vite.config.ts`: `@effect/tsgo`'s `recommended` preset plus `@mpsuesser/oxlint-plugin-effect`, rule set copied from effect-web). Only `error` fails it. The rules listed under "adoption allowances" sit at `warn` because pre-existing code still trips them (#98 tracks the burn-down): a new site is a defect, not headroom, and a rule goes back to `error` once its count reaches zero. `CHANGELOG.md` files are never formatted (Changesets writes them).
@@ -51,6 +51,7 @@
 - `vp check` — format + lint (Oxfmt + Oxlint). `vp check --fix` applies the fixes. `vp run check` — the type gate: native TS7 `tsc -p tsconfig.json` per package. They are different commands.
 - `vp run -r test:unit` — every package's unit suite (node Vitest; nothing here needs a credential).
 - `vp run -r build` — `vp pack` → every package's `dist/`.
+- `vp run docgen` — builds every package, then type-checks and runs every JSDoc `@example` with `@effect/docgen` (`tsc` + `tsx`) against the built `dist/` (each `docgen.json` maps the package names onto `dist/` through `examplesCompilerOptions.paths`) and writes the git-ignored API reference to `packages/*/docs/`. CI runs it.
 - `vp run check:dist` — builds every package, then imports every built entry and subpath under Node ESM and fails if a value export the bundled `.d.ts` declares is missing at runtime (which the src-resolving suites cannot see), and launches the `effect-evals` bin from a packed tarball under `node_modules`.
 - `vp run test:coverage` — every package's unit suite under one Istanbul map at `coverage/coverage-final.json`, which `fallow audit` reads for exact per-function CRAP scores (without the map fallow scores every function as uncovered); fails if any package's coverage drops below its `coverageFloor`. CI runs it.
 - `pnpm audit --audit-level high` — the dependency audit CI runs (network).
@@ -69,10 +70,11 @@ Before you report work as done, run the gates below in order and quote each comm
 5. `vp run test:coverage` (the coverage floors)
 6. `vp run -r build`
 7. `vp run check:dist`
-8. `pnpm audit --audit-level high` (network)
-9. `fallow audit --format json --quiet --explain --gate-marker agent` (the fallow gate below; not a CI step), which reads the map step 5 wrote. The verdict must not be `fail`.
+8. `vp run docgen`
+9. `pnpm audit --audit-level high` (network)
+10. `fallow audit --format json --quiet --explain --gate-marker agent` (the fallow gate below; not a CI step), which reads the map step 5 wrote. The verdict must not be `fail`.
 
-Steps 2–8 are CI's `ci` job, in its order ([ci.yml](.github/workflows/ci.yml)); its `node-floor` job reruns 4, 6 and 7 on Node 22.18.0.
+Steps 2–9 are CI's `ci` job, in its order ([ci.yml](.github/workflows/ci.yml)); its `node-floor` job reruns 4, 6 and 7 on Node 22.18.0.
 
 ## Branches and pull requests
 

@@ -1,15 +1,15 @@
 /**
  * The one Vite+ configuration every package in this workspace shares: the
- * task graph (`check`, `build`, `test:unit`, `test:coverage`), the `vp pack`
- * (tsdown) settings and the vitest / coverage settings. Each
+ * task graph (`check`, `build`, `test:unit`, `test:coverage`, `docgen`), the
+ * `vp pack` (tsdown) settings and the vitest / coverage settings. Each
  * `packages/<name>/vite.config.ts` is a one-call instantiation of it.
  *
  * Copied from the effect-web library's `vite.package.ts` and adapted to this
  * repo's layout, where a package's development `exports` point at `src/`
  * (`publishConfig` rewrites them to `dist/` on publish). So a test or a type
  * check that imports a package by name, its own or a sibling's, resolves to
- * `src/` through `exports` with no alias and no build first, and the
- * per-package tasks carry no build edge. Vite+ 1.0 nests a task's `env` /
+ * `src/` through `exports` with no alias and no build first, and only
+ * `docgen`, which runs its examples against `dist/`, carries a build edge. Vite+ 1.0 nests a task's `env` /
  * `input` / `output` under `cache` (effect-web, on 0.3.x, sets them on the
  * task itself).
  */
@@ -115,6 +115,19 @@ export const packageConfig = ({
             input: cacheInputs,
             output: ["coverage/**"],
           },
+        },
+        // Compiles AND RUNS every JSDoc `@example` (see the package's
+        // docgen.json), then writes the API reference under its git-ignored
+        // `docs/`. Examples import packages by name, exactly as a consumer
+        // would; development `exports` here point at `src/`, so each
+        // docgen.json maps those names onto `dist/` through
+        // `examplesCompilerOptions.paths` (honoured by both the examples' `tsc`
+        // and the `tsx` that runs them). Hence the build edges: the package's
+        // own and its workspace dependencies' (`@thomasfosterau/effect-ai-ext`).
+        docgen: {
+          command: "docgen",
+          dependsOn: ["build", { task: "build", from: "dependencies" }],
+          cache: { input: cacheInputs, output: ["docs/**"] },
         },
       },
     },

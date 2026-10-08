@@ -13,13 +13,15 @@
     "vite.package.ts",
     "scripts/check-dist.mjs"
   ],
-  "ignorePatterns": ["**/dist/**", "**/coverage/**"],
+  "ignorePatterns": ["**/dist/**", "**/docs/**", "**/coverage/**"],
   "ignoreDependencies": [
     "@types/node",
+    "@effect/docgen",
     "@effect/tsgo",
     "@effect/language-service",
     "@typescript/native",
     "typescript",
+    "tsx",
     "vite",
     "vitest",
     "vite-plus",

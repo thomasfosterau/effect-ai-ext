@@ -152,6 +152,10 @@ vite.config.ts.timestamp-*
 # itself (`.vite-hooks/pre-commit`) is committed.
 .vite-hooks/_/
 
+# Generated API reference (`vp run docgen`), per package. Never committed;
+# the README is the reference consumers read.
+packages/*/docs/
+
 # fallow's local cache and SARIF output.
 .fallow
 fallow.sarif

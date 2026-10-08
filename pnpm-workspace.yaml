@@ -39,6 +39,13 @@ catalogMode: strict
 catalog:
   "@changesets/cli": ^3.0.3
   "@cloudflare/workers-types": ^5.20261004.1
+  # Compiles AND RUNS every JSDoc `@example` (the `docgen` task); needs `tsx`
+  # and a TypeScript JS API — the TS6 alias below satisfies its peer
+  # (`typescript >=5.8.2 <7`). Pinned exact, unlike effect-web's `^4.0.0`:
+  # docgen depends on `effect` itself, and from 4.0.1 on that dependency is
+  # `^4.0.1`, which the `effect` singleton override (4.0.0) would silently
+  # mask. Bump it with the Effect line.
+  "@effect/docgen": 4.0.0
   "@effect/ai-anthropic": 4.0.0
   "@effect/language-service": ^0.87.3
   "@effect/platform-node": 4.0.0
@@ -77,6 +84,8 @@ catalog:
   # hook `.claude/hooks/fallow-gate.sh` runs `fallow audit` before every agent
   # `git commit` / `git push`).
   fallow: 3.31.0
+  # Runs docgen's compiled examples.
+  tsx: ^4.23.15
   typescript: "npm:@typescript/typescript6@6.0.2"
   # vite-plus pins `oxlint`, `oxfmt` and `vitest` to exact versions, so this
   # entry decides the oxlint version `effect-tsgo patch --oxlint` has to
