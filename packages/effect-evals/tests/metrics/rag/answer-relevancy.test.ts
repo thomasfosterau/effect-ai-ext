@@ -8,14 +8,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
-import {
-  AnswerRelevancy,
-  EvalCase,
-  GEval,
-  Golden,
-  Metric,
-  Threshold,
-} from "../../../src/index.ts";
+import { AnswerRelevancy, EvalCase, GEval, Golden, Metric, Threshold } from "../../../src/index.ts";
 import { expectFailureInstanceOf, runTest } from "../../helpers/effect.ts";
 import { deadJudge, makeJudgeStub, provideJudge } from "./helpers.ts";
 

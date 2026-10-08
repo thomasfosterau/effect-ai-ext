@@ -179,7 +179,10 @@ describe("ClassifierModel", () => {
       const response = await runTest(
         Effect.gen(function* () {
           const model = yield* fromLanguageModel;
-          return yield* model.classify({ inputs: ["great product"], labels: ["positive", "negative"] });
+          return yield* model.classify({
+            inputs: ["great product"],
+            labels: ["positive", "negative"],
+          });
         }).pipe(
           Effect.provide(
             stubLanguageModel(

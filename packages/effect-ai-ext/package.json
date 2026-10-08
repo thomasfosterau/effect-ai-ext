@@ -3,26 +3,31 @@
   "version": "0.4.2",
   "description": "Provider-neutral AI service abstractions upstream Effect lacks — reranker, classifier, TTS, STT, image, moderation, voice conversion — each shaped like effect/ai.",
   "keywords": [
-    "effect",
     "ai",
-    "reranker",
     "classifier",
-    "tts",
-    "stt",
+    "effect",
+    "image-generation",
     "moderation",
-    "image-generation"
+    "reranker",
+    "stt",
+    "tts"
   ],
+  "homepage": "https://github.com/thomasfosterau/effect-ai-ext/tree/trunk/packages/effect-ai-ext#readme",
+  "bugs": {
+    "url": "https://github.com/thomasfosterau/effect-ai-ext/issues"
+  },
   "license": "MIT",
   "author": "Thomas Foster <me@thomasfoster.au>",
-  "homepage": "https://github.com/thomasfosterau/effect-ai-ext/tree/trunk/packages/effect-ai-ext#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/thomasfosterau/effect-ai-ext.git",
     "directory": "packages/effect-ai-ext"
   },
-  "bugs": {
-    "url": "https://github.com/thomasfosterau/effect-ai-ext/issues"
-  },
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -35,13 +40,7 @@
     "./ModerationModel": "./src/ModerationModel.ts",
     "./VoiceConversionModel": "./src/VoiceConversionModel.ts"
   },
-  "files": [
-    "dist",
-    "src",
-    "README.md"
-  ],
   "publishConfig": {
-    "access": "public",
     "main": "./dist/index.js",
     "module": "./dist/index.js",
     "types": "./dist/index.d.ts",
@@ -78,15 +77,16 @@
         "types": "./dist/VoiceConversionModel.d.ts",
         "import": "./dist/VoiceConversionModel.js"
       }
-    }
-  },
-  "peerDependencies": {
-    "effect": "catalog:peers"
+    },
+    "access": "public"
   },
   "devDependencies": {
     "@effect/language-service": "catalog:",
     "@vitest/coverage-istanbul": "catalog:",
     "effect": "catalog:",
     "typescript": "catalog:"
+  },
+  "peerDependencies": {
+    "effect": "catalog:peers"
   }
 }

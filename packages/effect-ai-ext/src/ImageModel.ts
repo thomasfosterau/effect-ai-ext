@@ -176,9 +176,7 @@ const mapProviderResponse = (
  * @category constructors
  */
 export const make = (params: {
-  readonly generate: (
-    options: ProviderOptions,
-  ) => Effect.Effect<ProviderResponse, AiError.AiError>;
+  readonly generate: (options: ProviderOptions) => Effect.Effect<ProviderResponse, AiError.AiError>;
 }): Effect.Effect<Service> =>
   Effect.sync(() =>
     ImageModel.of({

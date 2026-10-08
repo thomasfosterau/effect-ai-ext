@@ -61,9 +61,7 @@ describe("SpeechModel", () => {
     expect(Array.from(response.audio)).toEqual([1, 2, 3]);
     expect(response.mediaType).toBe("audio/mpeg");
     expect(response.usage.inputCharacters).toBe(5);
-    expect(calls).toEqual([
-      { text: "hello", voice: "nova", format: "mp3", sampleRate: undefined },
-    ]);
+    expect(calls).toEqual([{ text: "hello", voice: "nova", format: "mp3", sampleRate: undefined }]);
   });
 
   it("fails with AiError when the provider returns empty audio", async () => {

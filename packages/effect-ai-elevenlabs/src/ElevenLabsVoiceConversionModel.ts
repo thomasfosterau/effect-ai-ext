@@ -17,7 +17,12 @@ import { VoiceConversionModel } from "@thomasfosterau/effect-ai-ext";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import { ElevenLabsClient } from "./ElevenLabsClient";
-import { collectBytes, mediaTypeForOutputFormat, resolveOutputFormat, toBlob } from "./internal/audio";
+import {
+  collectBytes,
+  mediaTypeForOutputFormat,
+  resolveOutputFormat,
+  toBlob,
+} from "./internal/audio";
 import type * as Wire from "./internal/wire";
 
 /**

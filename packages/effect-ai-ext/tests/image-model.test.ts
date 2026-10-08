@@ -72,9 +72,7 @@ describe("ImageModel", () => {
       new ImagePart({ data: bytes, mediaType: "image/jpeg" }),
     ]);
     expect(response.usage.inputTokens).toBe(3);
-    expect(calls).toEqual([
-      { prompt: "a cat", size: "512x512", format: undefined, count: 2 },
-    ]);
+    expect(calls).toEqual([{ prompt: "a cat", size: "512x512", format: undefined, count: 2 }]);
   });
 
   it("fails with AiError when the provider returns no images", async () => {

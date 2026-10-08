@@ -662,13 +662,20 @@ describe("CohereLanguageModel.streamText", () => {
     const { fetch } = makeFetch(() =>
       sseResponse([
         { type: "message-start", id: "s1", delta: { message: { role: "assistant" } } },
-        { type: "content-start", index: 0, delta: { message: { content: { type: "text", text: "" } } } },
+        {
+          type: "content-start",
+          index: 0,
+          delta: { message: { content: { type: "text", text: "" } } },
+        },
         { type: "content-delta", index: 0, delta: { message: { content: { text: "Hello" } } } },
         { type: "content-delta", index: 0, delta: { message: { content: { text: " world" } } } },
         { type: "content-end", index: 0 },
         {
           type: "message-end",
-          delta: { finish_reason: "COMPLETE", usage: { tokens: { input_tokens: 3, output_tokens: 2 } } },
+          delta: {
+            finish_reason: "COMPLETE",
+            usage: { tokens: { input_tokens: 3, output_tokens: 2 } },
+          },
         },
       ]),
     );
@@ -706,7 +713,11 @@ describe("CohereLanguageModel.streamText", () => {
           index: 0,
           delta: {
             message: {
-              tool_calls: { id: "call_5", type: "function", function: { name: "get_weather", arguments: "" } },
+              tool_calls: {
+                id: "call_5",
+                type: "function",
+                function: { name: "get_weather", arguments: "" },
+              },
             },
           },
         },
@@ -730,7 +741,11 @@ describe("CohereLanguageModel.streamText", () => {
         prompt: "weather",
         toolkit: weatherToolkit,
         disableToolCallResolution: true,
-      }).pipe(Stream.runCollect, Effect.provide(modelLayer(fetch)), Effect.provide(weatherHandlers)),
+      }).pipe(
+        Stream.runCollect,
+        Effect.provide(modelLayer(fetch)),
+        Effect.provide(weatherHandlers),
+      ),
     );
 
     const types = parts.map((part) => part.type);
@@ -795,7 +810,12 @@ describe("CohereEmbeddingModel", () => {
   it("posts to /v2/embed with the pinned model and dimension, decoding vectors + usage", async () => {
     const { calls, fetch } = makeFetch(() =>
       jsonResponse({
-        embeddings: { float: [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]] },
+        embeddings: {
+          float: [
+            [0.1, 0.2, 0.3],
+            [0.4, 0.5, 0.6],
+          ],
+        },
         meta: { billed_units: { input_tokens: 4 } },
       }),
     );
@@ -824,9 +844,7 @@ describe("CohereEmbeddingModel", () => {
   });
 
   it("honours an overridden input type, model, and output dimension", async () => {
-    const { calls, fetch } = makeFetch(() =>
-      jsonResponse({ embeddings: { float: [[1, 2]] } }),
-    );
+    const { calls, fetch } = makeFetch(() => jsonResponse({ embeddings: { float: [[1, 2]] } }));
 
     await runTest(
       Effect.gen(function* () {
@@ -834,7 +852,11 @@ describe("CohereEmbeddingModel", () => {
         return yield* model.embedMany(["q"]);
       }).pipe(
         Effect.provide(
-          embedLayer(fetch, { inputType: "search_query", model: "embed-english-v3.0", outputDimension: 512 }),
+          embedLayer(fetch, {
+            inputType: "search_query",
+            model: "embed-english-v3.0",
+            outputDimension: 512,
+          }),
         ),
       ),
     );

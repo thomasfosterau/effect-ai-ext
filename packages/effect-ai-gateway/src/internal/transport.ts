@@ -128,16 +128,14 @@ export const requestViaBinding = <S extends Schema.Top>(
     origin,
     gatewayRun(binding, data).pipe(
       Effect.mapError((cause) => transportFailure(origin, cause)),
-      Effect.map(
-        (response): NormalizedResponse => ({
-          status: response.status,
-          text: Effect.tryPromise(() => response.text()).pipe(Effect.orElseSucceed(() => "")),
-          json: Effect.tryPromise({
-            try: () => response.json() as Promise<unknown>,
-            catch: (cause) => bodyReadFailure(origin, cause),
-          }),
+      Effect.map((response): NormalizedResponse => ({
+        status: response.status,
+        text: Effect.tryPromise(() => response.text()).pipe(Effect.orElseSucceed(() => "")),
+        json: Effect.tryPromise({
+          try: () => response.json() as Promise<unknown>,
+          catch: (cause) => bodyReadFailure(origin, cause),
         }),
-      ),
+      })),
     ),
     schema,
   );
@@ -167,13 +165,11 @@ export const requestViaUrl = <S extends Schema.Top>(
     origin,
     httpClient.execute(request).pipe(
       Effect.mapError((cause) => transportFailure(origin, cause)),
-      Effect.map(
-        (response): NormalizedResponse => ({
-          status: response.status,
-          text: response.text.pipe(Effect.orElseSucceed(() => "")),
-          json: response.json.pipe(Effect.mapError((cause) => bodyReadFailure(origin, cause))),
-        }),
-      ),
+      Effect.map((response): NormalizedResponse => ({
+        status: response.status,
+        text: response.text.pipe(Effect.orElseSucceed(() => "")),
+        json: response.json.pipe(Effect.mapError((cause) => bodyReadFailure(origin, cause))),
+      })),
     ),
     schema,
   );

@@ -153,9 +153,7 @@ const mapProviderResponse = (
  * @category constructors
  */
 export const make = (params: {
-  readonly convert: (
-    options: ProviderOptions,
-  ) => Effect.Effect<ProviderResponse, AiError.AiError>;
+  readonly convert: (options: ProviderOptions) => Effect.Effect<ProviderResponse, AiError.AiError>;
 }): Effect.Effect<Service> =>
   Effect.sync(() =>
     VoiceConversionModel.of({

@@ -95,9 +95,7 @@ const OmniModerationResponse = Schema.Struct({
     Schema.Struct({
       flagged: Schema.Boolean,
       categories: Schema.optional(Schema.Record(Schema.String, Schema.NullOr(Schema.Boolean))),
-      category_scores: Schema.optional(
-        Schema.Record(Schema.String, Schema.NullOr(Schema.Finite)),
-      ),
+      category_scores: Schema.optional(Schema.Record(Schema.String, Schema.NullOr(Schema.Finite))),
     }),
   ),
 });
@@ -187,7 +185,10 @@ export const makeOpenAiModerationModelFromUrl = (
     const gatewayConfig = yield* Url.gatewayUrlConfig;
     const httpClient = yield* HttpClient.HttpClient;
     const url = `${Url.gatewayBaseUrl(gatewayConfig, OPENAI_PROVIDER)}/${MODERATIONS_ENDPOINT}`;
-    const headers = { ...Url.cfAigAuthorizationHeader(gatewayConfig), ...moderationHeaders(options) };
+    const headers = {
+      ...Url.cfAigAuthorizationHeader(gatewayConfig),
+      ...moderationHeaders(options),
+    };
 
     return yield* ModerationModel.make({
       moderate: ({ inputs }) =>

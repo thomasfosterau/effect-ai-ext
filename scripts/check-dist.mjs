@@ -81,7 +81,8 @@ const expectedValueExports = (dts) => {
   return checker
     .getExportsOfModule(moduleSymbol)
     .filter((symbol) => {
-      const target = symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
+      const target =
+        symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
       return (target.flags & ts.SymbolFlags.Value) !== 0;
     })
     .map((symbol) => symbol.getName())
