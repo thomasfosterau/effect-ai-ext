@@ -13,14 +13,14 @@ catalogs:
       specifier: ^5.20261004.1
       version: 5.20261004.1
     '@effect/ai-anthropic':
-      specifier: 4.0.0
-      version: 4.0.0
+      specifier: 4.0.1
+      version: 4.0.1
     '@effect/language-service':
-      specifier: ^0.87.3
-      version: 0.87.3
+      specifier: ^0.87.4
+      version: 0.87.4
     '@effect/platform-node':
-      specifier: 4.0.0
-      version: 4.0.0
+      specifier: 4.0.1
+      version: 4.0.1
     '@effect/tsgo':
       specifier: 0.47.2
       version: 0.47.2
@@ -49,8 +49,8 @@ catalogs:
 overrides:
   vite: npm:@voidzero-dev/vite-plus-core@1.0.0
   vitest: 5.0.1
-  effect: 4.0.0
-  '@effect/platform-node-shared': 4.0.0
+  effect: 4.0.1
+  '@effect/platform-node-shared': 4.0.1
   '@mpsuesser/oxlint-plugin-effect>effect': 4.0.0-beta.100
 
 importers:
@@ -62,7 +62,7 @@ importers:
         version: 3.0.3
       '@effect/language-service':
         specifier: 'catalog:'
-        version: 0.87.3
+        version: 0.87.4
       '@effect/tsgo':
         specifier: 'catalog:'
         version: 0.47.2
@@ -99,13 +99,13 @@ importers:
     devDependencies:
       '@effect/language-service':
         specifier: 'catalog:'
-        version: 0.87.3
+        version: 0.87.4
       '@vitest/coverage-istanbul':
         specifier: 'catalog:'
         version: 5.0.1(vitest@5.0.1)
       effect:
-        specifier: 4.0.0
-        version: 4.0.0
+        specifier: 4.0.1
+        version: 4.0.1
       typescript:
         specifier: 'catalog:'
         version: '@typescript/typescript6@6.0.2'
@@ -118,13 +118,13 @@ importers:
     devDependencies:
       '@effect/language-service':
         specifier: 'catalog:'
-        version: 0.87.3
+        version: 0.87.4
       '@vitest/coverage-istanbul':
         specifier: 'catalog:'
         version: 5.0.1(vitest@5.0.1)
       effect:
-        specifier: 4.0.0
-        version: 4.0.0
+        specifier: 4.0.1
+        version: 4.0.1
       typescript:
         specifier: 'catalog:'
         version: '@typescript/typescript6@6.0.2'
@@ -133,13 +133,13 @@ importers:
     devDependencies:
       '@effect/language-service':
         specifier: 'catalog:'
-        version: 0.87.3
+        version: 0.87.4
       '@vitest/coverage-istanbul':
         specifier: 'catalog:'
         version: 5.0.1(vitest@5.0.1)
       effect:
-        specifier: 4.0.0
-        version: 4.0.0
+        specifier: 4.0.1
+        version: 4.0.1
       typescript:
         specifier: 'catalog:'
         version: '@typescript/typescript6@6.0.2'
@@ -155,16 +155,16 @@ importers:
         version: 5.20261004.1
       '@effect/ai-anthropic':
         specifier: 'catalog:'
-        version: 4.0.0(effect@4.0.0)
+        version: 4.0.1(effect@4.0.1)
       '@effect/language-service':
         specifier: 'catalog:'
-        version: 0.87.3
+        version: 0.87.4
       '@vitest/coverage-istanbul':
         specifier: 'catalog:'
         version: 5.0.1(vitest@5.0.1)
       effect:
-        specifier: 4.0.0
-        version: 4.0.0
+        specifier: 4.0.1
+        version: 4.0.1
       typescript:
         specifier: 'catalog:'
         version: '@typescript/typescript6@6.0.2'
@@ -173,13 +173,13 @@ importers:
     devDependencies:
       '@effect/language-service':
         specifier: 'catalog:'
-        version: 0.87.3
+        version: 0.87.4
       '@vitest/coverage-istanbul':
         specifier: 'catalog:'
         version: 5.0.1(vitest@5.0.1)
       effect:
-        specifier: 4.0.0
-        version: 4.0.0
+        specifier: 4.0.1
+        version: 4.0.1
       typescript:
         specifier: 'catalog:'
         version: '@typescript/typescript6@6.0.2'
@@ -192,13 +192,13 @@ importers:
     devDependencies:
       '@effect/language-service':
         specifier: 'catalog:'
-        version: 0.87.3
+        version: 0.87.4
       '@vitest/coverage-istanbul':
         specifier: 'catalog:'
         version: 5.0.1(vitest@5.0.1)
       effect:
-        specifier: 4.0.0
-        version: 4.0.0
+        specifier: 4.0.1
+        version: 4.0.1
       typescript:
         specifier: 'catalog:'
         version: '@typescript/typescript6@6.0.2'
@@ -207,16 +207,16 @@ importers:
     devDependencies:
       '@effect/language-service':
         specifier: 'catalog:'
-        version: 0.87.3
+        version: 0.87.4
       '@effect/platform-node':
         specifier: 'catalog:'
-        version: 4.0.0(effect@4.0.0)(redis@6.2.1)
+        version: 4.0.1(effect@4.0.1)(redis@6.2.1)
       '@vitest/coverage-istanbul':
         specifier: 'catalog:'
         version: 5.0.1(vitest@5.0.1)
       effect:
-        specifier: 4.0.0
-        version: 4.0.0
+        specifier: 4.0.1
+        version: 4.0.1
       typescript:
         specifier: 'catalog:'
         version: '@typescript/typescript6@6.0.2'
@@ -380,26 +380,26 @@ packages:
   '@cloudflare/workers-types@5.20261004.1':
     resolution: {integrity: sha512-K9D4/Y6bSIDNYFzjqzFMNoWK99pLgfgFxqSa76kfW++3VCkTSzJbzsQRffir366G3kmNyjoigC6ekp7DxIkxkw==}
 
-  '@effect/ai-anthropic@4.0.0':
-    resolution: {integrity: sha512-/xZYmvRE9yDLKiz1pOIx0CVaB+o0zdJd6sTG9KQbFSkM+Ule0U/6yeN+Q6KD9I7Z73t3WxhK9Xmg1eqU6+IVmQ==}
+  '@effect/ai-anthropic@4.0.1':
+    resolution: {integrity: sha512-hJ3Es38q8C43CLiRInv0QLyjqayHIlrtOx7wCcT1x8LjYC1Ev/An6EhkUFstQfvWkI7ydo1tUe6oMWSS7NNW2g==}
     peerDependencies:
-      effect: 4.0.0
+      effect: 4.0.1
 
-  '@effect/language-service@0.87.3':
-    resolution: {integrity: sha512-g1OmRBZF5chbW9QMNoirPo5Bb4zzU2HfP88tR7/VSZEUxHJ1/qVb8AQ0kUh2ggctLH1I715yCwP4gkw56PTjpQ==}
+  '@effect/language-service@0.87.4':
+    resolution: {integrity: sha512-AfFn4K45l84LtbQSwoPWc06nrg7OzfV3uJOnIUqimSOWTCIsY1IKBXZfjSsVTq7jDuL9Jtoz8//bZp9+rkEihg==}
     hasBin: true
 
-  '@effect/platform-node-shared@4.0.0':
-    resolution: {integrity: sha512-VBXHJU9UXVZPdQGGDRjGXpo+TpOzRwZuMrdKAtIxi1qwcRftmacZ1zTgIrzBa0Z2RA2KVkoOecQUsTlt/nJZhw==}
+  '@effect/platform-node-shared@4.0.1':
+    resolution: {integrity: sha512-VanaejudEhKJ4mpmqnEzdncVUhN6sGSO9ZDND54mRxAlZxj+4dYAWjDTYAy9o4tJo9aALeP2U8cVcOFzEdSeLg==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
-      effect: 4.0.0
+      effect: 4.0.1
 
-  '@effect/platform-node@4.0.0':
-    resolution: {integrity: sha512-/L+4MUbl8FejPKLHLROYSOebvHnfixkP8KiblSD/DE5uH5xENZBHaux4nH6XMnRP+lr8ajpEJFS8sUrmmxFJeQ==}
+  '@effect/platform-node@4.0.1':
+    resolution: {integrity: sha512-FT0Fu5LO0/XP9zBpj0HqrtJNLluK4StNKqf6TSulUsjp8FPBsDVXGJiDuyoN5J2yVMT7tgvhxSwaDcObWVRIaQ==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
-      effect: 4.0.0
+      effect: 4.0.1
       redis: '>=5.0.0 <7.0.0'
 
   '@effect/tsgo-darwin-arm64@0.47.2':
@@ -1583,13 +1583,13 @@ packages:
   effect-oxlint@0.3.4:
     resolution: {integrity: sha512-VaI72NhDI+OBk8rkWBxR3D+k8iQN5KX4caiTRtWR/KDlif4KdxmjPelQqflwwprxkGldEpLry9fQvvzlBWY6bA==}
     peerDependencies:
-      effect: 4.0.0
-
-  effect@4.0.0:
-    resolution: {integrity: sha512-ooc1TG5t+FfzgYnFz2ff6BBKyZ7EwBRVXC7c4RhQUAD6/TZ2gTXXMeb4WX7a19ozQo4J73/QW+S00YAIresoMQ==}
+      effect: 4.0.1
 
   effect@4.0.0-beta.100:
     resolution: {integrity: sha512-K4ed+BS3HyE+NoAZ8pJss2DpuK41mb856IO7ZlPfnwBXbq8oTtAAurrsVnwe2hzPamIuaZp/Pq4/xp9qORYv8Q==}
+
+  effect@4.0.1:
+    resolution: {integrity: sha512-b1VlQG9g8fwxE5QnIZuPoOP/0MsqHJSRKxUijjoM80E5q95FXrX5yWtY5XI8G+GJsBQAVSDbLS458z9a++uVvw==}
 
   electron-to-chromium@1.5.447:
     resolution: {integrity: sha512-vhYiRwTPq7tvwplP6fOFVRJxfZifavlr6tK8FD1EO5RxRuvZ9qdQM0lr1mvNBeDe1s2XrfL3n5BBwvigXJ7KuA==}
@@ -2291,25 +2291,25 @@ snapshots:
 
   '@cloudflare/workers-types@5.20261004.1': {}
 
-  '@effect/ai-anthropic@4.0.0(effect@4.0.0)':
+  '@effect/ai-anthropic@4.0.1(effect@4.0.1)':
     dependencies:
-      effect: 4.0.0
+      effect: 4.0.1
 
-  '@effect/language-service@0.87.3': {}
+  '@effect/language-service@0.87.4': {}
 
-  '@effect/platform-node-shared@4.0.0(effect@4.0.0)':
+  '@effect/platform-node-shared@4.0.1(effect@4.0.1)':
     dependencies:
       '@types/ws': 8.18.1
-      effect: 4.0.0
+      effect: 4.0.1
       ws: 8.22.0
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
 
-  '@effect/platform-node@4.0.0(effect@4.0.0)(redis@6.2.1)':
+  '@effect/platform-node@4.0.1(effect@4.0.1)(redis@6.2.1)':
     dependencies:
-      '@effect/platform-node-shared': 4.0.0(effect@4.0.0)
-      effect: 4.0.0
+      '@effect/platform-node-shared': 4.0.1(effect@4.0.1)
+      effect: 4.0.1
       redis: 6.2.1
       undici: 8.11.2
     transitivePeerDependencies:
@@ -3042,8 +3042,6 @@ snapshots:
       '@oxlint/plugins': 1.87.0
       effect: 4.0.0-beta.100
 
-  effect@4.0.0: {}
-
   effect@4.0.0-beta.100:
     dependencies:
       '@standard-schema/spec': 1.1.0
@@ -3056,6 +3054,8 @@ snapshots:
       toml: 4.3.0
       uuid: 14.0.2
       yaml: 2.9.0
+
+  effect@4.0.1: {}
 
   electron-to-chromium@1.5.447: {}
 
