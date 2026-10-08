@@ -14,6 +14,7 @@
 
 import { describe, expect, it } from "vitest";
 import * as Config from "effect/Config";
+import * as RerankerModelExt from "@thomasfosterau/effect-ai-ext/RerankerModel";
 
 const EXPORTS = [
   "anthropicLanguageModelLayer",
@@ -29,9 +30,18 @@ const EXPORTS = [
   "makeCohereRerankerFromUrl",
   "makeOpenAiModerationModel",
   "makeOpenAiModerationModelFromUrl",
-  // The RerankerModel re-export from effect-ai-ext (the deprecation shim).
+] as const;
+
+/**
+ * The deprecated `RerankerModel` re-export from effect-ai-ext (#60): every
+ * value name the former `export *` carried, removed from the gateway in 0.5.0.
+ */
+const DEPRECATED_RERANKER_EXPORTS = [
   "make",
+  "RerankedDocument",
   "RerankerModel",
+  "RerankerUsage",
+  "RerankResponse",
 ] as const;
 
 describe("module load", () => {
@@ -41,6 +51,18 @@ describe("module load", () => {
     expect(Object.keys(entry)).toEqual(expect.arrayContaining([...EXPORTS]));
     for (const name of EXPORTS) {
       expect(entry[name], name).toBeDefined();
+    }
+  });
+
+  it("still re-exports every RerankerModel value from effect-ai-ext, by identity", async () => {
+    const entry: Record<string, unknown> = await import("@thomasfosterau/effect-ai-gateway");
+    const ext: Record<string, unknown> = RerankerModelExt;
+
+    // The named list must cover everything effect-ai-ext exports, or dropping
+    // the `export *` silently removed a name (a breaking change).
+    expect([...DEPRECATED_RERANKER_EXPORTS].sort()).toEqual(Object.keys(ext).sort());
+    for (const name of DEPRECATED_RERANKER_EXPORTS) {
+      expect(entry[name], name).toBe(ext[name]);
     }
   });
 

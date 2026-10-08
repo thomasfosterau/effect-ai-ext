@@ -16,7 +16,9 @@ application code or env vars — this package never takes or reads an API key.
   holds its own OpenAI key passes it as `apiKey` (a `Redacted`) and it is sent
   as the bearer token. Text inputs only — the abstraction's contract.
 - **`RerankerModel`** — deprecated re-export of
-  `@thomasfosterau/effect-ai-ext/RerankerModel`; import it from there.
+  `@thomasfosterau/effect-ai-ext/RerankerModel` (`RerankerModel`, `make`,
+  `RerankResponse`, … are each tagged `@deprecated`); import it from there.
+  It is removed from the gateway in 0.5.0.
 - **`Binding` / `Url`** — the Worker-binding and public-HTTPS transports.
 
 Every provider comes in a binding-based (`make…`) and a binding-free
