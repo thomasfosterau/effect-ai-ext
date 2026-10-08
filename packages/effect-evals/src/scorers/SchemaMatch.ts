@@ -6,8 +6,8 @@
  * same decode over a case whose `output` is already a structured value, no
  * JSON string round trip. Uses `Schema` from `effect`, never
  * `effect/schema`. A decode failure (`SchemaError`) scores `0` with the
- * decode error's message as `reason`; nothing else is caught, so a defect
- * in a schema's own transformation fails the run (#98).
+ * decode error's message as `reason`; it is the decode's only failure, so
+ * a defect in a schema's own transformation fails the run.
  *
  * @module scorers/SchemaMatch
  *
