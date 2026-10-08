@@ -79,7 +79,7 @@ describe("makeOpenAiModerationModel", () => {
       },
     ]);
     expect(response.results).toHaveLength(1);
-    expect(response.results[0]?.flagged).toBe(false);
+    expect(response.results[0]?.isFlagged).toBe(false);
     expect(response.results[0]?.categories).toEqual({ hate: 0.01 });
     expect(response.usage.inputTokens).toBeUndefined();
   });
@@ -116,7 +116,7 @@ describe("makeOpenAiModerationModel", () => {
 
     const response = await runTest(moderate(ai, ["nasty", "nice"]));
 
-    expect(response.results.map((result) => result.flagged)).toEqual([true, false]);
+    expect(response.results.map((result) => result.isFlagged)).toEqual([true, false]);
     expect(response.results[0]?.categories).toEqual({ hate: 0.94, violence: 0.02 });
     expect(response.results[1]?.categories).toEqual({ hate: 0.01, violence: 0.03 });
   });
@@ -159,7 +159,7 @@ describe("makeOpenAiModerationModel", () => {
 
     const response = await runTest(moderate(ai, ["hello"]));
 
-    expect(response.results[0]).toMatchObject({ flagged: true, categories: {} });
+    expect(response.results[0]).toMatchObject({ isFlagged: true, categories: {} });
   });
 
   it("returns an empty response for no inputs without calling the gateway", async () => {

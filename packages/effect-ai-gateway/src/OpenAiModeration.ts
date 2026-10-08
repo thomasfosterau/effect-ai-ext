@@ -19,7 +19,8 @@
  *
  * ## What this module does NOT decide
  *
- * `ModerationModel` reports the provider's reading — `flagged`, and every
+ * `ModerationModel` reports the provider's reading — `isFlagged` (the
+ * provider's `flagged`), and every
  * category's score in `[0, 1]`. Turning scores into a hold / reject
  * decision, a priority band, or a review-queue item is threshold policy and
  * stays with the caller; this module reports, it does not sentence.
@@ -87,16 +88,17 @@ export interface OpenAiModerationOptions {
  * gateway that answers 200 with an error envelope, or a model that changes
  * its response shape, must fail as an `AiError` rather than produce a
  * result with missing scores that grades as "nothing fired". Unknown fields
- * at any level are ignored.
+ * at any level are ignored. The wire field `flagged` decodes to `isFlagged`,
+ * the name `ModerationModel` carries, here at the decode boundary.
  */
 const OmniModerationResponse = Schema.Struct({
   model: Schema.optional(Schema.String),
   results: Schema.Array(
     Schema.Struct({
-      flagged: Schema.Boolean,
+      isFlagged: Schema.Boolean,
       categories: Schema.optional(Schema.Record(Schema.String, Schema.NullOr(Schema.Boolean))),
       category_scores: Schema.optional(Schema.Record(Schema.String, Schema.NullOr(Schema.Finite))),
-    }),
+    }).pipe(Schema.encodeKeys({ isFlagged: "flagged" })),
   ),
 });
 
@@ -137,7 +139,7 @@ const mapModerationResponse = (
   response: typeof OmniModerationResponse.Type,
 ): ModerationModel.ProviderResponse => ({
   results: response.results.map((result) => ({
-    flagged: result.flagged,
+    isFlagged: result.isFlagged,
     categories: definedScores(result.category_scores),
   })),
   usage: { inputTokens: undefined },

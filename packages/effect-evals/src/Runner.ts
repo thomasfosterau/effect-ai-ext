@@ -199,6 +199,9 @@ const retryAiErrors = <A, E, R>(
     Effect.retry({ schedule, while: (error) => AiError.isAiError(error) && error.isRetryable }),
   );
 
+/** The one failure `JSON.parse` reports for unparseable text. */
+const isSyntaxError = (cause: unknown): cause is SyntaxError => cause instanceof SyntaxError;
+
 /** Resolves a cache key unless caching is bypassed for this run. */
 const cacheKeyFor = (
   config: ResolvedConfig,
@@ -219,8 +222,11 @@ const cacheGetJson = <A>(
         ),
       );
     if (raw === undefined) return undefined;
-    return yield* Effect.try(() => JSON.parse(raw) as A).pipe(
-      Effect.catch(() => Effect.succeed<A | undefined>(undefined)),
+    // An unparseable entry (`JSON.parse`'s `SyntaxError`) is a cache miss;
+    // anything else is a defect, not a reason to re-run silently (#98).
+    return yield* Effect.try({ try: () => JSON.parse(raw) as A, catch: (cause) => cause }).pipe(
+      Effect.catchIf(isSyntaxError, () => Effect.succeed<A | undefined>(undefined)),
+      Effect.orDie,
     );
   });
 

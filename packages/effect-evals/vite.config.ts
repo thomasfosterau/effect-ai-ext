@@ -5,7 +5,7 @@ import { type CoverageFloor, packageConfig } from "../../vite.package.ts";
 export const coverageFloor: CoverageFloor = {
   lines: 98, // 98.67
   branches: 93, // 93.16
-  functions: 98, // 98.8
+  functions: 99, // 99.21
   statements: 98, // 98.11
 };
 

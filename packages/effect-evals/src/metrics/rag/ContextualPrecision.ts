@@ -26,8 +26,8 @@
 
 import * as Effect from "effect/Effect";
 import { LanguageModel } from "effect/ai";
-import { makeMetric, type Metric } from "../../Metric.ts";
-import { makeScorer } from "../../Scorer.ts";
+import * as Metric from "../../Metric.ts";
+import * as Scorer from "../../Scorer.ts";
 import type { Score } from "../../Score.ts";
 import type { Threshold } from "../../Threshold.ts";
 import { classifyStatements, type Verdict } from "./ExtractThenClassify.ts";
@@ -97,10 +97,10 @@ export interface ContextualPrecisionOptions {
  */
 export const contextualPrecision = <Case extends RagCase = RagCase>(
   options: ContextualPrecisionOptions,
-): Metric<Case, RagMetricError, LanguageModel.LanguageModel> => {
+): Metric.Metric<Case, RagMetricError, LanguageModel.LanguageModel> => {
   const name = options.name ?? "contextual-precision";
 
-  const scorer = makeScorer<Case, RagMetricError, LanguageModel.LanguageModel>({
+  const scorer = Scorer.makeScorer<Case, RagMetricError, LanguageModel.LanguageModel>({
     name,
     evaluate: (evalCase): Effect.Effect<Score, RagMetricError, LanguageModel.LanguageModel> =>
       Effect.gen(function* () {
@@ -133,5 +133,5 @@ export const contextualPrecision = <Case extends RagCase = RagCase>(
       }),
   });
 
-  return makeMetric({ name, scorer, threshold: options.threshold });
+  return Metric.makeMetric({ name, scorer, threshold: options.threshold });
 };

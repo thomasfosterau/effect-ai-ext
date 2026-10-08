@@ -15,8 +15,8 @@
 
 import * as Effect from "effect/Effect";
 import { LanguageModel } from "effect/ai";
-import { makeMetric, type Metric } from "../../Metric.ts";
-import { makeScorer } from "../../Scorer.ts";
+import * as Metric from "../../Metric.ts";
+import * as Scorer from "../../Scorer.ts";
 import type { Threshold } from "../../Threshold.ts";
 import { extractThenClassifyRatio } from "./ExtractThenClassify.ts";
 import {
@@ -46,10 +46,10 @@ export interface FaithfulnessOptions {
  */
 export const faithfulness = <Case extends RagCase = RagCase>(
   options: FaithfulnessOptions,
-): Metric<Case, RagMetricError, LanguageModel.LanguageModel> => {
+): Metric.Metric<Case, RagMetricError, LanguageModel.LanguageModel> => {
   const name = options.name ?? "faithfulness";
 
-  const scorer = makeScorer<Case, RagMetricError, LanguageModel.LanguageModel>({
+  const scorer = Scorer.makeScorer<Case, RagMetricError, LanguageModel.LanguageModel>({
     name,
     evaluate: (evalCase) =>
       Effect.gen(function* () {
@@ -79,5 +79,5 @@ export const faithfulness = <Case extends RagCase = RagCase>(
       }),
   });
 
-  return makeMetric({ name, scorer, threshold: options.threshold });
+  return Metric.makeMetric({ name, scorer, threshold: options.threshold });
 };

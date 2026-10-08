@@ -11,22 +11,37 @@
 
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import type * as Schema from "effect/Schema";
 import { AiError, LanguageModel } from "effect/ai";
 
 /**
  * A `LanguageModel` layer whose `generateObject` resolves to the given value,
  * wrapped in a `GenerateObjectResponse`. `onCall` captures each request's
- * `prompt` and `objectName` for pass-through assertions.
+ * `prompt`, `objectName` and `schema` for pass-through assertions (the
+ * schema lets a test decode a raw wire payload the way a real
+ * `LanguageModel` would).
  */
 export const stubLanguageModel = (
   value: unknown,
-  onCall?: (request: { readonly prompt: unknown; readonly objectName: unknown }) => void,
+  onCall?: (request: {
+    readonly prompt: unknown;
+    readonly objectName: unknown;
+    readonly schema: Schema.Codec<unknown, unknown>;
+  }) => void,
 ): Layer.Layer<LanguageModel.LanguageModel> =>
   Layer.succeed(
     LanguageModel.LanguageModel,
     LanguageModel.LanguageModel.of({
-      generateObject: ((options: { prompt: unknown; objectName: unknown }) => {
-        onCall?.({ prompt: options.prompt, objectName: options.objectName });
+      generateObject: ((options: {
+        prompt: unknown;
+        objectName: unknown;
+        schema: Schema.Codec<unknown, unknown>;
+      }) => {
+        onCall?.({
+          prompt: options.prompt,
+          objectName: options.objectName,
+          schema: options.schema,
+        });
         return Effect.succeed(new LanguageModel.GenerateObjectResponse(value, []));
       }) as never,
       generateText: (() => Effect.die(new Error("generateText not stubbed"))) as never,

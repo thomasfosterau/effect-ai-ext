@@ -123,7 +123,6 @@ export default defineConfig({
       "effect/no-known-value-widening": "warn",
       "effect/no-chained-type-assertions": "warn",
       "effect/avoid-any": "warn",
-      "effect/no-service-constructor-imports": "warn",
       "effect/avoid-object-type": "warn",
       "effect/prefer-effect-is": "warn",
       "effect/prefer-arr-sort": "warn",
@@ -135,13 +134,9 @@ export default defineConfig({
       "effect/use-path-service": "warn",
       "effect/avoid-sync-fs": "warn",
       "effect/use-filesystem-service": "warn",
-      "effect/effect-catchall-default": "warn",
       "effect/avoid-node-imports": "warn",
       "effect/use-temp-file-scoped": "warn",
       "effect/use-command-executor-service": "warn",
-      // `flagged` mirrors the moderation APIs' own field name and is public
-      // surface (`ModerationModel`), so renaming it is a breaking change.
-      "effect/require-is-prefix-for-boolean-schema-field": "warn",
       "effect/prefer-effect-fn": "warn",
       "effect/use-console-service": "warn",
       "effect/throw-in-effect-gen": "warn",

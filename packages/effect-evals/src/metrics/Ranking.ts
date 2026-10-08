@@ -44,9 +44,9 @@
  */
 
 import * as Effect from "effect/Effect";
-import { makeMetric, type Metric } from "../Metric.ts";
+import * as Metric from "../Metric.ts";
 import type { Score } from "../Score.ts";
-import { makeScorer, type Scorer } from "../Scorer.ts";
+import * as Scorer from "../Scorer.ts";
 import { minScore, type Threshold } from "../Threshold.ts";
 
 /**
@@ -221,8 +221,8 @@ const describe = (metric: RankingMetricName, evidence: Evidence, value: number):
  * {@link RankingCase}, named by {@link metricKey} (`ndcg@10`). Never fails:
  * every input has a defined score.
  */
-export const scorerAtK = (metric: RankingMetricName, k: number): Scorer<RankingCase> =>
-  makeScorer({
+export const scorerAtK = (metric: RankingMetricName, k: number): Scorer.Scorer<RankingCase> =>
+  Scorer.makeScorer({
     name: metricKey(metric, k),
     evaluate: (evalCase) =>
       Effect.sync((): Score => {
@@ -237,16 +237,16 @@ export const scorerAtK = (metric: RankingMetricName, k: number): Scorer<RankingC
   });
 
 /** {@link scorerAtK} for `"ndcg"`. */
-export const ndcgAtK = (k: number): Scorer<RankingCase> => scorerAtK("ndcg", k);
+export const ndcgAtK = (k: number): Scorer.Scorer<RankingCase> => scorerAtK("ndcg", k);
 
 /** {@link scorerAtK} for `"recall"`. */
-export const recallAtK = (k: number): Scorer<RankingCase> => scorerAtK("recall", k);
+export const recallAtK = (k: number): Scorer.Scorer<RankingCase> => scorerAtK("recall", k);
 
 /** {@link scorerAtK} for `"mrr"`. */
-export const mrrAtK = (k: number): Scorer<RankingCase> => scorerAtK("mrr", k);
+export const mrrAtK = (k: number): Scorer.Scorer<RankingCase> => scorerAtK("mrr", k);
 
 /** {@link scorerAtK} for `"precision"`. */
-export const precisionAtK = (k: number): Scorer<RankingCase> => scorerAtK("precision", k);
+export const precisionAtK = (k: number): Scorer.Scorer<RankingCase> => scorerAtK("precision", k);
 
 /**
  * A ranking metric at a cutoff as a {@link Metric.Metric} — the scorer plus
@@ -258,8 +258,8 @@ export const metricAtK = (
   metric: RankingMetricName,
   k: number,
   threshold: Threshold = minScore(0),
-): Metric<RankingCase> =>
-  makeMetric({ name: metricKey(metric, k), scorer: scorerAtK(metric, k), threshold });
+): Metric.Metric<RankingCase> =>
+  Metric.makeMetric({ name: metricKey(metric, k), scorer: scorerAtK(metric, k), threshold });
 
 /** Options for {@link metricsAtK}. */
 export interface MetricsAtKOptions {
@@ -273,7 +273,7 @@ export interface MetricsAtKOptions {
 export const metricsAtK = (
   k: number,
   options: MetricsAtKOptions = {},
-): ReadonlyArray<Metric<RankingCase>> =>
+): ReadonlyArray<Metric.Metric<RankingCase>> =>
   (options.metrics ?? ALL_METRICS).map((metric) =>
     metricAtK(metric, k, options.thresholds?.[metric] ?? minScore(0)),
   );
