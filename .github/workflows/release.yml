@@ -43,14 +43,13 @@ jobs:
           node-version: latest
           cache: pnpm
           registry-url: https://registry.npmjs.org
-      # `changeset publish` runs `pnpm publish`, and pnpm 11 performs the
-      # trusted-publishing (OIDC) exchange itself, so the publish path does not
-      # depend on this global npm. It stays pinned to a major, never `@latest`,
-      # because this job holds `id-token: write` (#57).
-      - run: npm install -g npm@11
       - run: pnpm install --frozen-lockfile
       - run: pnpm run check
       - run: pnpm run test
+      # The job installs no npm CLI of its own: `changeset publish` runs
+      # `pnpm publish` (pnpm 11 publishes natively, never via npm) and pnpm
+      # performs the trusted-publishing (OIDC) exchange itself (#63).
+      #
       # v2 of the action pairs with Changesets CLI v3 (`@changesets/cli` in the
       # root devDependencies) and renamed v1's `version` / `publish` / `commit`
       # / `title` inputs.
