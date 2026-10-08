@@ -11,6 +11,7 @@
 
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import type * as Schema from "effect/Schema";
 import { AiError, LanguageModel } from "effect/ai";
 
 /**
@@ -25,13 +26,17 @@ export const stubLanguageModel = (
   onCall?: (request: {
     readonly prompt: unknown;
     readonly objectName: unknown;
-    readonly schema: unknown;
+    readonly schema: Schema.Codec<unknown, unknown>;
   }) => void,
 ): Layer.Layer<LanguageModel.LanguageModel> =>
   Layer.succeed(
     LanguageModel.LanguageModel,
     LanguageModel.LanguageModel.of({
-      generateObject: ((options: { prompt: unknown; objectName: unknown; schema: unknown }) => {
+      generateObject: ((options: {
+        prompt: unknown;
+        objectName: unknown;
+        schema: Schema.Codec<unknown, unknown>;
+      }) => {
         onCall?.({
           prompt: options.prompt,
           objectName: options.objectName,

@@ -127,9 +127,7 @@ describe("ModerationModel", () => {
 
   describe("fromLanguageModel", () => {
     it("moderates via structured output and reuses the validation path", async () => {
-      let captured:
-        | { readonly prompt: unknown; readonly objectName: unknown; readonly schema: unknown }
-        | undefined;
+      let captured: { readonly prompt: unknown; readonly objectName: unknown } | undefined;
       const response = await runTest(
         Effect.gen(function* () {
           const model = yield* fromLanguageModel;
@@ -152,7 +150,7 @@ describe("ModerationModel", () => {
     });
 
     it("asks the model for the wire name `flagged` and decodes it to `isFlagged`", async () => {
-      let schema: unknown;
+      const codecs: Array<Schema.Codec<unknown, unknown>> = [];
       await runTest(
         Effect.gen(function* () {
           const model = yield* fromLanguageModel;
@@ -160,14 +158,15 @@ describe("ModerationModel", () => {
         }).pipe(
           Effect.provide(
             stubLanguageModel({ results: [{ isFlagged: false, categories: {} }] }, (request) => {
-              schema = request.schema;
+              codecs.push(request.schema);
             }),
           ),
         ),
       );
 
-      // SAFETY: `fromLanguageModel` passes a `Schema.Struct` to `generateObject`.
-      const codec = schema as Schema.Codec<unknown, unknown>;
+      expect(codecs).toHaveLength(1);
+      const [codec] = codecs;
+      if (codec === undefined) return;
       const wire = { results: [{ flagged: true, categories: { hate: 0.5 } }] };
       expect(Schema.decodeUnknownSync(codec)(wire)).toEqual({
         results: [{ isFlagged: true, categories: { hate: 0.5 } }],

@@ -15,10 +15,16 @@ import { runTest, runTestExit } from "../helpers/effect.ts";
 
 const Person = Schema.Struct({ name: Schema.String, age: Schema.Finite });
 
+class TransformationBug extends Schema.TaggedError<TransformationBug>()("TransformationBug", {
+  message: Schema.String,
+}) {}
+
 /** A schema whose decode transformation dies: a bug, not a decode failure. */
 const Exploding = Schema.String.pipe(
   Schema.decodeTo(Schema.String, {
-    decode: SchemaGetter.transformEffect(() => Effect.die(new Error("boom: transformation bug"))),
+    decode: SchemaGetter.transformEffect(() =>
+      Effect.die(new TransformationBug({ message: "boom: transformation bug" })),
+    ),
     encode: SchemaGetter.passthrough(),
   }),
 );

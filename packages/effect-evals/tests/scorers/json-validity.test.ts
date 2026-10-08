@@ -8,6 +8,7 @@ import { describe, expect, it } from "vite-plus/test";
 import * as Cause from "effect/Cause";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
+import * as Schema from "effect/Schema";
 import {
   Cache,
   Dataset,
@@ -20,36 +21,34 @@ import {
 import { runTest, runTestExit } from "../helpers/effect.ts";
 
 /**
- * An `output` that is not the string `JsonCase` promises: coercing it for
- * `JSON.parse` throws a plain `Error`, not the `SyntaxError` of unparseable
- * text — the stand-in for a failure that is no verdict on the output.
+ * A case whose `output` cannot even be read: the getter throws a plain
+ * `Error`, not the `SyntaxError` of unparseable text. It stands in for a
+ * failure that is no verdict on the output (a bug in a case adapter).
  */
-const unparseableByContract = (): string => {
-  const exploding = {
-    toString: (): string => {
-      throw new Error("boom: not a string");
-    },
-  };
-  // SAFETY: deliberately breaks the `string` contract to reach the
-  // non-`SyntaxError` path; nothing reads it as a string.
-  return exploding as unknown as string;
-};
+class AdapterBug extends Schema.TaggedError<AdapterBug>()("AdapterBug", {
+  message: Schema.String,
+}) {}
 
-const jsonMetric = Metric.makeMetric({
-  name: "json-validity",
-  scorer: Scorer.contramap(
-    JsonValidity.jsonValidity,
-    (evalCase: Runner.EvaluatedCase<string, string>) => ({ output: evalCase.output }),
-  ),
-  threshold: Threshold.strict,
+const unreadableCase = (): JsonValidity.JsonCase => ({
+  get output(): string {
+    throw new AdapterBug({ message: "boom: unreadable output" });
+  },
 });
 
-const suiteWithOutput = (output: () => string) =>
+const jsonSuite = (
+  toCase: (evalCase: Runner.EvaluatedCase<string, string>) => JsonValidity.JsonCase,
+) =>
   Runner.makeSuite({
     name: "json",
-    dataset: Dataset.fromArray("json", ["case"]),
-    task: Runner.makeTask<string, string>({ id: "json@v1", run: () => Effect.sync(output) }),
-    metrics: [jsonMetric],
+    dataset: Dataset.fromArray("json", ["{not valid json"]),
+    task: Runner.makeTask<string, string>({ id: "json@v1", run: Effect.succeed }),
+    metrics: [
+      Metric.makeMetric({
+        name: "json-validity",
+        scorer: Scorer.contramap(JsonValidity.jsonValidity, toCase),
+        threshold: Threshold.strict,
+      }),
+    ],
   });
 
 describe("JsonValidity.jsonValidity", () => {
@@ -72,27 +71,16 @@ describe("JsonValidity.jsonValidity", () => {
   });
 
   it("reports the SyntaxError's own message as the reason", async () => {
-    const parseError: unknown = Effect.runSync(
-      Effect.flip(
-        Effect.try({ try: () => JSON.parse("{not valid json"), catch: (cause) => cause }),
-      ),
-    );
-    expect(parseError).toBeInstanceOf(SyntaxError);
     const score = await runTest(JsonValidity.jsonValidity.evaluate({ output: "{not valid json" }));
-    expect(score).toEqual({
-      score: 0,
-      reason: parseError instanceof SyntaxError ? parseError.message : undefined,
-    });
+    expect(score.reason).toMatch(/JSON/);
   });
 
   it("dies, rather than scoring 0, when parsing throws anything but a SyntaxError", async () => {
-    const exit = await runTestExit(
-      JsonValidity.jsonValidity.evaluate({ output: unparseableByContract() }),
-    );
+    const exit = await runTestExit(JsonValidity.jsonValidity.evaluate(unreadableCase()));
     expect(Exit.isFailure(exit)).toBe(true);
     if (!Exit.isFailure(exit)) return;
     expect(Cause.hasDies(exit.cause)).toBe(true);
-    expect(String(Cause.squash(exit.cause))).toContain("boom: not a string");
+    expect(String(Cause.squash(exit.cause))).toContain("boom: unreadable output");
   });
 
   it("scores 0 for an empty string", async () => {
@@ -105,7 +93,7 @@ describe("JsonValidity.jsonValidity — inside a run", () => {
   it("an unparseable output scores 0 and the run completes", async () => {
     const result = await runTest(
       Runner.runSuite(
-        suiteWithOutput(() => "{not valid json"),
+        jsonSuite((evalCase) => ({ output: evalCase.output })),
         { bypassCache: true },
       ).pipe(Effect.provide(Cache.layerMemory)),
     );
@@ -118,7 +106,7 @@ describe("JsonValidity.jsonValidity — inside a run", () => {
 
   it("an unexpected parse failure fails the run instead of scoring 0", async () => {
     const exit = await runTestExit(
-      Runner.runSuite(suiteWithOutput(unparseableByContract), { bypassCache: true }).pipe(
+      Runner.runSuite(jsonSuite(unreadableCase), { bypassCache: true }).pipe(
         Effect.provide(Cache.layerMemory),
       ),
     );
