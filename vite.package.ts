@@ -15,6 +15,40 @@
  */
 import { defineConfig } from "vite-plus";
 
+/** One Istanbul threshold per metric, in percent. */
+export interface CoverageThresholds {
+  readonly lines: number;
+  readonly branches: number;
+  readonly functions: number;
+  readonly statements: number;
+}
+
+/**
+ * The coverage every package ratchets toward: effect-web's thresholds, the
+ * family standard (#100). A package that omits a metric from its
+ * `coverageFloor` is held to the value here.
+ */
+export const coverageTarget: CoverageThresholds = {
+  lines: 90,
+  branches: 85,
+  functions: 90,
+  statements: 90,
+};
+
+/**
+ * A package's ratchet: the coverage it must not drop below, set from its own
+ * measured numbers rounded down to the integer (#100). Raise a metric whenever
+ * the package's coverage rises; delete it to fall back to `coverageTarget`.
+ * Never lower one to make a change pass: add the tests instead.
+ */
+export type CoverageFloor = Partial<CoverageThresholds>;
+
+/** A package's enforced thresholds: its floor, the target for any metric it omits. */
+export const resolveCoverageThresholds = (floor: CoverageFloor = {}): CoverageThresholds => ({
+  ...coverageTarget,
+  ...floor,
+});
+
 /** What differs per package. */
 export interface PackageConfigOptions {
   /**
@@ -25,6 +59,13 @@ export interface PackageConfigOptions {
   readonly entry: Readonly<Record<string, string>>;
   /** Extra coverage exclusions (beyond declaration files). */
   readonly coverageExclude?: ReadonlyArray<string> | undefined;
+  /**
+   * The package's coverage ratchet (see `CoverageFloor`). Declared as the
+   * `coverageFloor` named export of the package's `vite.config.ts`, which the
+   * root config also reads, so `vp run -r test:coverage` (per package) and
+   * `vp run test:coverage` (root) enforce the same numbers.
+   */
+  readonly coverageFloor?: CoverageFloor;
 }
 
 /**
@@ -40,7 +81,11 @@ const cacheInputs = [
   { pattern: "pnpm-lock.yaml", base: "workspace" as const },
 ];
 
-export const packageConfig = ({ entry, coverageExclude = [] }: PackageConfigOptions) => {
+export const packageConfig = ({
+  entry,
+  coverageExclude = [],
+  coverageFloor,
+}: PackageConfigOptions) => {
   const maxWorkers = process.env.VITEST_MAX_WORKERS;
   return defineConfig({
     run: {
@@ -117,6 +162,11 @@ export const packageConfig = ({ entry, coverageExclude = [] }: PackageConfigOpti
         reportsDirectory: "./coverage",
         include: ["src/**/*.ts"],
         exclude: ["**/*.d.ts", ...coverageExclude],
+        // A coverage drop below the package's floor fails the run (#100).
+        // Vitest reads `coverage` from the root config only, so this binds the
+        // per-package `test:coverage` task; the root task applies the same
+        // floors per package through glob thresholds (root `vite.config.ts`).
+        thresholds: { ...resolveCoverageThresholds(coverageFloor) },
       },
     },
   });

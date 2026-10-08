@@ -1,4 +1,13 @@
-import { packageConfig } from "../../vite.package.ts";
+import { type CoverageFloor, packageConfig } from "../../vite.package.ts";
+
+// Coverage ratchet (#100): the measured % at adoption (in the comments),
+// rounded down to the integer. Raise a metric as coverage rises; never lower one.
+export const coverageFloor: CoverageFloor = {
+  lines: 98, // 98.06
+  branches: 95, // 95.16
+  functions: 100, // 100
+  statements: 98, // 98.07
+};
 
 // One entry per module (mirrors how `effect` itself ships per-module
 // subpaths), matching the subpaths `publishConfig.exports` declares.
@@ -14,6 +23,7 @@ import { packageConfig } from "../../vite.package.ts";
 // barrel and the subpath share one module instance — the layout the tsup build
 // shipped before (#58).
 export default packageConfig({
+  coverageFloor,
   entry: {
     index: "src/index.ts",
     RerankerModel: "entries/RerankerModel.ts",
