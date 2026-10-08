@@ -12,10 +12,18 @@
  * @module tests/module-load
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 /** This package's own abstractions — each also published as a subpath. */
-const NAMESPACES = ["RerankerModel", "ClassifierModel", "SpeechModel", "TranscriptionModel", "ImageModel", "ModerationModel", "VoiceConversionModel"] as const;
+const NAMESPACES = [
+  "RerankerModel",
+  "ClassifierModel",
+  "SpeechModel",
+  "TranscriptionModel",
+  "ImageModel",
+  "ModerationModel",
+  "VoiceConversionModel",
+] as const;
 
 describe("module load", () => {
   it("imports the package entry and exposes every abstraction plus the effect/ai re-export", async () => {

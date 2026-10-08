@@ -10,7 +10,7 @@
  * @module tests/scorers/tool-call-correctness
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { ToolCallCorrectness } from "../../src/index.ts";
 import { runTest } from "../helpers/effect.ts";
 

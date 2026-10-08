@@ -201,9 +201,7 @@ const mapProviderResponse = (
  * @category constructors
  */
 export const make = (params: {
-  readonly moderate: (
-    options: ProviderOptions,
-  ) => Effect.Effect<ProviderResponse, AiError.AiError>;
+  readonly moderate: (options: ProviderOptions) => Effect.Effect<ProviderResponse, AiError.AiError>;
 }): Effect.Effect<Service> =>
   Effect.sync(() =>
     ModerationModel.of({
@@ -275,12 +273,10 @@ export const fromLanguageModel: Effect.Effect<Service, never, LanguageModel.Lang
             schema: StructuredModerationOutput,
           })
           .pipe(
-            Effect.map(
-              (response): ProviderResponse => ({
-                results: response.value.results,
-                usage: { inputTokens: undefined },
-              }),
-            ),
+            Effect.map((response): ProviderResponse => ({
+              results: response.value.results,
+              usage: { inputTokens: undefined },
+            })),
           ),
     });
   });

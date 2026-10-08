@@ -4,7 +4,7 @@
  * @module tests/scorers/levenshtein
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { Levenshtein } from "../../src/index.ts";
 import { runTest } from "../helpers/effect.ts";
 

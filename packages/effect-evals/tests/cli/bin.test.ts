@@ -11,7 +11,7 @@
  * copied into a scratch package whose `dist/cli/main.js` imports the CLI's
  * TypeScript source (type-stripped by Node, as it is outside `node_modules`).
  * The bin's own argv is what runs; only the entry it launches is swapped.
- * `pnpm run check:dist` covers the built entry from an installed path.
+ * `vp run check:dist` covers the built entry from an installed path.
  *
  * @module tests/cli/bin
  */
@@ -21,7 +21,7 @@ import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 
 const source = (relative: string): string => fileURLToPath(new URL(relative, import.meta.url));
 

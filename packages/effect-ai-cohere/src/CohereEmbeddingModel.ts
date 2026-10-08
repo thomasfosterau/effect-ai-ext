@@ -65,7 +65,9 @@ export interface Options {
  *
  * @see {@link layer} for providing the service as a `Layer`
  */
-export const make = (options: Options): Effect.Effect<EmbeddingModel.EmbeddingModel, never, CohereClient> =>
+export const make = (
+  options: Options,
+): Effect.Effect<EmbeddingModel.EmbeddingModel, never, CohereClient> =>
   Effect.gen(function* () {
     const client = yield* CohereClient;
     const model = options.model ?? EMBEDDING_MODEL;

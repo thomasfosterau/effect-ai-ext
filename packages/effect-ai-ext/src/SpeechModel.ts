@@ -163,9 +163,7 @@ const toProviderOptions = (options: SpeechOptions): ProviderOptions => ({
  * @category constructors
  */
 export const make = (params: {
-  readonly generate: (
-    options: ProviderOptions,
-  ) => Effect.Effect<ProviderResponse, AiError.AiError>;
+  readonly generate: (options: ProviderOptions) => Effect.Effect<ProviderResponse, AiError.AiError>;
   readonly stream: (options: ProviderOptions) => Stream.Stream<Uint8Array, AiError.AiError>;
 }): Effect.Effect<Service> =>
   Effect.sync(() =>
@@ -173,10 +171,7 @@ export const make = (params: {
       generate: (options) =>
         params
           .generate(toProviderOptions(options))
-          .pipe(
-            Effect.flatMap(mapProviderResponse),
-            Effect.withSpan("SpeechModel.generate"),
-          ),
+          .pipe(Effect.flatMap(mapProviderResponse), Effect.withSpan("SpeechModel.generate")),
       stream: (options) =>
         params.stream(toProviderOptions(options)).pipe(Stream.withSpan("SpeechModel.stream")),
     }),

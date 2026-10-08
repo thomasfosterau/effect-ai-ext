@@ -3,38 +3,37 @@
   "version": "0.3.2",
   "description": "Effect AI provider for Cohere — LanguageModel (Command chat), EmbeddingModel, RerankerModel, and ClassifierModel over Cohere's v2 API.",
   "keywords": [
-    "effect",
     "ai",
+    "classifier",
     "cohere",
-    "llm",
-    "language-model",
+    "effect",
     "embedding",
-    "reranker",
-    "classifier"
+    "language-model",
+    "llm",
+    "reranker"
   ],
+  "homepage": "https://github.com/thomasfosterau/effect-ai-ext/tree/trunk/packages/effect-ai-cohere#readme",
+  "bugs": {
+    "url": "https://github.com/thomasfosterau/effect-ai-ext/issues"
+  },
   "license": "MIT",
   "author": "Thomas Foster <me@thomasfoster.au>",
-  "homepage": "https://github.com/thomasfosterau/effect-ai-ext/tree/trunk/packages/effect-ai-cohere#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/thomasfosterau/effect-ai-ext.git",
     "directory": "packages/effect-ai-cohere"
-  },
-  "bugs": {
-    "url": "https://github.com/thomasfosterau/effect-ai-ext/issues"
-  },
-  "type": "module",
-  "sideEffects": false,
-  "exports": {
-    ".": "./src/index.ts"
   },
   "files": [
     "dist",
     "src",
     "README.md"
   ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "publishConfig": {
-    "access": "public",
     "main": "./dist/index.js",
     "module": "./dist/index.js",
     "types": "./dist/index.d.ts",
@@ -43,26 +42,19 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js"
       }
-    }
-  },
-  "scripts": {
-    "build": "tsup",
-    "check": "tsc -p tsconfig.json",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
-  },
-  "peerDependencies": {
-    "effect": "catalog:peers"
+    },
+    "access": "public"
   },
   "dependencies": {
     "@thomasfosterau/effect-ai-ext": "workspace:*"
   },
   "devDependencies": {
     "@effect/language-service": "catalog:",
-    "@vitest/coverage-v8": "catalog:",
+    "@vitest/coverage-istanbul": "catalog:",
     "effect": "catalog:",
-    "tsup": "catalog:",
-    "typescript": "catalog:",
-    "vitest": "catalog:"
+    "typescript": "catalog:"
+  },
+  "peerDependencies": {
+    "effect": "catalog:peers"
   }
 }

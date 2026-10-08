@@ -12,7 +12,7 @@
  * @module tests/voyage
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -65,7 +65,10 @@ const jsonResponse = (body: unknown, status = 200): Response =>
     headers: { "content-type": "application/json" },
   });
 
-const embeddingBody = (vectors: ReadonlyArray<ReadonlyArray<number>>, over?: Record<string, unknown>) => ({
+const embeddingBody = (
+  vectors: ReadonlyArray<ReadonlyArray<number>>,
+  over?: Record<string, unknown>,
+) => ({
   object: "list",
   data: vectors.map((embedding, index) => ({ object: "embedding", embedding, index })),
   model: "voyage-3-large",
@@ -100,7 +103,10 @@ const embeddingLayer = (
 
 const rerankerLayer = (
   fetch: typeof globalThis.fetch,
-  options?: { readonly apiKey?: Redacted.Redacted<string>; readonly model?: VoyageRerankerModel.Options },
+  options?: {
+    readonly apiKey?: Redacted.Redacted<string>;
+    readonly model?: VoyageRerankerModel.Options;
+  },
 ) =>
   VoyageRerankerModel.layer(options?.model ?? { model: "rerank-2.5" }).pipe(
     Layer.provide(VoyageClient.layer({ apiKey: options?.apiKey ?? Redacted.make("test-key") })),
@@ -120,9 +126,18 @@ const rerank = (options: RerankerModel.RerankOptions) =>
 
 describe("VoyageEmbeddingModel", () => {
   it("posts to the embeddings endpoint with a bearer token and decodes vectors", async () => {
-    const { calls, fetch } = makeFetch(() => jsonResponse(embeddingBody([[0.1, 0.2], [0.3, 0.4]])));
+    const { calls, fetch } = makeFetch(() =>
+      jsonResponse(
+        embeddingBody([
+          [0.1, 0.2],
+          [0.3, 0.4],
+        ]),
+      ),
+    );
 
-    const response = await runTest(embedMany(["a", "b"]).pipe(Effect.provide(embeddingLayer(fetch))));
+    const response = await runTest(
+      embedMany(["a", "b"]).pipe(Effect.provide(embeddingLayer(fetch))),
+    );
 
     expect(calls).toHaveLength(1);
     expect(calls[0]?.url).toBe("https://api.voyageai.com/v1/embeddings");
@@ -175,7 +190,9 @@ describe("VoyageEmbeddingModel", () => {
       }),
     );
 
-    const response = await runTest(embedMany(["a", "b"]).pipe(Effect.provide(embeddingLayer(fetch))));
+    const response = await runTest(
+      embedMany(["a", "b"]).pipe(Effect.provide(embeddingLayer(fetch))),
+    );
 
     expect(response.embeddings.map((e) => e.vector)).toEqual([[0.1], [0.2]]);
   });
@@ -261,7 +278,9 @@ describe("VoyageClient apiUrl override", () => {
   });
 
   it("loads apiUrl and apiKey through a Config-driven client layer", async () => {
-    const { calls, fetch } = makeFetch(() => jsonResponse(rerankBody([{ index: 0, relevance_score: 0.9 }])));
+    const { calls, fetch } = makeFetch(() =>
+      jsonResponse(rerankBody([{ index: 0, relevance_score: 0.9 }])),
+    );
 
     const clientLayer = VoyageClient.layerConfig({
       apiKey: Config.succeed(Redacted.make("cfg-key")),
@@ -314,7 +333,9 @@ describe("VoyageRerankerModel", () => {
   });
 
   it("omits top_k when topN is unset", async () => {
-    const { calls, fetch } = makeFetch(() => jsonResponse(rerankBody([{ index: 0, relevance_score: 0.5 }])));
+    const { calls, fetch } = makeFetch(() =>
+      jsonResponse(rerankBody([{ index: 0, relevance_score: 0.5 }])),
+    );
 
     await runTest(
       rerank({ query: "q", documents: ["a"] }).pipe(Effect.provide(rerankerLayer(fetch))),
@@ -335,7 +356,9 @@ describe("VoyageRerankerModel", () => {
   });
 
   it("fails with an AiError when the provider returns an out-of-range index", async () => {
-    const { fetch } = makeFetch(() => jsonResponse(rerankBody([{ index: 5, relevance_score: 0.5 }])));
+    const { fetch } = makeFetch(() =>
+      jsonResponse(rerankBody([{ index: 5, relevance_score: 0.5 }])),
+    );
 
     await expectFailureInstanceOf(
       rerank({ query: "q", documents: ["a", "b"] }).pipe(Effect.provide(rerankerLayer(fetch))),
@@ -395,7 +418,12 @@ describe("VoyageClient", () => {
 
 describe("VoyageEmbeddingModel.EMBEDDING_MODELS", () => {
   it("documents Matryoshka models with four selectable dimensions and a 1024 default", async () => {
-    for (const id of ["voyage-3-large", "voyage-3.5", "voyage-3.5-lite", "voyage-code-3"] as const) {
+    for (const id of [
+      "voyage-3-large",
+      "voyage-3.5",
+      "voyage-3.5-lite",
+      "voyage-code-3",
+    ] as const) {
       const info = VoyageEmbeddingModel.EMBEDDING_MODELS[id];
       expect(info.defaultDimension).toBe(1024);
       expect(info.dimensions).toEqual([256, 512, 1024, 2048]);

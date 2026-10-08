@@ -1,7 +1,7 @@
 {
   "name": "@thomasfosterau/effect-evals",
   "version": "0.4.0",
-  "description": "An Effect-native LLM evaluation toolkit \u2014 goldens, scorers, thresholds, metrics (G-Eval, RAG, retrieval ranking: nDCG / recall / MRR / precision@k), a caching runner, and a CLI for *.eval.ts suites.",
+  "description": "An Effect-native LLM evaluation toolkit — goldens, scorers, thresholds, metrics (G-Eval, RAG, retrieval ranking: nDCG / recall / MRR / precision@k), a caching runner, and a CLI for *.eval.ts suites.",
   "keywords": [
     "ai",
     "effect",
@@ -40,9 +40,6 @@
     "README.md"
   ],
   "type": "module",
-  "engines": {
-    "node": ">=22.18"
-  },
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts"
@@ -59,20 +56,12 @@
     },
     "access": "public"
   },
-  "scripts": {
-    "build": "tsup",
-    "check": "tsc -p tsconfig.json",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
-  },
   "devDependencies": {
     "@effect/language-service": "catalog:",
     "@effect/platform-node": "catalog:",
-    "@vitest/coverage-v8": "catalog:",
+    "@vitest/coverage-istanbul": "catalog:",
     "effect": "catalog:",
-    "tsup": "catalog:",
-    "typescript": "catalog:",
-    "vitest": "catalog:"
+    "typescript": "catalog:"
   },
   "peerDependencies": {
     "@effect/platform-node": "catalog:peers",
@@ -82,5 +71,8 @@
     "@effect/platform-node": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=22.18"
   }
 }

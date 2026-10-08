@@ -3,40 +3,39 @@
   "version": "0.4.1",
   "description": "Route Effect AI providers (Anthropic, Cohere, OpenAI moderation) through a Cloudflare AI Gateway Worker binding or its public HTTPS endpoint, BYOK.",
   "keywords": [
-    "effect",
     "ai",
-    "cloudflare",
     "ai-gateway",
-    "byok",
     "anthropic",
+    "byok",
+    "cloudflare",
     "cohere",
-    "openai",
+    "effect",
     "moderation",
+    "openai",
     "reranker"
   ],
+  "homepage": "https://github.com/thomasfosterau/effect-ai-ext/tree/trunk/packages/effect-ai-gateway#readme",
+  "bugs": {
+    "url": "https://github.com/thomasfosterau/effect-ai-ext/issues"
+  },
   "license": "MIT",
   "author": "Thomas Foster <me@thomasfoster.au>",
-  "homepage": "https://github.com/thomasfosterau/effect-ai-ext/tree/trunk/packages/effect-ai-gateway#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/thomasfosterau/effect-ai-ext.git",
     "directory": "packages/effect-ai-gateway"
-  },
-  "bugs": {
-    "url": "https://github.com/thomasfosterau/effect-ai-ext/issues"
-  },
-  "type": "module",
-  "sideEffects": false,
-  "exports": {
-    ".": "./src/index.ts"
   },
   "files": [
     "dist",
     "src",
     "README.md"
   ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "publishConfig": {
-    "access": "public",
     "main": "./dist/index.js",
     "module": "./dist/index.js",
     "types": "./dist/index.d.ts",
@@ -45,13 +44,19 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js"
       }
-    }
+    },
+    "access": "public"
   },
-  "scripts": {
-    "build": "tsup",
-    "check": "tsc -p tsconfig.json",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
+  "dependencies": {
+    "@thomasfosterau/effect-ai-ext": "workspace:*"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "catalog:",
+    "@effect/ai-anthropic": "catalog:",
+    "@effect/language-service": "catalog:",
+    "@vitest/coverage-istanbul": "catalog:",
+    "effect": "catalog:",
+    "typescript": "catalog:"
   },
   "peerDependencies": {
     "@cloudflare/workers-types": "catalog:peers",
@@ -62,18 +67,5 @@
     "@cloudflare/workers-types": {
       "optional": true
     }
-  },
-  "dependencies": {
-    "@thomasfosterau/effect-ai-ext": "workspace:*"
-  },
-  "devDependencies": {
-    "@cloudflare/workers-types": "catalog:",
-    "@effect/ai-anthropic": "catalog:",
-    "@effect/language-service": "catalog:",
-    "@vitest/coverage-v8": "catalog:",
-    "effect": "catalog:",
-    "tsup": "catalog:",
-    "typescript": "catalog:",
-    "vitest": "catalog:"
   }
 }

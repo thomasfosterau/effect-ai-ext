@@ -15,7 +15,12 @@
 #   never proposes it: bump it by hand to the same rc in the same PR.
 #   `@effect/tsgo` is excluded: it belongs to the TypeScript set below, not
 #   the Effect line.
-# - `vitest-toolchain`: `vitest` + `@vitest/*`.
+# - `vitest-toolchain`: `vitest`, `@vitest/coverage-istanbul` and
+#   `vite-plus`. vite-plus pins vitest, oxlint and oxfmt exactly, so version
+#   updates to any of the four (`vite`, `vitest`, `@vitest/coverage-istanbul`,
+#   `vite-plus`) are ignored below (they move together by hand, with the
+#   @effect/tsgo pin — see pnpm-workspace.yaml) while SECURITY updates stay
+#   enabled. Copied from the effect-web library (#58).
 #
 # `ignore` keeps Dependabot from proposing the TypeScript toolchain set:
 # `@effect/tsgo` + `@typescript/native` + `typescript` (the 6/7 side-by-side
@@ -23,12 +28,13 @@
 # ships artifacts for an explicit set of TypeScript versions only, so any
 # pairing it has no artifact for fails `pnpm install`
 # (UnsupportedTargetPackageVersionError). Grouping the three did not make a
-# bump safe, so they move BY HAND, as one set (together with `vite-plus`
-# wherever a workspace uses it; this one does not), after reading the
-# `components` table in node_modules/@effect/tsgo/dist/effect-tsgo.cjs. The
-# ignore covers the `version-update:semver-*` update types only: SECURITY
-# updates for the three stay enabled (a bare `dependency-name` ignore would
-# block them too).
+# bump safe, so they move BY HAND, as one set together with `vite-plus`
+# (whose `oxlint` `effect-tsgo patch --oxlint` must also support), after
+# reading the `components` table in
+# node_modules/@effect/tsgo/dist/effect-tsgo.cjs. The ignore covers the
+# `version-update:semver-*` update types only: SECURITY updates for every
+# ignored package stay enabled (a bare `dependency-name` ignore would block
+# them too).
 #
 # `cooldown` mirrors pnpm-workspace.yaml's `minimumReleaseAge` so Dependabot
 # never proposes a version pnpm's own supply-chain gate would then reject at
@@ -62,7 +68,8 @@ updates:
       vitest-toolchain:
         patterns:
           - "vitest"
-          - "@vitest/*"
+          - "@vitest/coverage-istanbul"
+          - "vite-plus"
     ignore:
       - dependency-name: "@effect/tsgo"
         update-types:
@@ -75,6 +82,26 @@ updates:
           - "version-update:semver-minor"
           - "version-update:semver-patch"
       - dependency-name: "@typescript/native"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+      - dependency-name: "vite"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+      - dependency-name: "vitest"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+      - dependency-name: "vite-plus"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+      - dependency-name: "@vitest/coverage-istanbul"
         update-types:
           - "version-update:semver-major"
           - "version-update:semver-minor"

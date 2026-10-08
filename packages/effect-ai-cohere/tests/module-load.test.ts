@@ -12,9 +12,15 @@
  * @module tests/module-load
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
-const NAMESPACES = ["CohereClient", "CohereLanguageModel", "CohereEmbeddingModel", "CohereRerankerModel", "CohereClassifierModel"] as const;
+const NAMESPACES = [
+  "CohereClient",
+  "CohereLanguageModel",
+  "CohereEmbeddingModel",
+  "CohereRerankerModel",
+  "CohereClassifierModel",
+] as const;
 
 describe("module load", () => {
   it("imports the package entry and exposes every namespace", async () => {

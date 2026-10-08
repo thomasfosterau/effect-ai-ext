@@ -250,9 +250,7 @@ const mapProviderResponse = (
  * @category constructors
  */
 export const make = (params: {
-  readonly classify: (
-    options: ProviderOptions,
-  ) => Effect.Effect<ProviderResponse, AiError.AiError>;
+  readonly classify: (options: ProviderOptions) => Effect.Effect<ProviderResponse, AiError.AiError>;
 }): Effect.Effect<Service> =>
   Effect.sync(() =>
     ClassifierModel.of({
@@ -350,12 +348,10 @@ export const fromLanguageModel: Effect.Effect<Service, never, LanguageModel.Lang
             schema: StructuredClassifyResult,
           })
           .pipe(
-            Effect.map(
-              (response): ProviderResponse => ({
-                classifications: response.value.classifications,
-                usage: { inputTokens: undefined },
-              }),
-            ),
+            Effect.map((response): ProviderResponse => ({
+              classifications: response.value.classifications,
+              usage: { inputTokens: undefined },
+            })),
           ),
     });
   });

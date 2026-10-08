@@ -260,10 +260,8 @@ export const makeCohereReranker = (binding: GatewayBinding): Effect.Effect<Reran
  * so it is a plain (lazy) Effect value rather than a zero-argument
  * constructor: `const reranker = yield* makeCohereRerankerFromUrl`.
  */
-export const makeCohereRerankerFromUrl: Effect.Effect<
-  RerankerModel.Service,
-  Config.ConfigError
-> = Effect.gen(function* () {
+export const makeCohereRerankerFromUrl: Effect.Effect<RerankerModel.Service, Config.ConfigError> =
+  Effect.gen(function* () {
     const gatewayConfig = yield* Url.gatewayUrlConfig;
     const httpClient = yield* HttpClient.HttpClient;
     const baseUrl = Url.gatewayBaseUrl(gatewayConfig, COHERE_PROVIDER);

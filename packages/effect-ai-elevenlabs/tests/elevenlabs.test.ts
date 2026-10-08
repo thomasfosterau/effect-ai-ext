@@ -19,8 +19,12 @@
  * @module tests/elevenlabs
  */
 
-import { describe, expect, it } from "vitest";
-import { SpeechModel, TranscriptionModel, VoiceConversionModel } from "@thomasfosterau/effect-ai-ext";
+import { describe, expect, it } from "vite-plus/test";
+import {
+  SpeechModel,
+  TranscriptionModel,
+  VoiceConversionModel,
+} from "@thomasfosterau/effect-ai-ext";
 import * as Config from "effect/Config";
 import * as Deferred from "effect/Deferred";
 import * as Effect from "effect/Effect";
@@ -196,9 +200,9 @@ describe("ElevenLabsSpeechModel.generate", () => {
     const { fetch } = makeFetch(() => jsonResponse({ detail: "rate limited" }, 429));
 
     await expectFailureInstanceOf(
-      Effect.flatMap(SpeechModel.SpeechModel, (model) => model.generate({ text: "hi", voice: "v" })).pipe(
-        Effect.provide(speechLayer(fetch)),
-      ),
+      Effect.flatMap(SpeechModel.SpeechModel, (model) =>
+        model.generate({ text: "hi", voice: "v" }),
+      ).pipe(Effect.provide(speechLayer(fetch))),
       AiError.AiError,
     );
   });
@@ -207,9 +211,9 @@ describe("ElevenLabsSpeechModel.generate", () => {
     const { fetch } = makeFetch(() => audioResponse(new Uint8Array(0)));
 
     await expectFailureInstanceOf(
-      Effect.flatMap(SpeechModel.SpeechModel, (model) => model.generate({ text: "hi", voice: "v" })).pipe(
-        Effect.provide(speechLayer(fetch)),
-      ),
+      Effect.flatMap(SpeechModel.SpeechModel, (model) =>
+        model.generate({ text: "hi", voice: "v" }),
+      ).pipe(Effect.provide(speechLayer(fetch))),
       AiError.AiError,
     );
   });
@@ -220,9 +224,9 @@ describe("ElevenLabsSpeechModel.generate", () => {
     const keylessClient = ElevenLabsClient.layer({}).pipe(Layer.provide(httpLayer(fetch)));
 
     await runTest(
-      Effect.flatMap(SpeechModel.SpeechModel, (model) => model.generate({ text: "hi", voice: "v" })).pipe(
-        Effect.provide(ElevenLabsSpeechModel.layer().pipe(Layer.provide(keylessClient))),
-      ),
+      Effect.flatMap(SpeechModel.SpeechModel, (model) =>
+        model.generate({ text: "hi", voice: "v" }),
+      ).pipe(Effect.provide(ElevenLabsSpeechModel.layer().pipe(Layer.provide(keylessClient)))),
     );
 
     expect(calls[0]?.apiKey).toBeNull();
@@ -260,8 +264,8 @@ describe("ElevenLabsSpeechModel.stream", () => {
   it("posts to the /stream endpoint and yields the audio as multiple chunks", async () => {
     const chunks = [bytes(1, 1), bytes(2, 2), bytes(3, 3)];
     const { body } = makeChunkedStream(chunks);
-    const { calls, fetch } = makeFetch(() =>
-      new Response(body, { status: 200, headers: { "content-type": "audio/mpeg" } }),
+    const { calls, fetch } = makeFetch(
+      () => new Response(body, { status: 200, headers: { "content-type": "audio/mpeg" } }),
     );
 
     const received = await runTest(
@@ -280,8 +284,8 @@ describe("ElevenLabsSpeechModel.stream", () => {
   it("respects backpressure — a partial consumer does not drain the whole body", async () => {
     const chunks = Array.from({ length: 8 }, (_, i) => bytes(i));
     const { body, state } = makeChunkedStream(chunks);
-    const { fetch } = makeFetch(() =>
-      new Response(body, { status: 200, headers: { "content-type": "audio/mpeg" } }),
+    const { fetch } = makeFetch(
+      () => new Response(body, { status: 200, headers: { "content-type": "audio/mpeg" } }),
     );
 
     const received = await runTest(
@@ -314,8 +318,8 @@ describe("ElevenLabsSpeechModel.stream", () => {
         state.cancelled = true;
       },
     });
-    const { calls, fetch } = makeFetch(() =>
-      new Response(body, { status: 200, headers: { "content-type": "audio/mpeg" } }),
+    const { calls, fetch } = makeFetch(
+      () => new Response(body, { status: 200, headers: { "content-type": "audio/mpeg" } }),
     );
 
     const signal = await runTest(
@@ -395,7 +399,9 @@ describe("ElevenLabsTranscriptionModel.transcribe", () => {
     const form = await calls[0]!.request.formData();
     const file = form.get("file") as File;
     expect(file).toBeInstanceOf(Blob);
-    expect(await file.arrayBuffer().then((b) => Array.from(new Uint8Array(b)))).toEqual([1, 2, 3, 4]);
+    expect(await file.arrayBuffer().then((b) => Array.from(new Uint8Array(b)))).toEqual([
+      1, 2, 3, 4,
+    ]);
     // The per-call language overrides the model default.
     expect(form.get("language_code")).toBe("fr");
   });
@@ -444,9 +450,7 @@ describe("ElevenLabsVoiceConversionModel.convert", () => {
     await runTest(
       Effect.flatMap(VoiceConversionModel.VoiceConversionModel, (model) =>
         model.convert({ audio: bytes(1), targetVoice: "v", format: "mp3_44100_128" }),
-      ).pipe(
-        Effect.provide(voiceConversionLayer(fetch, { voiceSettings: { stability: 0.3 } })),
-      ),
+      ).pipe(Effect.provide(voiceConversionLayer(fetch, { voiceSettings: { stability: 0.3 } }))),
     );
 
     expect(calls[0]?.outputFormat).toBe("mp3_44100_128");
@@ -467,9 +471,9 @@ describe("ElevenLabsClient", () => {
     }).pipe(Layer.provide(httpLayer(fetch)));
 
     await runTest(
-      Effect.flatMap(SpeechModel.SpeechModel, (model) => model.generate({ text: "hi", voice: "v" })).pipe(
-        Effect.provide(ElevenLabsSpeechModel.layer().pipe(Layer.provide(client))),
-      ),
+      Effect.flatMap(SpeechModel.SpeechModel, (model) =>
+        model.generate({ text: "hi", voice: "v" }),
+      ).pipe(Effect.provide(ElevenLabsSpeechModel.layer().pipe(Layer.provide(client)))),
     );
 
     expect(calls[0]?.url).toBe("https://gateway.example/eleven/v1/text-to-speech/v");
@@ -486,9 +490,9 @@ describe("ElevenLabsClient", () => {
     }).pipe(Layer.provide(httpLayer(fetch)));
 
     await runTest(
-      Effect.flatMap(SpeechModel.SpeechModel, (model) => model.generate({ text: "hi", voice: "v" })).pipe(
-        Effect.provide(ElevenLabsSpeechModel.layer().pipe(Layer.provide(client))),
-      ),
+      Effect.flatMap(SpeechModel.SpeechModel, (model) =>
+        model.generate({ text: "hi", voice: "v" }),
+      ).pipe(Effect.provide(ElevenLabsSpeechModel.layer().pipe(Layer.provide(client)))),
     );
 
     expect(calls[0]?.request.headers.get("x-test")).toBe("1");
@@ -500,9 +504,9 @@ describe("ElevenLabsClient", () => {
     };
 
     await expectFailureInstanceOf(
-      Effect.flatMap(SpeechModel.SpeechModel, (model) => model.generate({ text: "hi", voice: "v" })).pipe(
-        Effect.provide(speechLayer(fetch)),
-      ),
+      Effect.flatMap(SpeechModel.SpeechModel, (model) =>
+        model.generate({ text: "hi", voice: "v" }),
+      ).pipe(Effect.provide(speechLayer(fetch))),
       AiError.AiError,
     );
   });

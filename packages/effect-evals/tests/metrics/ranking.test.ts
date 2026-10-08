@@ -11,7 +11,7 @@
  * @module tests/metrics/ranking
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { Metric, Ranking, Threshold } from "../../src/index.ts";
 import { runTest } from "../helpers/effect.ts";
 
@@ -165,7 +165,10 @@ describe("Ranking scorers", () => {
     const lenient = Ranking.metricAtK("recall", 5);
     expect(lenient.name).toBe("recall@5");
     const miss = await runTest(Metric.evaluate(lenient, rankingCase(["x"])));
-    expect(miss).toEqual({ score: { score: 0, reason: "0 of 2 relevant reached the top 5" }, passed: true });
+    expect(miss).toEqual({
+      score: { score: 0, reason: "0 of 2 relevant reached the top 5" },
+      passed: true,
+    });
 
     const strict = Ranking.metricAtK("recall", 5, Threshold.minScore(0.75));
     const half = await runTest(Metric.evaluate(strict, rankingCase(["a", "x"])));

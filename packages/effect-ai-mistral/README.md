@@ -1,16 +1,9 @@
 # @thomasfosterau/effect-ai-mistral
 
-An [Effect](https://effect.website) AI provider for **Mistral**. Effect ships
-no `@effect/ai-mistral` package, so this implements the `LanguageModel`
-service directly against Mistral's OpenAI-compatible
-`/v1/chat/completions` API.
+An [Effect](https://effect.website) AI provider for **Mistral**. Effect ships no `@effect/ai-mistral` package, so this implements the `LanguageModel` service directly against Mistral's OpenAI-compatible `/v1/chat/completions` API.
 
-- **`MistralClient`** — the low-level HTTP client (regular + streaming), every
-  failure mapped to `AiError`. Its `apiUrl` override targets a proxy or any
-  OpenAI-compatible endpoint.
-- **`MistralLanguageModel`** — the `LanguageModel` implementation: prompt /
-  tool / structured-output conversion and response decoding, exposed through
-  `layer`, `model`, and `make`.
+- **`MistralClient`** — the low-level HTTP client (regular + streaming), every failure mapped to `AiError`. Its `apiUrl` override targets a proxy or any OpenAI-compatible endpoint.
+- **`MistralLanguageModel`** — the `LanguageModel` implementation: prompt / tool / structured-output conversion and response decoding, exposed through `layer`, `model`, and `make`.
 
 ## Install
 
@@ -39,9 +32,7 @@ const program = LanguageModel.generateText({ prompt: "Explain Effect in one line
 );
 ```
 
-Structured output uses Mistral's native `json_schema` response format;
-tool-call parameters are returned as parsed JSON and validated against the
-toolkit. Streaming is available via `LanguageModel.streamText`.
+Structured output uses Mistral's native `json_schema` response format; tool-call parameters are returned as parsed JSON and validated against the toolkit. Streaming is available via `LanguageModel.streamText`.
 
 ## License
 

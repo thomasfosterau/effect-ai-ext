@@ -5,7 +5,7 @@
  * @module tests/unit/moderation-model
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import * as Effect from "effect/Effect";
 import { AiError } from "effect/ai";
 import {

@@ -4,7 +4,7 @@
  * @module tests/scorers/json-validity
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { JsonValidity } from "../../src/index.ts";
 import { runTest } from "../helpers/effect.ts";
 

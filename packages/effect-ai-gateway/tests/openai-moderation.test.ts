@@ -12,7 +12,7 @@
  * @module tests/unit/openai-moderation
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import * as Effect from "effect/Effect";
 import * as Redacted from "effect/Redacted";
 import { AiError } from "effect/ai";
@@ -124,7 +124,9 @@ describe("makeOpenAiModerationModel", () => {
   it("drops null (unassessed) category scores rather than grading them as zero", async () => {
     const { ai } = stubAi({
       status: 200,
-      body: omniBody([omniResult(false, { hate: null, sexual: false }, { hate: null, sexual: 0.2 })]),
+      body: omniBody([
+        omniResult(false, { hate: null, sexual: false }, { hate: null, sexual: 0.2 }),
+      ]),
     });
 
     const response = await runTest(moderate(ai, ["..."]));

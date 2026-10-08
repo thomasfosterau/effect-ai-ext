@@ -1,19 +1,10 @@
 # @thomasfosterau/effect-ai-voyage
 
-A first-party [Effect](https://effect.website) AI provider for **Voyage AI**
-(embeddings + rerankers). Effect ships no `@effect/ai-voyage` package, so this
-speaks Voyage's own API directly and implements the relevant service
-abstractions.
+A first-party [Effect](https://effect.website) AI provider for **Voyage AI** (embeddings + rerankers). Effect ships no `@effect/ai-voyage` package, so this speaks Voyage's own API directly and implements the relevant service abstractions.
 
-- **`VoyageClient`** — the low-level HTTP client for `/v1/embeddings` and
-  `/v1/rerank`, every failure mapped to `AiError`. Its `apiUrl` override
-  targets a proxy or a routing layer (the Cloudflare AI Gateway repoints it
-  for BYOK).
-- **`VoyageEmbeddingModel`** — an `effect/ai` `EmbeddingModel` over
-  `/v1/embeddings`, with `model` + `inputType` + `outputDimension` options and
-  the current model/dimension matrix exposed as `EMBEDDING_MODELS`.
-- **`VoyageRerankerModel`** — a `@thomasfosterau/effect-ai-ext` `RerankerModel`
-  over `/v1/rerank`.
+- **`VoyageClient`** — the low-level HTTP client for `/v1/embeddings` and `/v1/rerank`, every failure mapped to `AiError`. Its `apiUrl` override targets a proxy or a routing layer (the Cloudflare AI Gateway repoints it for BYOK).
+- **`VoyageEmbeddingModel`** — an `effect/ai` `EmbeddingModel` over `/v1/embeddings`, with `model` + `inputType` + `outputDimension` options and the current model/dimension matrix exposed as `EMBEDDING_MODELS`.
+- **`VoyageRerankerModel`** — a `@thomasfosterau/effect-ai-ext` `RerankerModel` over `/v1/rerank`.
 
 ## Install
 
@@ -73,11 +64,7 @@ const program = Effect.flatMap(RerankerModel.RerankerModel, (reranker) =>
 
 ## Model / dimension matrix
 
-`VoyageEmbeddingModel.EMBEDDING_MODELS` documents the current Voyage embedding
-model ids with their default and selectable dimensions. The Matryoshka models
-(`voyage-3-large`, `voyage-3.5`, `voyage-3.5-lite`, `voyage-code-3`) accept
-`outputDimension` ∈ {256, 512, 1024, 2048} (default 1024); the domain- and
-generation-specific models return a single fixed dimension.
+`VoyageEmbeddingModel.EMBEDDING_MODELS` documents the current Voyage embedding model ids with their default and selectable dimensions. The Matryoshka models (`voyage-3-large`, `voyage-3.5`, `voyage-3.5-lite`, `voyage-code-3`) accept `outputDimension` ∈ {256, 512, 1024, 2048} (default 1024); the domain- and generation-specific models return a single fixed dimension.
 
 ## License
 

@@ -1,0 +1,72 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "entry": [
+    "packages/*/src/index.ts",
+    "packages/effect-ai-ext/entries/*.ts",
+    "packages/effect-ai-ext/src/*Model.ts",
+    "packages/effect-evals/src/cli/main.ts",
+    "packages/effect-evals/src/cli/loader.mjs",
+    "packages/effect-evals/bin/effect-evals.js",
+    "packages/*/tests/**/*.test.ts",
+    "packages/effect-evals/tests/fixtures/**",
+    "**/vite.config.ts",
+    "vite.package.ts",
+    "scripts/check-dist.mjs"
+  ],
+  "ignorePatterns": ["**/dist/**", "**/coverage/**"],
+  "ignoreDependencies": [
+    "@types/node",
+    "@effect/tsgo",
+    "@effect/language-service",
+    "@typescript/native",
+    "typescript",
+    "vite",
+    "vitest",
+    "vite-plus",
+    "@changesets/cli",
+    "@vitest/coverage-istanbul",
+    "@mpsuesser/oxlint-plugin-effect",
+    "fallow"
+  ],
+  "rules": {
+    "unused-files": "error",
+    "unused-exports": "error",
+    "unused-types": "error",
+    "unused-dependencies": "error",
+    "unused-dev-dependencies": "warn",
+    "unused-enum-members": "error",
+    "unused-class-members": "warn",
+    "unresolved-imports": "error",
+    "unlisted-dependencies": "error",
+    "duplicate-exports": "error",
+    "circular-dependencies": "error",
+    "boundary-violation": "error",
+    "stale-suppressions": "warn"
+  },
+  "boundaries": {
+    "zones": [
+      { "name": "ext", "patterns": ["packages/effect-ai-ext/**"] },
+      { "name": "gateway", "patterns": ["packages/effect-ai-gateway/**"] },
+      { "name": "mistral", "patterns": ["packages/effect-ai-mistral/**"] },
+      { "name": "cohere", "patterns": ["packages/effect-ai-cohere/**"] },
+      { "name": "voyage", "patterns": ["packages/effect-ai-voyage/**"] },
+      { "name": "elevenlabs", "patterns": ["packages/effect-ai-elevenlabs/**"] },
+      { "name": "evals", "patterns": ["packages/effect-evals/**"] }
+    ],
+    "rules": [
+      { "from": "ext", "allow": [] },
+      { "from": "gateway", "allow": ["ext"] },
+      { "from": "mistral", "allow": [] },
+      { "from": "cohere", "allow": ["ext"] },
+      { "from": "voyage", "allow": ["ext"] },
+      { "from": "elevenlabs", "allow": ["ext"] },
+      { "from": "evals", "allow": [] }
+    ]
+  },
+  "health": {
+    "maxCyclomatic": 20,
+    "maxCognitive": 15,
+    "maxCrap": 30,
+    "coverage": "coverage/coverage-final.json"
+  }
+}

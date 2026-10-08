@@ -7,29 +7,30 @@
   "license": "MIT",
   "author": "Thomas Foster <me@thomasfoster.au>",
   "type": "module",
-  "engines": {
-    "node": ">=22.18",
-    "pnpm": ">=11"
-  },
-  "packageManager": "pnpm@11.27.0",
   "scripts": {
-    "prepare": "effect-tsgo patch --typescript",
-    "check": "pnpm -r --workspace-concurrency=1 run check",
-    "test": "pnpm -r run test",
-    "test:coverage": "pnpm -r run test:coverage",
-    "build": "pnpm -r run build",
-    "check:dist": "node scripts/check-dist.mjs",
-    "ci": "pnpm run check && pnpm run test && pnpm run build && pnpm run check:dist",
+    "prepare": "vp config && effect-tsgo patch --typescript --oxlint",
+    "fallow": "fallow --summary",
+    "fallow:audit": "fallow audit",
     "changeset": "changeset",
-    "changeset:version": "changeset version",
-    "changeset:publish": "pnpm run build && changeset publish"
+    "changeset:version": "changeset version && vp fmt",
+    "changeset:publish": "vp run -r build && changeset publish"
   },
   "devDependencies": {
     "@changesets/cli": "catalog:",
     "@effect/language-service": "catalog:",
     "@effect/tsgo": "catalog:",
+    "@mpsuesser/oxlint-plugin-effect": "catalog:",
     "@types/node": "catalog:",
     "@typescript/native": "catalog:",
-    "typescript": "catalog:"
-  }
+    "fallow": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plus": "catalog:",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=22.18",
+    "pnpm": ">=11"
+  },
+  "packageManager": "pnpm@11.27.0"
 }

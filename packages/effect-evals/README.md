@@ -149,7 +149,8 @@ import { Cache, Dataset, Runner, Threshold } from "@thomasfosterau/effect-evals"
 
 const port: Runner.RetrievalPort<SearchError, Database> = {
   id: "search@rerank-v3.5", // the configuration under test; part of the cache key
-  retrieve: (query, { limit }) => search({ query, limit }).pipe(Effect.map((rows) => rows.map(handleOf))),
+  retrieve: (query, { limit }) =>
+    search({ query, limit }).pipe(Effect.map((rows) => rows.map(handleOf))),
 };
 
 const result = await Effect.runPromise(
@@ -157,7 +158,11 @@ const result = await Effect.runPromise(
     {
       name: "search-ranking-smoke",
       dataset: Dataset.fromArray("search-ranking-smoke", [
-        { name: "genus", query: "monstera", relevant: { "taxon:monstera": 3, "taxon:monstera-x": 1 } },
+        {
+          name: "genus",
+          query: "monstera",
+          relevant: { "taxon:monstera": 3, "taxon:monstera-x": 1 },
+        },
       ]),
       port,
       k: 20,

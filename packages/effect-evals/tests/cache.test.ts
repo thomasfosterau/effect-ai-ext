@@ -5,7 +5,7 @@
  * @module tests/cache
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import * as Effect from "effect/Effect";
 import { Cache } from "../src/index.ts";
 import { runTest } from "./helpers/effect.ts";

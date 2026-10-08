@@ -316,7 +316,9 @@ const convertUserMessage = (
  * `tool_calls`. Reasoning / file / tool-result / approval parts have no
  * Cohere representation and are dropped.
  */
-const convertAssistantMessage = (message: Prompt.AssistantMessage): Wire.AssistantMessageRequest => {
+const convertAssistantMessage = (
+  message: Prompt.AssistantMessage,
+): Wire.AssistantMessageRequest => {
   let text = "";
   const toolCalls: Array<Wire.RequestToolCall> = [];
   for (const part of message.content) {
@@ -551,10 +553,7 @@ const mapFinishReason = (reason: string | null | undefined): Response.FinishReas
 /** The shared usage envelope Cohere reports under either `usage` or `meta`. */
 type UsageEnvelope = Wire.ChatResponse["usage"];
 
-const makeUsage = (
-  usage: UsageEnvelope,
-  meta: UsageEnvelope,
-): typeof Response.Usage.Encoded => {
+const makeUsage = (usage: UsageEnvelope, meta: UsageEnvelope): typeof Response.Usage.Encoded => {
   const tokens = usage?.tokens ?? meta?.tokens ?? undefined;
   return {
     inputTokens: {
@@ -592,9 +591,7 @@ const buildResponseDetails = (
 // Non-streaming Response Conversion
 // =============================================================================
 
-const collectText = (
-  content: Wire.ChatResponse["message"]["content"],
-): string => {
+const collectText = (content: Wire.ChatResponse["message"]["content"]): string => {
   if (isAbsent(content)) {
     return "";
   }

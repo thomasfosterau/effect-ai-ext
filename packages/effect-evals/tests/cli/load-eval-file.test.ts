@@ -8,7 +8,7 @@
  * @module tests/cli/load-eval-file
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import * as Layer from "effect/Layer";
 import {
   EvalFileImportError,

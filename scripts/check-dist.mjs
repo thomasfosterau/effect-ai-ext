@@ -1,5 +1,6 @@
 /**
- * Dist-level import check (issue #32): run after `pnpm run build`.
+ * Dist-level import check (issue #32): `vp run check:dist`, a root task that
+ * depends on every package's `build`.
  *
  * For every published package and every subpath its `publishConfig.exports`
  * declares, imports the BUILT `dist/*.js` under real Node ESM (never the
@@ -80,7 +81,8 @@ const expectedValueExports = (dts) => {
   return checker
     .getExportsOfModule(moduleSymbol)
     .filter((symbol) => {
-      const target = symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
+      const target =
+        symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
       return (target.flags & ts.SymbolFlags.Value) !== 0;
     })
     .map((symbol) => symbol.getName())

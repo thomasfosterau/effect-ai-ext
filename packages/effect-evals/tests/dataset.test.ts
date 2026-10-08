@@ -5,7 +5,7 @@
  * @module tests/dataset
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { Dataset } from "../src/index.ts";
 import { runTest } from "./helpers/effect.ts";
 

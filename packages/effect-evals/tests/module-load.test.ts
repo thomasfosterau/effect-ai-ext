@@ -8,13 +8,13 @@
  *
  * The `effect-evals` bin is deliberately NOT launched here: it runs the built
  * `dist/cli/main.js`, and the unit-test job runs without a build. It is proved
- * from a packed tarball unpacked under `node_modules` by `pnpm run
+ * from a packed tarball unpacked under `node_modules` by `vp run
  * check:dist` (issue #42), which is the only place that can prove it.
  *
  * @module tests/module-load
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 const NAMESPACES = [
   "AnswerRelevancy",

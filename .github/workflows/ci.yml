@@ -1,17 +1,24 @@
 name: CI
 
-# Three jobs, one per gate, so a failure names the gate, plus a Node-floor
-# job. The default branch is `trunk` (not `main`) — the triggers below must say
-# so or the workflow never fires (issue #30).
+# One gate job, `ci`: the pipeline's task graph lives in vite.config.ts (the
+# root `check` and `check:dist` tasks and every package's `test:unit` /
+# `build`), not in GitHub Actions `needs:`. Copied in shape from the effect-web
+# library (#58), which took it from effect-drizzle-ext and the gardeneria
+# application. Nothing here needs a database, a stage or a credential, so
+# every PR class runs the whole gate.
+#
+# The default branch is `trunk` (not `main`) — the triggers below must say so
+# or the workflow never fires (issue #30).
 #
 # Every third-party action is pinned to a full commit SHA (the tag is a comment
 # for humans and Dependabot's `github-actions` ecosystem keeps both current).
 #
-# The three gate jobs run on the latest stable Node (`node-version: latest`),
-# as every repository in the family does (#71). `engines.node` in the published
-# packages is the consumer floor and is deliberately not tied to it, so the
-# `node-floor` job reruns the runtime gates (tests, build, check:dist) on that
-# floor, 22.18.0, which `latest` alone never exercises (#83).
+# The `ci` job runs on the latest stable Node (`node-version: latest` in the
+# setup action), as every repository in the family does (#71). `engines.node`
+# in the published packages is the consumer floor and is deliberately not tied
+# to it, so the `node-floor` job reruns the runtime gates (tests, build,
+# check:dist) on that floor, 22.18.0, which `latest` alone never exercises
+# (#83).
 
 on:
   pull_request:
@@ -24,83 +31,74 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/trunk' }}
 
+# No permissions by default; each job grants only read access.
+permissions: {}
+
 jobs:
-  # Native TS7 type-check (`tsc`) across every package. The 6/7 split's
-  # `prepare` step patches the native compiler with @effect/tsgo on install.
-  typecheck:
+  ci:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     permissions:
       contents: read
+    env:
+      # A modest ceiling for every Node process in the pipeline. NODE_OPTIONS
+      # is inherited by every child, including each vitest fork.
+      NODE_OPTIONS: --max-old-space-size=2048
+      VITEST_MAX_WORKERS: 2
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      # pnpm before Node so setup-node's `cache: pnpm` can resolve the store
-      # path. The pnpm version comes from `packageManager` in package.json.
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: latest
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run check
-
-  # Unit suite (vitest) — recorded/stubbed fixtures only, no live-key or
-  # live-network tests.
-  test:
-    needs: typecheck
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Restore the Vite+ task cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          node-version: latest
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run test
-
-  # Prove every package builds a publishable dist (esbuild ESM bundle +
-  # bundled declarations) standalone, then import each built entry under real
-  # Node ESM and check every value export its declarations promise exists at
-  # runtime (`scripts/check-dist.mjs`, issue #32).
-  build:
-    needs: typecheck
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: latest
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run build
-      - run: pnpm run check:dist
+          path: node_modules/.vite/task-cache
+          key: vp-task-v1-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            vp-task-v1-${{ runner.os }}-
+      - name: Format and lint
+        run: vp check
+      # Native TS7 type-check (`tsc`, patched by @effect/tsgo on install) of
+      # every package.
+      - name: Type gates
+        run: vp run --concurrency-limit 2 check
+      # Recorded/stubbed fixtures only, no live-key or live-network tests.
+      - name: Unit tests
+        run: vp run -r test:unit
+      - name: Build
+        run: vp run -r build
+      # Imports every built entry under real Node ESM and checks every value
+      # export its declarations promise exists at runtime, then launches the
+      # `effect-evals` bin from a packed tarball (`scripts/check-dist.mjs`,
+      # #32, #42).
+      - name: Dist import check
+        run: vp run check:dist
+      - name: Audit
+        run: pnpm audit --audit-level high
 
   # The runtime gates on the `engines.node` floor (`>=22.18`). Pinned to the
   # exact floor version, not `22`, so a newer 22.x can't hide a floor-only
   # failure. Raise it together with `engines.node` in the root and
-  # `packages/effect-evals` package.json.
+  # `packages/effect-evals` package.json. No task cache: every gate runs.
   node-floor:
-    needs: typecheck
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     permissions:
       contents: read
+    env:
+      NODE_OPTIONS: --max-old-space-size=2048
+      VITEST_MAX_WORKERS: 2
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
         with:
           node-version: 22.18.0
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run test
-      - run: pnpm run build
-      - run: pnpm run check:dist
+      - name: Unit tests
+        run: vp run -r test:unit
+      - name: Build
+        run: vp run -r build
+      - name: Dist import check
+        run: vp run check:dist

@@ -226,7 +226,11 @@ export const scorerAtK = (metric: RankingMetricName, k: number): Scorer<RankingC
     name: metricKey(metric, k),
     evaluate: (evalCase) =>
       Effect.sync((): Score => {
-        const evidence: Evidence = { ranked: evalCase.output, relevant: evalCase.golden.relevant, k };
+        const evidence: Evidence = {
+          ranked: evalCase.output,
+          relevant: evalCase.golden.relevant,
+          k,
+        };
         const value = metricFunctions[metric](evidence);
         return { score: value, reason: describe(metric, evidence, value) };
       }),

@@ -5,8 +5,9 @@
  * @module tests/cli/cli
  */
 
-import { describe, expect, it, vi } from "vitest";
-import { Effect, Layer } from "effect";
+import { describe, expect, it, vi } from "vite-plus/test";
+import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
 import { Command } from "effect/cli";
 import { NodeServices } from "@effect/platform-node";
 import { Cache } from "../../src/index.ts";

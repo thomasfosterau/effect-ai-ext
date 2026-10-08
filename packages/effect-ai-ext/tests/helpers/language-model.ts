@@ -29,8 +29,7 @@ export const stubLanguageModel = (
         onCall?.({ prompt: options.prompt, objectName: options.objectName });
         return Effect.succeed(new LanguageModel.GenerateObjectResponse(value, []));
       }) as never,
-      generateText: (() =>
-        Effect.die(new Error("generateText not stubbed"))) as never,
+      generateText: (() => Effect.die(new Error("generateText not stubbed"))) as never,
       streamText: (() => {
         throw new Error("streamText not stubbed");
       }) as never,
@@ -50,8 +49,7 @@ export const failingLanguageModel = (): Layer.Layer<LanguageModel.LanguageModel>
             reason: new AiError.UnknownError({ description: "stubbed failure" }),
           }),
         )) as never,
-      generateText: (() =>
-        Effect.die(new Error("generateText not stubbed"))) as never,
+      generateText: (() => Effect.die(new Error("generateText not stubbed"))) as never,
       streamText: (() => {
         throw new Error("streamText not stubbed");
       }) as never,

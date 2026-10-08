@@ -6,7 +6,7 @@
  * the Node platform services and the filesystem-backed result cache, then
  * hands off to `Command.run`.
  *
- * Excluded from coverage (`vitest.config.ts`) — this is a thin, side-effecting
+ * Excluded from coverage (`vite.config.ts`) — this is a thin, side-effecting
  * wire-up with nothing worth unit-testing; `Cli.ts`, `RunCommand.ts`, and
  * `Run.ts` carry the actual logic, exercised directly in `tests/cli/`.
  *

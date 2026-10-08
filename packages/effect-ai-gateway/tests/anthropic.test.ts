@@ -13,7 +13,7 @@
  * @module tests/unit/anthropic
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import { LanguageModel } from "effect/ai";
