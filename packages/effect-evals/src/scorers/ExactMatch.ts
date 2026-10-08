@@ -12,7 +12,7 @@
  */
 
 import * as Effect from "effect/Effect";
-import { makeScorer, type Scorer } from "../Scorer.ts";
+import * as Scorer from "../Scorer.ts";
 import type { StringCase } from "./StringCase.ts";
 
 /** Options for {@link normalizedMatch}: which normalisations to apply to both sides before comparing. */
@@ -28,7 +28,7 @@ const normalize = (value: string, options: NormalizedMatchOptions): string => {
 
 /** Shared by {@link exactMatch} and {@link normalizedMatch} — `exactMatch` is just this with no normalisation applied. */
 const compare =
-  (options: NormalizedMatchOptions): Scorer<StringCase>["evaluate"] =>
+  (options: NormalizedMatchOptions): Scorer.Scorer<StringCase>["evaluate"] =>
   (evalCase) =>
     Effect.sync(() => {
       const { expected } = evalCase.golden;
@@ -41,7 +41,7 @@ const compare =
     });
 
 /** Strict equality between `evalCase.output` and `evalCase.golden.expected`. */
-export const exactMatch: Scorer<StringCase> = makeScorer({
+export const exactMatch: Scorer.Scorer<StringCase> = Scorer.makeScorer({
   name: "exact-match",
   evaluate: compare({}),
 });
@@ -51,5 +51,5 @@ export const exactMatch: Scorer<StringCase> = makeScorer({
  * applying the given normalisations to both sides — trims whitespace and/or
  * folds case before comparing, so cosmetic differences don't fail the match.
  */
-export const normalizedMatch = (options: NormalizedMatchOptions = {}): Scorer<StringCase> =>
-  makeScorer({ name: "normalized-match", evaluate: compare(options) });
+export const normalizedMatch = (options: NormalizedMatchOptions = {}): Scorer.Scorer<StringCase> =>
+  Scorer.makeScorer({ name: "normalized-match", evaluate: compare(options) });

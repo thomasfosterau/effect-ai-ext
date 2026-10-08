@@ -11,8 +11,8 @@
 
 import * as Effect from "effect/Effect";
 import { LanguageModel } from "effect/ai";
-import { makeMetric, type Metric } from "../../Metric.ts";
-import { makeScorer } from "../../Scorer.ts";
+import * as Metric from "../../Metric.ts";
+import * as Scorer from "../../Scorer.ts";
 import type { Threshold } from "../../Threshold.ts";
 import { extractThenClassifyRatio } from "./ExtractThenClassify.ts";
 import {
@@ -42,10 +42,10 @@ export interface ContextualRecallOptions {
  */
 export const contextualRecall = <Case extends RagCase = RagCase>(
   options: ContextualRecallOptions,
-): Metric<Case, RagMetricError, LanguageModel.LanguageModel> => {
+): Metric.Metric<Case, RagMetricError, LanguageModel.LanguageModel> => {
   const name = options.name ?? "contextual-recall";
 
-  const scorer = makeScorer<Case, RagMetricError, LanguageModel.LanguageModel>({
+  const scorer = Scorer.makeScorer<Case, RagMetricError, LanguageModel.LanguageModel>({
     name,
     evaluate: (evalCase) =>
       Effect.gen(function* () {
@@ -66,5 +66,5 @@ export const contextualRecall = <Case extends RagCase = RagCase>(
       }),
   });
 
-  return makeMetric({ name, scorer, threshold: options.threshold });
+  return Metric.makeMetric({ name, scorer, threshold: options.threshold });
 };

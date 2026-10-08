@@ -26,7 +26,7 @@
 import * as Effect from "effect/Effect";
 import * as Equal from "effect/Equal";
 import type { ToolCall } from "../EvalCase.ts";
-import { makeScorer, type Scorer } from "../Scorer.ts";
+import * as Scorer from "../Scorer.ts";
 
 /** One tool call a golden expects, mirroring `EvalCase.ToolCall`'s `name`/`params` shape without an actual `result` (nothing has run yet). */
 export interface ExpectedToolCall {
@@ -175,12 +175,12 @@ const describeMismatches = (
 /** Builds a scorer comparing `evalCase.toolCalls` against `evalCase.golden.expectedTools` under the given {@link ToolCallCorrectnessOptions}. */
 export const toolCallCorrectness = (
   options: ToolCallCorrectnessOptions = {},
-): Scorer<ToolCallCorrectnessCase> => {
+): Scorer.Scorer<ToolCallCorrectnessCase> => {
   const mode = options.mode ?? "subset";
   const ordered = options.ordered ?? false;
   const matchParams = options.matchParams ?? false;
 
-  return makeScorer({
+  return Scorer.makeScorer({
     name: "tool-call-correctness",
     evaluate: (evalCase) =>
       Effect.sync(() => {

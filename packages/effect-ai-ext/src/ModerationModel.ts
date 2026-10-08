@@ -71,7 +71,7 @@ export class ModerationUsage extends Schema.Class<ModerationUsage>(
 export class ModerationResult extends Schema.Class<ModerationResult>(
   "@thomasfosterau/effect-ai-ext/ModerationModel/ModerationResult",
 )({
-  flagged: Schema.Boolean,
+  isFlagged: Schema.Boolean,
   categories: Schema.Record(Schema.String, Schema.Finite),
 }) {}
 
@@ -121,7 +121,7 @@ export interface ProviderOptions {
  */
 export interface ProviderResponse {
   readonly results: ReadonlyArray<{
-    readonly flagged: boolean;
+    readonly isFlagged: boolean;
     readonly categories: Record<string, number>;
   }>;
   readonly usage: { readonly inputTokens: number | undefined };
@@ -173,7 +173,9 @@ const mapProviderResponse = (
         );
       }
     }
-    results.push(new ModerationResult({ flagged: result.flagged, categories: result.categories }));
+    results.push(
+      new ModerationResult({ isFlagged: result.isFlagged, categories: result.categories }),
+    );
   }
   return Effect.succeed(
     new ModerationResponse({
@@ -217,10 +219,15 @@ export const make = (params: {
     }),
   );
 
+/**
+ * The structured output a `LanguageModel` is asked for. The model sees the
+ * field as `flagged` (the moderation APIs' own name, which the prompt below
+ * uses); it decodes to `isFlagged`, the name {@link ModerationResult} carries.
+ */
 const StructuredModerationResult = Schema.Struct({
-  flagged: Schema.Boolean,
+  isFlagged: Schema.Boolean,
   categories: Schema.Record(Schema.String, Schema.Finite),
-});
+}).pipe(Schema.encodeKeys({ isFlagged: "flagged" }));
 
 const StructuredModerationOutput = Schema.Struct({
   results: Schema.Array(StructuredModerationResult),

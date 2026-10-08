@@ -10,7 +10,7 @@
  */
 
 import * as Effect from "effect/Effect";
-import { makeScorer, type Scorer } from "../Scorer.ts";
+import * as Scorer from "../Scorer.ts";
 import type { StringCase } from "./StringCase.ts";
 
 /**
@@ -49,7 +49,7 @@ export const levenshteinSimilarity = (a: string, b: string): number => {
 };
 
 /** Normalised Levenshtein similarity between `evalCase.output` and `evalCase.golden.expected`. */
-export const levenshtein: Scorer<StringCase> = makeScorer({
+export const levenshtein: Scorer.Scorer<StringCase> = Scorer.makeScorer({
   name: "levenshtein",
   evaluate: (evalCase) =>
     Effect.sync(() => {

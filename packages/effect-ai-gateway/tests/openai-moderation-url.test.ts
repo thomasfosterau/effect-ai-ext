@@ -96,7 +96,7 @@ describe("makeOpenAiModerationModelFromUrl", () => {
     // BYOK by default: no provider key leaves this process.
     expect(calls[0]?.authorizationHeader).toBeNull();
     expect(calls[0]?.body).toEqual({ model: OPENAI_MODERATION_MODEL, input: ["hello"] });
-    expect(response.results[0]).toMatchObject({ flagged: false, categories: { hate: 0.01 } });
+    expect(response.results[0]).toMatchObject({ isFlagged: false, categories: { hate: 0.01 } });
     expect(response.usage.inputTokens).toBeUndefined();
   });
 

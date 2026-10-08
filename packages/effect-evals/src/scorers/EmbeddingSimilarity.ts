@@ -15,7 +15,7 @@
 import * as Effect from "effect/Effect";
 import * as Number from "effect/Number";
 import { AiError, EmbeddingModel } from "effect/ai";
-import { makeScorer, type Scorer } from "../Scorer.ts";
+import * as Scorer from "../Scorer.ts";
 import type { StringCase } from "./StringCase.ts";
 
 /** Dot-product cosine similarity, `[-1, 1]`; `0` when either vector is the zero vector. */
@@ -41,11 +41,11 @@ const toUnitScore = (similarity: number): number =>
  * embedded via the `EmbeddingModel` service in `R`. Scores `0` (without
  * calling the model) when the golden has no `expected` to compare against.
  */
-export const embeddingSimilarity: Scorer<
+export const embeddingSimilarity: Scorer.Scorer<
   StringCase,
   AiError.AiError,
   EmbeddingModel.EmbeddingModel
-> = makeScorer({
+> = Scorer.makeScorer({
   name: "embedding-similarity",
   evaluate: (evalCase) =>
     Effect.gen(function* () {

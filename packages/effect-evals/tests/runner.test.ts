@@ -369,6 +369,61 @@ describe("Runner.runSuite — caching", () => {
     expect(second?.passed).toBe(true);
   });
 
+  it("treats an unparseable cache entry as a miss, re-running the task and metric", async () => {
+    let taskCalls = 0;
+    let metricCalls = 0;
+
+    const countingTask = Runner.makeTask<string, string>({
+      id: "corrupt@v1",
+      run: (golden) =>
+        Effect.sync(() => {
+          taskCalls++;
+          return golden;
+        }),
+    });
+    const countingMetric = Metric.makeMetric({
+      name: "counting",
+      scorer: Scorer.makeScorer<Runner.EvaluatedCase<string, string>>({
+        name: "counting",
+        evaluate: () =>
+          Effect.sync(() => {
+            metricCalls++;
+            return { score: 1 };
+          }),
+      }),
+      threshold: Threshold.strict,
+    });
+    const suite = Runner.makeSuite({
+      name: "corrupt",
+      dataset: Dataset.fromArray("corrupt", ["Bonjour"]),
+      task: countingTask,
+      metrics: [countingMetric],
+    });
+
+    const second = await runTest(
+      Effect.gen(function* () {
+        yield* Runner.runSuite(suite);
+        const kv = yield* Cache.KeyValueStore.KeyValueStore;
+        const taskKey = yield* Cache.hashKey({ golden: "Bonjour", taskId: "corrupt@v1", trial: 1 });
+        const metricKey = yield* Cache.hashKey({
+          golden: "Bonjour",
+          taskId: "corrupt@v1",
+          metric: "counting",
+          judgeModelId: undefined,
+          trial: 1,
+        });
+        yield* kv.set(taskKey, "{not valid json");
+        yield* kv.set(metricKey, "{not valid json");
+        return yield* Runner.runSuite(suite);
+      }).pipe(Effect.provide(Cache.layerMemory)),
+    );
+
+    expect(taskCalls).toBe(2);
+    expect(metricCalls).toBe(2);
+    expect(second.cases[0]?.metrics[0]?.trials[0]).toMatchObject({ cached: false });
+    expect(second.passed).toBe(true);
+  });
+
   it("bypassCache: true skips the cache, making a fresh call on every run", async () => {
     let metricCalls = 0;
     const countingMetric = Metric.makeMetric({

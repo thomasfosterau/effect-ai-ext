@@ -7,6 +7,7 @@
 
 import { describe, expect, it } from "vite-plus/test";
 import * as Effect from "effect/Effect";
+import * as Schema from "effect/Schema";
 import { AiError } from "effect/ai";
 import {
   fromLanguageModel,
@@ -55,7 +56,7 @@ describe("ModerationModel", () => {
       Effect.gen(function* () {
         const { model } = yield* makeStub({
           respond: () => ({
-            results: [{ flagged: true, categories: { hate: 0.9, violence: 0.1 } }],
+            results: [{ isFlagged: true, categories: { hate: 0.9, violence: 0.1 } }],
             usage: { inputTokens: 7 },
           }),
         });
@@ -63,7 +64,7 @@ describe("ModerationModel", () => {
       }),
     );
 
-    expect(response.results[0].flagged).toBe(true);
+    expect(response.results[0].isFlagged).toBe(true);
     expect(response.results[0].categories.hate).toBe(0.9);
     expect(response.usage.inputTokens).toBe(7);
   });
@@ -72,7 +73,7 @@ describe("ModerationModel", () => {
     const { response, callCount } = await runTest(
       Effect.gen(function* () {
         const { model, calls } = yield* makeStub({
-          respond: () => ({ results: [{ flagged: false, categories: {} }], usage: noUsage }),
+          respond: () => ({ results: [{ isFlagged: false, categories: {} }], usage: noUsage }),
         });
         const result = yield* model.moderate({ inputs: [] });
         return { response: result, callCount: calls.length };
@@ -102,7 +103,7 @@ describe("ModerationModel", () => {
       Effect.gen(function* () {
         const { model } = yield* makeStub({
           respond: () => ({
-            results: [{ flagged: true, categories: { hate: 1.5 } }],
+            results: [{ isFlagged: true, categories: { hate: 1.5 } }],
             usage: noUsage,
           }),
         });
@@ -126,7 +127,9 @@ describe("ModerationModel", () => {
 
   describe("fromLanguageModel", () => {
     it("moderates via structured output and reuses the validation path", async () => {
-      let captured: { readonly prompt: unknown; readonly objectName: unknown } | undefined;
+      let captured:
+        | { readonly prompt: unknown; readonly objectName: unknown; readonly schema: unknown }
+        | undefined;
       const response = await runTest(
         Effect.gen(function* () {
           const model = yield* fromLanguageModel;
@@ -134,7 +137,7 @@ describe("ModerationModel", () => {
         }).pipe(
           Effect.provide(
             stubLanguageModel(
-              { results: [{ flagged: false, categories: { hate: 0.01 } }] },
+              { results: [{ isFlagged: false, categories: { hate: 0.01 } }] },
               (request) => {
                 captured = request;
               },
@@ -143,9 +146,37 @@ describe("ModerationModel", () => {
         ),
       );
 
-      expect(response.results[0].flagged).toBe(false);
+      expect(response.results[0].isFlagged).toBe(false);
       expect(response.results[0].categories.hate).toBe(0.01);
       expect(captured?.objectName).toBe("moderation");
+    });
+
+    it("asks the model for the wire name `flagged` and decodes it to `isFlagged`", async () => {
+      let schema: unknown;
+      await runTest(
+        Effect.gen(function* () {
+          const model = yield* fromLanguageModel;
+          return yield* model.moderate({ inputs: ["x"] });
+        }).pipe(
+          Effect.provide(
+            stubLanguageModel({ results: [{ isFlagged: false, categories: {} }] }, (request) => {
+              schema = request.schema;
+            }),
+          ),
+        ),
+      );
+
+      // SAFETY: `fromLanguageModel` passes a `Schema.Struct` to `generateObject`.
+      const codec = schema as Schema.Codec<unknown, unknown>;
+      const wire = { results: [{ flagged: true, categories: { hate: 0.5 } }] };
+      expect(Schema.decodeUnknownSync(codec)(wire)).toEqual({
+        results: [{ isFlagged: true, categories: { hate: 0.5 } }],
+      });
+      expect(
+        Schema.encodeUnknownSync(codec)({ results: [{ isFlagged: false, categories: {} }] }),
+      ).toEqual({
+        results: [{ flagged: false, categories: {} }],
+      });
     });
 
     it("surfaces a language-model failure as AiError", async () => {
@@ -166,7 +197,7 @@ describe("ModerationModel", () => {
           return yield* model.moderate({ inputs: ["x"] });
         }).pipe(
           Effect.provide(
-            stubLanguageModel({ results: [{ flagged: true, categories: { hate: 2 } }] }),
+            stubLanguageModel({ results: [{ isFlagged: true, categories: { hate: 2 } }] }),
           ),
         ),
       );

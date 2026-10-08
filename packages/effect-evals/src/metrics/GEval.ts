@@ -36,8 +36,8 @@ import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import { AiError, LanguageModel } from "effect/ai";
 import * as Prompt from "effect/ai/Prompt";
-import { makeMetric, type Metric } from "../Metric.ts";
-import { makeScorer } from "../Scorer.ts";
+import * as Metric from "../Metric.ts";
+import * as Scorer from "../Scorer.ts";
 import type { Score } from "../Score.ts";
 import type { Threshold } from "../Threshold.ts";
 
@@ -382,7 +382,7 @@ export interface GEvalOptions extends GEvalSharedOptions {
  */
 export const gEval = <Case extends GEvalCase = GEvalCase>(
   options: GEvalOptions,
-): Metric<Case, GEvalError, LanguageModel.LanguageModel> => {
+): Metric.Metric<Case, GEvalError, LanguageModel.LanguageModel> => {
   const { criteria, evaluationSteps } = resolveCriteria(
     options.name,
     options.criteria,
@@ -390,7 +390,7 @@ export const gEval = <Case extends GEvalCase = GEvalCase>(
   );
   const template = options.template ?? defaultTemplate;
 
-  const scorer = makeScorer<Case, GEvalError, LanguageModel.LanguageModel>({
+  const scorer = Scorer.makeScorer<Case, GEvalError, LanguageModel.LanguageModel>({
     name: options.name,
     evaluate: (evalCase) =>
       Effect.gen(function* () {
@@ -408,7 +408,7 @@ export const gEval = <Case extends GEvalCase = GEvalCase>(
       }),
   });
 
-  return makeMetric({ name: options.name, scorer, threshold: options.threshold });
+  return Metric.makeMetric({ name: options.name, scorer, threshold: options.threshold });
 };
 
 // ── Conversational gEval ─────────────────────────────────────────────
@@ -465,7 +465,7 @@ export interface GEvalConversationalOptions extends GEvalSharedOptions {
  */
 export const gEvalConversational = <Case extends GEvalConversationalCase = GEvalConversationalCase>(
   options: GEvalConversationalOptions,
-): Metric<Case, GEvalError, LanguageModel.LanguageModel> => {
+): Metric.Metric<Case, GEvalError, LanguageModel.LanguageModel> => {
   const { criteria, evaluationSteps } = resolveCriteria(
     options.name,
     options.criteria,
@@ -474,7 +474,7 @@ export const gEvalConversational = <Case extends GEvalConversationalCase = GEval
   const template = options.template ?? defaultTemplate;
   const evaluationParams = options.evaluationParams ?? [];
 
-  const scorer = makeScorer<Case, GEvalError, LanguageModel.LanguageModel>({
+  const scorer = Scorer.makeScorer<Case, GEvalError, LanguageModel.LanguageModel>({
     name: options.name,
     evaluate: (evalCase) =>
       Effect.gen(function* () {
@@ -495,5 +495,5 @@ export const gEvalConversational = <Case extends GEvalConversationalCase = GEval
       }),
   });
 
-  return makeMetric({ name: options.name, scorer, threshold: options.threshold });
+  return Metric.makeMetric({ name: options.name, scorer, threshold: options.threshold });
 };

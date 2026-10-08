@@ -5,8 +5,9 @@
  * sibling checks only the "is it JSON at all" half). `schemaMatchValue` is the
  * same decode over a case whose `output` is already a structured value, no
  * JSON string round trip. Uses `Schema` from `effect`, never
- * `effect/schema`. Never fails: a decode failure scores `0` with the
- * decode error's message as `reason`.
+ * `effect/schema`. A decode failure (`SchemaError`) scores `0` with the
+ * decode error's message as `reason`; nothing else is caught, so a defect
+ * in a schema's own transformation fails the run (#98).
  *
  * @module scorers/SchemaMatch
  *
@@ -15,17 +16,17 @@
 
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
-import { makeScorer, type Scorer } from "../Scorer.ts";
+import * as Scorer from "../Scorer.ts";
 import type { Score } from "../Score.ts";
 import type { JsonCase } from "./JsonValidity.ts";
 
 /** Scores `1` when `decoded` succeeds, `0` with the decode error's message as `reason` when it doesn't — shared by {@link schemaMatch} and {@link schemaMatchValue}. */
-const scoreDecodeResult = <A, E extends { readonly message: string }, R>(
-  decoded: Effect.Effect<A, E, R>,
+const scoreDecodeResult = <A, R>(
+  decoded: Effect.Effect<A, Schema.SchemaError, R>,
 ): Effect.Effect<Score, never, R> =>
   decoded.pipe(
     Effect.map(() => ({ score: 1 })),
-    Effect.catch((error) => Effect.succeed({ score: 0, reason: error.message })),
+    Effect.catchTag("SchemaError", (error) => Effect.succeed({ score: 0, reason: error.message })),
   );
 
 /**
@@ -35,10 +36,10 @@ const scoreDecodeResult = <A, E extends { readonly message: string }, R>(
  */
 export const schemaMatch = <S extends Schema.Top>(
   schema: S,
-): Scorer<JsonCase, never, S["DecodingServices"]> => {
+): Scorer.Scorer<JsonCase, never, S["DecodingServices"]> => {
   const fromJsonString = Schema.fromJsonString(schema);
 
-  return makeScorer({
+  return Scorer.makeScorer({
     name: "schema-match",
     evaluate: (evalCase) =>
       scoreDecodeResult(Schema.decodeUnknownEffect(fromJsonString)(evalCase.output)),
@@ -61,8 +62,8 @@ export interface ValueCase {
  */
 export const schemaMatchValue = <S extends Schema.Top>(
   schema: S,
-): Scorer<ValueCase, never, S["DecodingServices"]> =>
-  makeScorer({
+): Scorer.Scorer<ValueCase, never, S["DecodingServices"]> =>
+  Scorer.makeScorer({
     name: "schema-match",
     evaluate: (evalCase) => scoreDecodeResult(Schema.decodeUnknownEffect(schema)(evalCase.output)),
   });
