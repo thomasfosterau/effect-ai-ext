@@ -11,7 +11,7 @@
  * @module tests/result
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { Result } from "../src/index.ts";
 
 const scoredMetric = (score: number, reason?: string): Result.MetricAggregate => ({

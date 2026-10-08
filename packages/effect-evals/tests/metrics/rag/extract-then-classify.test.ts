@@ -7,7 +7,7 @@
  * @module tests/metrics/rag/extract-then-classify
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import * as Effect from "effect/Effect";
 import * as Stream from "effect/Stream";
 import { AiError, LanguageModel } from "effect/ai";

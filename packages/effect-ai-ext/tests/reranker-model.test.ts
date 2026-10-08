@@ -8,7 +8,7 @@
  * @module tests/unit/reranker-model
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import * as Effect from "effect/Effect";
 import { AiError } from "effect/ai";
 import { RerankedDocument } from "@thomasfosterau/effect-ai-ext/RerankerModel";

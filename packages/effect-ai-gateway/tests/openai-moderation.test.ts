@@ -12,7 +12,7 @@
  * @module tests/unit/openai-moderation
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import * as Effect from "effect/Effect";
 import * as Redacted from "effect/Redacted";
 import { AiError } from "effect/ai";

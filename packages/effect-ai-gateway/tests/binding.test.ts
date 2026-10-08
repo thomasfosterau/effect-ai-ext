@@ -4,7 +4,7 @@
  * @module tests/unit/binding
  */
 
-import { describe, expect, it } from "vitest";
+import { assert, describe, expect, it } from "vite-plus/test";
 import * as Cause from "effect/Cause";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
@@ -43,10 +43,8 @@ describe("gatewayUrl", () => {
 
     const exit = await Effect.runPromiseExit(gatewayUrl({ ai, gatewayId: "website" }, "cohere"));
 
-    expect(Exit.isFailure(exit)).toBe(true);
-    if (Exit.isFailure(exit)) {
-      expect(Cause.hasDies(exit.cause)).toBe(true);
-    }
+    assert(Exit.isFailure(exit));
+    expect(Cause.hasDies(exit.cause)).toBe(true);
   });
 });
 
@@ -95,11 +93,9 @@ describe("gatewayRun", () => {
       ),
     );
 
-    expect(Exit.isFailure(exit)).toBe(true);
-    if (Exit.isFailure(exit)) {
-      expect(Cause.hasDies(exit.cause)).toBe(false);
-      expect(Cause.hasFails(exit.cause)).toBe(true);
-    }
+    assert(Exit.isFailure(exit));
+    expect(Cause.hasDies(exit.cause)).toBe(false);
+    expect(Cause.hasFails(exit.cause)).toBe(true);
   });
 
   it("aborts the in-flight subrequest when interrupted (#706/#730)", async () => {

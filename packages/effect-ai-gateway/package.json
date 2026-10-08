@@ -47,12 +47,6 @@
       }
     }
   },
-  "scripts": {
-    "build": "tsup",
-    "check": "tsc -p tsconfig.json",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
-  },
   "peerDependencies": {
     "@cloudflare/workers-types": "catalog:peers",
     "@effect/ai-anthropic": "catalog:peers",
@@ -70,10 +64,8 @@
     "@cloudflare/workers-types": "catalog:",
     "@effect/ai-anthropic": "catalog:",
     "@effect/language-service": "catalog:",
-    "@vitest/coverage-v8": "catalog:",
+    "@vitest/coverage-istanbul": "catalog:",
     "effect": "catalog:",
-    "tsup": "catalog:",
-    "typescript": "catalog:",
-    "vitest": "catalog:"
+    "typescript": "catalog:"
   }
 }

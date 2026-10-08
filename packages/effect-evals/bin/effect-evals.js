@@ -17,7 +17,7 @@
  * Never `--no-warnings=…`: Node ignores its value and hides every warning,
  * `DeprecationWarning`s included (#81).
  *
- * Run `pnpm run build` before using the bin from the workspace.
+ * Run `vp run -r build` before using the bin from the workspace.
  *
  * @module bin/effect-evals
  *
@@ -34,7 +34,7 @@ const entry = path.join(dir, "..", "dist", "cli", "main.js");
 
 if (!existsSync(entry)) {
   console.error(
-    `effect-evals: ${entry} does not exist. In the workspace, run \`pnpm run build\` first.`,
+    `effect-evals: ${entry} does not exist. In the workspace, run \`vp run -r build\` first.`,
   );
   process.exit(1);
 }

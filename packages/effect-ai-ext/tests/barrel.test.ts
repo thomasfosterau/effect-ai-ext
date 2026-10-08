@@ -7,7 +7,7 @@
  * @module tests/barrel
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import * as UpstreamAi from "effect/ai";
 import * as Ext from "@thomasfosterau/effect-ai-ext";
 

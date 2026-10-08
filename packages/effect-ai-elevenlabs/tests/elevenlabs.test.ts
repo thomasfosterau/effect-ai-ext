@@ -19,7 +19,7 @@
  * @module tests/elevenlabs
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { SpeechModel, TranscriptionModel, VoiceConversionModel } from "@thomasfosterau/effect-ai-ext";
 import * as Config from "effect/Config";
 import * as Deferred from "effect/Deferred";

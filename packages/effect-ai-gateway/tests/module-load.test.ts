@@ -12,7 +12,7 @@
  * @module tests/module-load
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import * as Config from "effect/Config";
 import * as RerankerModelExt from "@thomasfosterau/effect-ai-ext/RerankerModel";
 

@@ -11,7 +11,7 @@
  * @module tests/metrics/ranking
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { Metric, Ranking, Threshold } from "../../src/index.ts";
 import { runTest } from "../helpers/effect.ts";
 

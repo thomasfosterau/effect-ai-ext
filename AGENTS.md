@@ -2,7 +2,7 @@
 
 `CLAUDE.md` is a symlink to this file. This repo publishes the `@thomasfosterau/effect-ai-*` family and `effect-evals`: purely additive extensions to Effect's AI module (`effect/ai`), consumed by the owner's applications.
 
-**Toolchain differs from the sibling libraries:** plain `pnpm run <script>` (no Vite+ `vp`), no format or lint gate (no Oxfmt, Oxlint or fallow), tsup instead of `vp pack`, and tests import from `vitest` (the siblings use `vite-plus/test`).
+**Toolchain:** the Vite+ library standard the sibling libraries share, copied from effect-web (#58): `vp` runs every task, `vp check` is the format (Oxfmt) and lint (Oxlint with the Effect preset) gate, `vp pack` (tsdown) builds, tests import from `vite-plus/test`, and the fallow gate runs before every agent commit and push. There is no `docgen` task yet (#99).
 
 | Package | Directory | Purpose · peers |
 | --- | --- | --- |
@@ -17,7 +17,7 @@
 - **`effect` is a singleton.** Two copies break `Context` / `Layer` / `Schema` identity, so every published package declares it as a peer (`catalog:peers`), takes it as a `catalog:` devDependency for building and testing, and `overrides: { effect: "catalog:" }` forces every resolution onto that one copy. `@effect/*` packages a published package needs are peers too, never exact-pinned dependencies: their own `effect` peer would reject a consumer's older rc.
 - **The Effect line moves as one.** `effect`, `@effect/ai-anthropic`, `@effect/platform-node` and the transitive `@effect/platform-node-shared` share one exact rc in the default catalog. Bump `@effect/platform-node-shared` by hand: only the catalog and `overrides` name it, so Dependabot never proposes it.
 - **The published peer floor is open, never an exact pin:** `catalog:peers` declares `effect: ">=4.0.0-rc.118"`, per the shared Effect-floor policy (effect-jsonapi#115). rc.118 is the first rc with the `effect/unstable/*` → `effect/*` path move (#51). Re-verify by pointing the default catalog at the floor before moving it; raising the floor is a breaking change for every package.
-- **`@effect/tsgo`, `@typescript/native` and `typescript` bump together.** `@effect/tsgo` ships artifacts for an explicit set of TypeScript versions and fails `pnpm install` with `UnsupportedTargetPackageVersionError` on any other. Read the comment on the `@effect/tsgo` catalog entry before bumping any of them.
+- **`@effect/tsgo`, `@typescript/native`, `typescript` and `vite-plus` bump together.** `@effect/tsgo` ships artifacts for an explicit set of TypeScript and Oxlint versions (`effect-tsgo patch --typescript --oxlint` patches both) and fails `pnpm install` with `UnsupportedTargetPackageVersionError` on any other; `vite-plus` pins the `oxlint`, `oxfmt` and `vitest` it carries, so `vite`, `vitest` and `@vitest/coverage-istanbul` follow it. Read the comments on the `@effect/tsgo` and `vite-plus` catalog entries before bumping any of them.
 - **Strict catalog.** Every external version lives in `pnpm-workspace.yaml` (`catalogMode: strict`); manifests carry `catalog:`, `catalog:peers` or `workspace:*`. After editing the catalog, run `pnpm install` and commit `pnpm-lock.yaml`, or every CI job fails with `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`.
 - **`minimumReleaseAge`** holds a newly published version for a day before `pnpm install` takes it (Dependabot's `cooldown` mirrors it); `@thomasfosterau/*` is exempt.
 - **The `apiUrl` override is a contract, not a convenience:** it is how a routing layer (the gateway) repoints a provider's client for BYOK. Every provider has a test that points `apiUrl` at a stub server.
@@ -35,35 +35,42 @@
   - Wire discipline: hand-written request interfaces (plain objects sent as JSON); lenient response decoding (`Schema.optional` + `Schema.NullOr`, free strings for enums the mapper narrows) so a new vendor field never fails an otherwise-valid response; `internal/errors.ts` maps `HttpClientError` / `SchemaError` to `AiError` through `AiError.reasonFromHttpStatus`.
 - **Barrels re-export each module as a namespace** (`export * as MistralClient from "./MistralClient"`). The gateway's barrel is flat; its `src/index.ts` says why `RerankerModel` is re-exported from `effect-ai-ext` directly.
 - **Doc comments put the description first, including module headers:** summary sentence, details, then tags (`@module`, `@copyright`, `@category`, …). Hovers show only the text before the first tag, so a header that opens with `@module` or `@copyright` shows no summary. Don't add `@since`; no docgen reads it here.
-- **Builds:** tsup (esbuild ESM + rollup-plugin-dts on TS6, `ignoreDeprecations: "6.0"`). `effect-ai-ext` builds one entry per module (its subpath exports); the others build `src/index.ts` only. `effect`, `@effect/*`, `@thomasfosterau/*` (and `@cloudflare/*` for the gateway) stay external so consumers share one copy. Packages develop with `exports` → `./src/index.ts`; `publishConfig` rewrites `exports` / `main` / `types` to `dist` on publish.
-- **TypeScript 6/7 split:** `@typescript/native` (TS7, bin `tsc`, patched by `@effect/tsgo` so it also reports Effect diagnostics) runs `pnpm run check`; `typescript` (aliased to `@typescript/typescript6`, bin `tsc6`) is the JS-API compiler the language service and tsup's declaration bundler load. Only Effect `error` diagnostics fail `tsc`: `suggestion` never affects the exit code, and `tsconfig.base.json` sets `ignoreEffectWarningsInTscExitCode` so `warning` diagnostics stay visible but don't fail `pnpm run check` either, as in the sibling libraries (#67).
+- **Builds:** `vp pack` (tsdown: rolldown ESM + rolldown-plugin-dts on TS6), configured once in `vite.package.ts` and instantiated by each package's one-call `vite.config.ts`. `effect-ai-ext` builds one entry per module (its subpath exports), each from a build-only facade under `packages/effect-ai-ext/entries/` (its `vite.config.ts` says why); `effect-evals` builds `src/index.ts` and its CLI (`dist/cli/main.js`); the others build `src/index.ts` only. `effect`, `@effect/*`, `@thomasfosterau/*`, `@cloudflare/*` and `node:*` stay external so consumers share one copy. Packages develop with `exports` → `./src/index.ts`; `publishConfig` rewrites `exports` / `main` / `types` to `dist` on publish, so tests and type checks resolve a sibling to its `src/` and no task needs a build first.
+- **TypeScript 6/7 split:** `@typescript/native` (TS7, bin `tsc`, patched by `@effect/tsgo` so it also reports Effect diagnostics) runs `vp run check`; `typescript` (aliased to `@typescript/typescript6`, bin `tsc6`) is the JS-API compiler the language service and `vp pack`'s declaration bundler load. Only Effect `error` diagnostics fail `tsc`: `suggestion` never affects the exit code, and `tsconfig.base.json` sets `ignoreEffectWarningsInTscExitCode` so `warning` diagnostics stay visible but don't fail `vp run check` either, as in the sibling libraries (#67).
+- **Format and lint:** `vp check` runs Oxfmt and Oxlint (config in the root `vite.config.ts`: `@effect/tsgo`'s `recommended` preset plus `@mpsuesser/oxlint-plugin-effect`, rule set copied from effect-web). Only `error` fails it. The rules listed under "adoption allowances" sit at `warn` because pre-existing code still trips them (#98 tracks the burn-down): a new site is a defect, not headroom, and a rule goes back to `error` once its count reaches zero. `CHANGELOG.md` files are never formatted (Changesets writes them).
 - **Tests:**
   - No live-key or live-network tests: stub at `FetchHttpClient.Fetch` (capture the request, return a canned `Response` or SSE stream) or at the abstraction's `make` seam.
-  - Effect helpers live per package in `tests/helpers/effect.ts` (`runTest`, `runTestExit`, `expectFailureInstanceOf`, `recordingTracer`); import from `vitest` and provide layers per test with `Effect.provide`.
+  - Effect helpers live per package in `tests/helpers/effect.ts` (`runTest`, `runTestExit`, `expectFailureInstanceOf`, `recordingTracer`); import from `vite-plus/test` (never `vitest`; the `vite-plus/prefer-vite-plus-imports` lint rule enforces it) and provide layers per test with `Effect.provide`.
   - Streaming providers also prove backpressure (a chunked stub, no unbounded buffering) and interruption (interrupting the Effect cancels the in-flight HTTP stream).
 - **No live credentials, tokens or secrets** in code or fixtures.
 
 ## Commands
 
-- `pnpm install` — dependencies (pnpm 11, pinned by `packageManager`); its `prepare` script runs `effect-tsgo patch --typescript`, which patches the native `tsc` and skips a binary that is already patched.
-- `pnpm run check` — the type gate: native TS7 `tsc -p tsconfig.json` per package.
-- `pnpm run test` — every package's `vitest run`. `pnpm run test:coverage` adds coverage.
-- `pnpm run build` — tsup → each package's `dist/`.
-- `pnpm run check:dist` — after `build`: imports every built entry and subpath under Node ESM and fails if a value export the bundled `.d.ts` declares is missing at runtime, which the src-resolving vitest suites cannot see.
-- `pnpm run ci` — `check`, `test`, `build`, `check:dist` in order.
+- `pnpm install` — dependencies (pnpm 11, pinned by `packageManager`) plus the Vite+ git hooks (`vp config`; pre-commit runs `vp staged`: format + lint on staged files) and the `prepare` step that patches the native `tsc` and the `oxlint` `vite-plus` carries with `@effect/tsgo` (`effect-tsgo patch --typescript --oxlint`, which skips a binary that is already patched). No pre-push hook: run the gates yourself.
+- `vp check` — format + lint (Oxfmt + Oxlint). `vp check --fix` applies the fixes. `vp run check` — the type gate: native TS7 `tsc -p tsconfig.json` per package. They are different commands.
+- `vp run -r test:unit` — every package's unit suite (node Vitest; nothing here needs a credential).
+- `vp run -r build` — `vp pack` → every package's `dist/`.
+- `vp run check:dist` — builds every package, then imports every built entry and subpath under Node ESM and fails if a value export the bundled `.d.ts` declares is missing at runtime (which the src-resolving suites cannot see), and launches the `effect-evals` bin from a packed tarball under `node_modules`.
+- `vp run test:coverage` — every package's unit suite under one Istanbul map at `coverage/coverage-final.json`, which `fallow audit` reads for exact per-function CRAP scores. Without the map fallow scores every function as uncovered.
+- `pnpm audit --audit-level high` — the dependency audit CI runs (network).
+- `pnpm changeset` — add a changeset.
 
-None of these needs a credential.
+Invoke everything through `vp` (`vp exec` instead of `npx`; `vp run <task>` instead of bare `pnpm`). The sanctioned non-`vp` invocations: `pnpm install` (and `pnpm install --frozen-lockfile` in CI), `pnpm audit`, `pnpm changeset` / `pnpm publish` on the release path. `vp` is `node_modules/.bin/vp`; the SessionStart hook puts it on PATH.
 
 ## Verification
 
 Before you report work as done, run the gates below in order and quote each command with its final pass/fail. If a gate can't run here, say which and why in the PR body; never imply it ran. There is no pre-push hook.
 
-1. `pnpm run check`
-2. `pnpm run test`
-3. `pnpm run build`
-4. `pnpm run check:dist`
+1. From a clean install, which is what CI sees: `rm -rf node_modules packages/*/node_modules packages/*/dist && pnpm install --frozen-lockfile`.
+2. `vp check`
+3. `vp run check`
+4. `vp run -r test:unit`
+5. `vp run -r build`
+6. `vp run check:dist`
+7. `pnpm audit --audit-level high` (network)
+8. `vp run test:coverage`, then `fallow audit --format json --quiet --explain --gate-marker agent` (the fallow gate below; not a CI step). The verdict must not be `fail`.
 
-`pnpm run ci` runs all four. For CI parity, start from a clean tree: `rm -rf node_modules packages/*/node_modules packages/*/dist && pnpm install --frozen-lockfile`.
+Steps 2–7 are CI's `ci` job, in its order ([ci.yml](.github/workflows/ci.yml)); its `node-floor` job reruns 4–6 on Node 22.18.0.
 
 ## Branches and pull requests
 
@@ -82,7 +89,9 @@ Consult effect-solutions before writing Effect code; never guess at an Effect pa
 
 ## Agent sessions
 
-The SessionStart hook (`.claude/hooks/session-start.sh`, registered in `.claude/settings.json`) runs `pnpm install --frozen-lockfile` (through Corepack when available), which also applies the tsgo patch, so the four gates run without manual setup. It hydrates no secrets, and nothing here needs one. Every gate runs in an agent session; `pnpm dlx effect-solutions` needs network.
+- The SessionStart hook (`.claude/hooks/session-start.sh`, registered in `.claude/settings.json`) runs `pnpm install --frozen-lockfile` (through Corepack when available), which also applies the tsgo patch, and puts `vp` (a re-exec shim that prefers the nearest checkout's `node_modules`) and `fallow` on PATH for non-interactive shells, so the gates run without manual setup. It hydrates no secrets, and nothing here needs one.
+- A PreToolUse hook (`.claude/hooks/fallow-gate.sh`) blocks `git commit` / `git push` when `fallow audit --base origin/trunk` fails; it reads the coverage map on disk, so run `vp run test:coverage` first. A PostToolUse hook runs `vp fmt` on every source, JSON, CSS or Markdown file you write or edit.
+- Every gate in [Verification](#verification) runs in an agent session; `pnpm audit` and `pnpm dlx effect-solutions` need network.
 
 ## Documentation surfaces
 
@@ -90,3 +99,19 @@ The SessionStart hook (`.claude/hooks/session-start.sh`, registered in `.claude/
 - `packages/*/README.md`: the API reference consumers read on npm.
 - `PUBLISHING.md`: the release pipeline and the owner's one-time setup.
 - This file: agent guidance. Decisions go in issue comments.
+
+---
+
+## Fallow local gate
+
+Before any `git commit` or `git push`, run `fallow audit --format json --quiet --explain --gate-marker agent`. If the verdict is `fail`, fix the reported findings before retrying. Treat JSON runtime errors like `{ "error": true, ... }` as non-blocking. Audit defaults to `gate=new-only`: only findings introduced by the current changeset affect the verdict. The config is `.fallowrc.json`: a new published entry point joins its `entry` list, and a new package adds a boundary zone and rule.
+
+## Fallow task map
+
+| When the agent is about to... | Run |
+| --- | --- |
+| delete an "unused" export or file | `fallow dead-code --trace <file>:<export>` |
+| delete an "unused" dependency | `fallow dead-code --trace-dependency <name>` |
+| commit or open a PR | `fallow audit --base <ref>` |
+| check which architecture rules apply to a file before changing it | `fallow guard <files>` |
+| understand a finding | `fallow explain <issue-type>` |

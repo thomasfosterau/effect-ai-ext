@@ -13,7 +13,7 @@
  * @module tests/cohere
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -317,7 +317,7 @@ describe("CohereLanguageModel configuration", () => {
     );
 
     expect(calls[0]?.body.temperature).toBe(0.2);
-    expect((calls[0]?.body as Record<string, unknown>).max_tokens).toBe(128);
+    expect(calls[0]?.body).toHaveProperty("max_tokens", 128);
   });
 
   it("lets withConfigOverride win over construction-time config", async () => {

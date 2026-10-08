@@ -12,7 +12,7 @@
  * @module tests/module-load
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 /** This package's own abstractions — each also published as a subpath. */
 const NAMESPACES = ["RerankerModel", "ClassifierModel", "SpeechModel", "TranscriptionModel", "ImageModel", "ModerationModel", "VoiceConversionModel"] as const;

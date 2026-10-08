@@ -44,8 +44,11 @@ jobs:
           cache: pnpm
           registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
-      - run: pnpm run check
-      - run: pnpm run test
+      # The Vite+ gates (#58): the type gate and every package's unit suite.
+      # `changeset:publish` builds every package (`vp run -r build`) before
+      # publishing.
+      - run: pnpm exec vp run check
+      - run: pnpm exec vp run -r test:unit
       # The job installs no npm CLI of its own: `changeset publish` runs
       # `pnpm publish` (pnpm 11 publishes natively, never via npm) and pnpm
       # performs the trusted-publishing (OIDC) exchange itself (#63).

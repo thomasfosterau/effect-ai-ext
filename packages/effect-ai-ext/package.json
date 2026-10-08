@@ -80,21 +80,13 @@
       }
     }
   },
-  "scripts": {
-    "build": "tsup",
-    "check": "tsc -p tsconfig.json",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
-  },
   "peerDependencies": {
     "effect": "catalog:peers"
   },
   "devDependencies": {
     "@effect/language-service": "catalog:",
-    "@vitest/coverage-v8": "catalog:",
+    "@vitest/coverage-istanbul": "catalog:",
     "effect": "catalog:",
-    "tsup": "catalog:",
-    "typescript": "catalog:",
-    "vitest": "catalog:"
+    "typescript": "catalog:"
   }
 }

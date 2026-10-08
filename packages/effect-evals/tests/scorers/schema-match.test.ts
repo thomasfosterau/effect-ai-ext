@@ -4,7 +4,7 @@
  * @module tests/scorers/schema-match
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import * as Schema from "effect/Schema";
 import { SchemaMatch } from "../../src/index.ts";
 import { runTest } from "../helpers/effect.ts";

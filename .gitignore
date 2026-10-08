@@ -147,3 +147,11 @@ vite.config.ts.timestamp-*
 .claude/settings.local.json
 .claude/worktrees/
 .claude/scheduled_tasks.lock
+
+# Vite+: the generated git-hook runner (`vp config`); the editable hook
+# itself (`.vite-hooks/pre-commit`) is committed.
+.vite-hooks/_/
+
+# fallow's local cache and SARIF output.
+.fallow
+fallow.sarif
