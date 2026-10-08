@@ -14,6 +14,8 @@
  */
 
 import { glob } from "node:fs/promises";
+import * as Order from "effect/Order";
+import * as Arr from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Path from "effect/Path";
 import * as Schema from "effect/Schema";
@@ -53,7 +55,7 @@ export const findEvalFiles = (
         for await (const match of glob([...patterns], { cwd, exclude })) {
           matches.add(path.resolve(cwd, match));
         }
-        return Array.from(matches).sort();
+        return Arr.sort(matches, Order.String);
       },
       catch: (cause) => new GlobError({ patterns: [...patterns], cause }),
     });

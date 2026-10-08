@@ -32,6 +32,10 @@
  * @copyright Thomas Foster
  */
 
+import * as Match from "effect/Match";
+import * as Order from "effect/Order";
+import * as Str from "effect/String";
+import * as Arr from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
@@ -98,10 +102,13 @@ export interface Rubric {
  * definition itself, not a per-case runtime condition.
  */
 export const makeRubric = (bands: ReadonlyArray<RubricBand>): Rubric => {
-  if (bands.length === 0) {
+  if (Arr.isReadonlyArrayEmpty(bands)) {
     throw new Error("gEval rubric must have at least one band");
   }
-  const sorted = [...bands].sort((a, b) => a.min - b.min);
+  const sorted = Arr.sort(
+    bands,
+    Order.mapInput(Order.Number, (band: RubricBand) => band.min),
+  );
   for (const band of sorted) {
     if (band.min > band.max) {
       throw new Error(`gEval rubric band has min (${band.min}) greater than max (${band.max})`);
@@ -283,9 +290,10 @@ const resolveCriteria = (
   rawCriteria: string | undefined,
   rawEvaluationSteps: ReadonlyArray<string> | undefined,
 ): ResolvedCriteria => {
-  const criteria = rawCriteria !== undefined && rawCriteria.length > 0 ? rawCriteria : undefined;
+  const criteria =
+    rawCriteria !== undefined && Str.isNonEmpty(rawCriteria) ? rawCriteria : undefined;
   const evaluationSteps =
-    rawEvaluationSteps !== undefined && rawEvaluationSteps.length > 0
+    rawEvaluationSteps !== undefined && Arr.isReadonlyArrayNonEmpty(rawEvaluationSteps)
       ? rawEvaluationSteps
       : undefined;
   if ((criteria === undefined) === (evaluationSteps === undefined)) {
@@ -318,17 +326,15 @@ const collectFields = <Param extends string>(
   params: ReadonlyArray<Param>,
   extract: (param: Param) => Option.Option<string>,
 ): Effect.Effect<ReadonlyArray<Field>, MissingEvaluationParamError> =>
-  Effect.gen(function* () {
-    const fields = [...seed];
-    for (const param of params) {
-      const value = extract(param);
-      if (Option.isNone(value)) {
-        return yield* new MissingEvaluationParamError({ metric: metricName, param });
-      }
-      fields.push({ label: param, value: value.value });
-    }
-    return fields;
-  });
+  Effect.forEach(
+    params,
+    (param) =>
+      Option.match(extract(param), {
+        onNone: () => Effect.fail(new MissingEvaluationParamError({ metric: metricName, param })),
+        onSome: (value): Effect.Effect<Field> => Effect.succeed({ label: param, value }),
+      }),
+    { concurrency: 1 },
+  ).pipe(Effect.map((fields) => [...seed, ...fields]));
 
 /** Options shared by {@link gEval} and {@link gEvalConversational}. */
 interface GEvalSharedOptions {
@@ -360,20 +366,15 @@ export interface GEvalCase {
   readonly retrievedContext?: ReadonlyArray<string> | undefined;
 }
 
-const extractParam = (evalCase: GEvalCase, param: EvaluationParam): Option.Option<string> => {
-  switch (param) {
-    case "input":
-      return renderField(evalCase.golden.input);
-    case "output":
-      return renderField(evalCase.output);
-    case "expected":
-      return renderField(evalCase.golden.expected);
-    case "context":
-      return renderField(evalCase.golden.context);
-    case "retrievedContext":
-      return renderField(evalCase.retrievedContext);
-  }
-};
+const extractParam = (evalCase: GEvalCase, param: EvaluationParam): Option.Option<string> =>
+  Match.value(param).pipe(
+    Match.when("input", () => renderField(evalCase.golden.input)),
+    Match.when("output", () => renderField(evalCase.output)),
+    Match.when("expected", () => renderField(evalCase.golden.expected)),
+    Match.when("context", () => renderField(evalCase.golden.context)),
+    Match.when("retrievedContext", () => renderField(evalCase.retrievedContext)),
+    Match.exhaustive,
+  );
 
 /** Options for {@link gEval}. */
 export interface GEvalOptions extends GEvalSharedOptions {
@@ -447,16 +448,13 @@ export const renderTurns = (turns: Prompt.Prompt): string =>
 const extractConversationalParam = (
   evalCase: GEvalConversationalCase,
   param: ConversationalEvaluationParam,
-): Option.Option<string> => {
-  switch (param) {
-    case "scenario":
-      return renderField(evalCase.scenario);
-    case "expectedOutcome":
-      return renderField(evalCase.expectedOutcome);
-    case "context":
-      return renderField(evalCase.context);
-  }
-};
+): Option.Option<string> =>
+  Match.value(param).pipe(
+    Match.when("scenario", () => renderField(evalCase.scenario)),
+    Match.when("expectedOutcome", () => renderField(evalCase.expectedOutcome)),
+    Match.when("context", () => renderField(evalCase.context)),
+    Match.exhaustive,
+  );
 
 /** Options for {@link gEvalConversational}. */
 export interface GEvalConversationalOptions extends GEvalSharedOptions {

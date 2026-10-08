@@ -43,6 +43,9 @@
  * @copyright Thomas Foster
  */
 
+import * as Match from "effect/Match";
+import * as Order from "effect/Order";
+import * as Arr from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as EffectRecord from "effect/Record";
 import * as Metric from "../Metric.ts";
@@ -131,10 +134,10 @@ const dcg = (grades: ReadonlyArray<number>): number =>
 export const ndcg = (evidence: Evidence): number => {
   const actual = dcg(topK(evidence).map((handle) => gradeOf(evidence, handle)));
   const ideal = dcg(
-    Object.values(evidence.relevant)
-      .filter((grade) => grade > 0)
-      .sort((left, right) => right - left)
-      .slice(0, evidence.k),
+    Arr.sort(
+      Object.values(evidence.relevant).filter((grade) => grade > 0),
+      Order.flip(Order.Number),
+    ).slice(0, evidence.k),
   );
   return ideal === 0 ? 0 : actual / ideal;
 };
@@ -201,18 +204,24 @@ const describe = (metric: RankingMetricName, evidence: Evidence, value: number):
   const relevantOnPage = page.filter((handle) => gradeOf(evidence, handle) > 0).length;
   const relevantTotal = Object.values(evidence.relevant).filter((grade) => grade > 0).length;
   const first = page.findIndex((handle) => gradeOf(evidence, handle) > 0);
-  switch (metric) {
-    case "ndcg":
-      return `${relevantOnPage} of ${relevantTotal} relevant in the top ${evidence.k}; nDCG ${value.toFixed(3)}`;
-    case "recall":
-      return `${relevantOnPage} of ${relevantTotal} relevant reached the top ${evidence.k}`;
-    case "precision":
-      return `${relevantOnPage} of the top ${evidence.k} are relevant`;
-    case "mrr":
-      return first === -1
+  return Match.value(metric).pipe(
+    Match.when(
+      "ndcg",
+      () =>
+        `${relevantOnPage} of ${relevantTotal} relevant in the top ${evidence.k}; nDCG ${value.toFixed(3)}`,
+    ),
+    Match.when(
+      "recall",
+      () => `${relevantOnPage} of ${relevantTotal} relevant reached the top ${evidence.k}`,
+    ),
+    Match.when("precision", () => `${relevantOnPage} of the top ${evidence.k} are relevant`),
+    Match.when("mrr", () =>
+      first === -1
         ? `no relevant document in the top ${evidence.k}`
-        : `first relevant document at rank ${first + 1}`;
-  }
+        : `first relevant document at rank ${first + 1}`,
+    ),
+    Match.exhaustive,
+  );
 };
 
 /**

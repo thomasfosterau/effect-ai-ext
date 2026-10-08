@@ -12,6 +12,7 @@
  * @copyright Thomas Foster
  */
 
+import * as Arr from "effect/Array";
 import * as Console from "effect/Console";
 import * as Effect from "effect/Effect";
 import { Command } from "effect/cli";
@@ -41,21 +42,27 @@ export const runCommand = Command.make(
       // handler from having to restate RunConfig's field list by hand.
       const report = yield* Run.runEvals(config);
 
-      const reporters = config.reporter.length > 0 ? config.reporter : DEFAULT_REPORTERS;
+      const reporters = Arr.isReadonlyArrayNonEmpty(config.reporter)
+        ? config.reporter
+        : DEFAULT_REPORTERS;
 
-      for (const skip of report.skipped) {
-        yield* Console.log(`SKIP  ${skip.file} — ${skip.suites.join(", ")} (${skip.reason})`);
-      }
-      for (const failure of report.failed) {
-        yield* Console.log(`FAIL  ${failure.file} — ${failure.error}`);
-      }
+      yield* Effect.forEach(
+        report.skipped,
+        (skip) => Console.log(`SKIP  ${skip.file} — ${skip.suites.join(", ")} (${skip.reason})`),
+        { concurrency: 1, discard: true },
+      );
+      yield* Effect.forEach(
+        report.failed,
+        (failure) => Console.log(`FAIL  ${failure.file} — ${failure.error}`),
+        { concurrency: 1, discard: true },
+      );
 
       if (reporters.includes("terminal")) {
-        for (const fileResult of report.ran) {
-          for (const suiteResult of fileResult.suites) {
-            yield* Console.log(Reporter.formatTerminalTable(suiteResult));
-          }
-        }
+        yield* Effect.forEach(
+          report.ran.flatMap((fileResult) => fileResult.suites),
+          (suiteResult) => Console.log(Reporter.formatTerminalTable(suiteResult)),
+          { concurrency: 1, discard: true },
+        );
       }
 
       if (reporters.includes("json")) {

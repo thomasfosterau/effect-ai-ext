@@ -23,6 +23,9 @@
  * @copyright Thomas Foster
  */
 
+import * as Match from "effect/Match";
+import * as Str from "effect/String";
+import * as Arr from "effect/Array";
 import * as Context from "effect/Context";
 import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
@@ -271,35 +274,37 @@ const fileToImageUrl = (part: Prompt.FilePart): string => {
  * non-image file part is rejected — Mistral chat completions accept images
  * only.
  */
+/** One user content part as a request part: text, or an image (the only file type Mistral accepts). */
+const convertUserPart = (
+  part: Prompt.UserMessage["content"][number],
+): Effect.Effect<Wire.RequestContentPart, AiError.AiError> => {
+  if (part.type === "text") {
+    return Effect.succeed({ type: "text", text: part.text });
+  }
+  if (!part.mediaType.startsWith("image/")) {
+    return Effect.fail(
+      failure(
+        "prepareMessages",
+        new AiErrorNs.InvalidUserInputError({
+          description: `Mistral chat completions support image files only; received '${part.mediaType}'`,
+        }),
+      ),
+    );
+  }
+  return Effect.succeed({ type: "image_url", image_url: { url: fileToImageUrl(part) } });
+};
+
 const convertUserMessage = (
   message: Prompt.UserMessage,
 ): Effect.Effect<Wire.UserMessageRequest, AiError.AiError> =>
-  Effect.gen(function* () {
-    const parts: Array<Wire.RequestContentPart> = [];
-    let hasNonText = false;
-    for (const part of message.content) {
-      if (part.type === "text") {
-        parts.push({ type: "text", text: part.text });
-        continue;
-      }
-      if (!part.mediaType.startsWith("image/")) {
-        return yield* failure(
-          "prepareMessages",
-          new AiErrorNs.InvalidUserInputError({
-            description: `Mistral chat completions support image files only; received '${part.mediaType}'`,
-          }),
-        );
-      }
-      hasNonText = true;
-      parts.push({ type: "image_url", image_url: { url: fileToImageUrl(part) } });
-    }
-    return {
+  Effect.forEach(message.content, (part) => convertUserPart(part), { concurrency: 1 }).pipe(
+    Effect.map((parts): Wire.UserMessageRequest => ({
       role: "user",
-      content: hasNonText
+      content: Arr.some(parts, (part) => part.type !== "text")
         ? parts
         : parts.map((part) => (part.type === "text" ? part.text : "")).join(""),
-    };
-  });
+    })),
+  );
 
 /**
  * Converts an `assistant` message: text parts concatenate into `content`
@@ -325,8 +330,8 @@ const convertAssistantMessage = (
   }
   return {
     role: "assistant",
-    content: text.length > 0 ? text : null,
-    ...(toolCalls.length > 0 ? { tool_calls: toolCalls } : undefined),
+    content: Str.isNonEmpty(text) ? text : null,
+    ...(Arr.isReadonlyArrayNonEmpty(toolCalls) ? { tool_calls: toolCalls } : undefined),
   };
 };
 
@@ -352,29 +357,32 @@ const convertToolMessage = (message: Prompt.ToolMessage): Array<Wire.ToolMessage
  * Effect AI message maps to one Mistral message, except a `tool` message,
  * whose results each become their own Mistral `tool` message.
  */
+/** One Effect AI message as the request messages it becomes (a `tool` message may become several). */
+const convertMessage = (
+  message: Prompt.Message,
+): Effect.Effect<ReadonlyArray<Wire.MessageRequest>, AiError.AiError> =>
+  Match.value(message).pipe(
+    Match.discriminatorsExhaustive("role")({
+      system: (system) =>
+        Effect.succeed<ReadonlyArray<Wire.MessageRequest>>([
+          { role: "system", content: system.content },
+        ]),
+      user: (user) =>
+        Effect.map(convertUserMessage(user), (request): ReadonlyArray<Wire.MessageRequest> => [
+          request,
+        ]),
+      assistant: (assistant) =>
+        Effect.succeed<ReadonlyArray<Wire.MessageRequest>>([convertAssistantMessage(assistant)]),
+      tool: (tool) => Effect.succeed<ReadonlyArray<Wire.MessageRequest>>(convertToolMessage(tool)),
+    }),
+  );
+
 const prepareMessages = (
   prompt: Prompt.Prompt,
 ): Effect.Effect<ReadonlyArray<Wire.MessageRequest>, AiError.AiError> =>
-  Effect.gen(function* () {
-    const messages: Array<Wire.MessageRequest> = [];
-    for (const message of prompt.content) {
-      switch (message.role) {
-        case "system":
-          messages.push({ role: "system", content: message.content });
-          break;
-        case "user":
-          messages.push(yield* convertUserMessage(message));
-          break;
-        case "assistant":
-          messages.push(convertAssistantMessage(message));
-          break;
-        case "tool":
-          messages.push(...convertToolMessage(message));
-          break;
-      }
-    }
-    return messages;
-  });
+  Effect.forEach(prompt.content, (message) => convertMessage(message), { concurrency: 1 }).pipe(
+    Effect.map(Arr.flatten),
+  );
 
 // =============================================================================
 // Tool Conversion
@@ -459,13 +467,12 @@ const prepareTools = (
   AiError.AiError
 > =>
   Effect.gen(function* () {
-    if (options.tools.length === 0 || options.toolChoice === "none") {
+    if (Arr.isReadonlyArrayEmpty(options.tools) || options.toolChoice === "none") {
       return { tools: undefined, toolChoice: undefined };
     }
-    const tools: Array<Wire.ToolRequest> = [];
-    for (const tool of options.tools) {
-      tools.push(yield* buildToolRequest(tool));
-    }
+    const tools = yield* Effect.forEach(options.tools, (tool) => buildToolRequest(tool), {
+      concurrency: 1,
+    });
     return resolveToolChoice(options.toolChoice, tools);
   });
 
@@ -501,23 +508,17 @@ const prepareResponseFormat = (
 // Shared Response Helpers
 // =============================================================================
 
-const mapFinishReason = (reason: string | null | undefined): Response.FinishReason => {
-  switch (reason) {
-    case "stop":
-      return "stop";
-    case "length":
-    case "model_length":
-      return "length";
-    case "tool_calls":
-      return "tool-calls";
-    case "content_filter":
-      return "content-filter";
-    case "error":
-      return "error";
-    default:
-      return Predicate.isNullish(reason) ? "unknown" : "other";
-  }
-};
+const mapFinishReason = (reason: string | null | undefined): Response.FinishReason =>
+  Match.value(reason).pipe(
+    Match.when("stop", (): Response.FinishReason => "stop"),
+    Match.when(Match.is("length", "model_length"), (): Response.FinishReason => "length"),
+    Match.when("tool_calls", (): Response.FinishReason => "tool-calls"),
+    Match.when("content_filter", (): Response.FinishReason => "content-filter"),
+    Match.when("error", (): Response.FinishReason => "error"),
+    Match.orElse((other): Response.FinishReason =>
+      Predicate.isNullish(other) ? "unknown" : "other",
+    ),
+  );
 
 const makeUsage = (usage: Wire.ChatCompletionResponse["usage"]): typeof Response.Usage.Encoded => ({
   inputTokens: {
@@ -574,20 +575,27 @@ const makeResponse = (
     const choice = body.choices[0];
     if (Predicate.isNotUndefined(choice)) {
       const content = choice.message.content;
-      if (Predicate.isNotNullish(content) && content.length > 0) {
+      if (Predicate.isNotNullish(content) && Str.isNonEmpty(content)) {
         parts.push({ type: "text", text: content });
       }
       const toolCalls = choice.message.tool_calls;
       if (Predicate.isNotNullish(toolCalls)) {
-        for (const toolCall of toolCalls) {
-          parts.push({
-            type: "tool-call",
-            id: toolCall.id ?? (yield* generateId()),
-            name: toolCall.function.name,
-            params: Wire.parseJsonLenient(toolCall.function.arguments),
-            providerExecuted: false,
-          });
-        }
+        const toolCallParts = yield* Effect.forEach(
+          toolCalls,
+          (toolCall) =>
+            Effect.map(
+              Predicate.isNotNullish(toolCall.id) ? Effect.succeed(toolCall.id) : generateId(),
+              (id): Response.PartEncoded => ({
+                type: "tool-call",
+                id,
+                name: toolCall.function.name,
+                params: Wire.parseJsonLenient(toolCall.function.arguments),
+                providerExecuted: false,
+              }),
+            ),
+          { concurrency: 1 },
+        );
+        parts.push(...toolCallParts);
       }
       parts.push({
         type: "finish",
@@ -673,7 +681,7 @@ const handleTextDelta = (
   context: StreamContext,
   out: Array<Response.StreamPartEncoded>,
 ): void => {
-  if (!Predicate.isNotNullish(content) || content.length === 0) {
+  if (!Predicate.isNotNullish(content) || Str.isEmpty(content)) {
     return;
   }
   if (!state.textStarted) {
@@ -696,7 +704,7 @@ const getOrCreateToolAccumulator = (
 ): ToolAccumulator => {
   const existing = state.tools.get(index);
   if (Predicate.isNotUndefined(existing)) {
-    if (existing.name.length === 0 && Predicate.isNotUndefined(toolCall.function?.name)) {
+    if (Str.isEmpty(existing.name) && Predicate.isNotUndefined(toolCall.function?.name)) {
       existing.name = toolCall.function.name;
     }
     return existing;
@@ -727,7 +735,7 @@ const handleToolCallDelta = (
   }
 
   const argsFragment = toolCall.function?.arguments;
-  if (Predicate.isNotUndefined(argsFragment) && argsFragment.length > 0) {
+  if (Predicate.isNotUndefined(argsFragment) && Str.isNonEmpty(argsFragment)) {
     accumulator.args += argsFragment;
     out.push({ type: "tool-params-delta", id: accumulator.id, delta: argsFragment });
   }
@@ -793,7 +801,7 @@ const finalize = (
       type: "tool-call",
       id: accumulator.id,
       name: accumulator.name,
-      params: Wire.parseJsonLenient(accumulator.args.length > 0 ? accumulator.args : "{}"),
+      params: Wire.parseJsonLenient(Str.isNonEmpty(accumulator.args) ? accumulator.args : "{}"),
       providerExecuted: false,
     });
   }

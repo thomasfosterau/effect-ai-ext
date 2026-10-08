@@ -14,6 +14,7 @@
 
 import * as Effect from "effect/Effect";
 import { dual } from "effect/Function";
+import * as Match from "effect/Match";
 import * as Option from "effect/Option";
 import * as Redactable from "effect/Redactable";
 import type * as Redacted from "effect/Redacted";
@@ -91,12 +92,9 @@ export const mapHttpClientError = dual<
   ) => (error: HttpClientError.HttpClientError) => Effect.Effect<never, AiError.AiError>,
   (error: HttpClientError.HttpClientError, method: string) => Effect.Effect<never, AiError.AiError>
 >(2, (error, method) => {
-  const reason = error.reason;
-  switch (reason._tag) {
-    case "TransportError":
-    case "EncodeError":
-    case "InvalidUrlError": {
-      return Effect.fail(
+  return Match.value(error.reason).pipe(
+    Match.tag("TransportError", "EncodeError", "InvalidUrlError", (reason) =>
+      Effect.fail(
         AiError.make({
           module: MODULE,
           method,
@@ -106,14 +104,12 @@ export const mapHttpClientError = dual<
             request: buildRequestDetails(reason.request),
           }),
         }),
-      );
-    }
-    case "StatusCodeError": {
-      return mapStatusCodeError(reason, method);
-    }
-    default: {
-      // DecodeError / EmptyBodyError — a 2xx response whose body could not be read.
-      return Effect.fail(
+      ),
+    ),
+    Match.tag("StatusCodeError", (reason) => mapStatusCodeError(reason, method)),
+    // DecodeError / EmptyBodyError — a 2xx response whose body could not be read.
+    Match.orElse((reason) =>
+      Effect.fail(
         AiError.make({
           module: MODULE,
           method,
@@ -121,9 +117,9 @@ export const mapHttpClientError = dual<
             description: reason.description ?? "Failed to read Mistral response body",
           }),
         }),
-      );
-    }
-  }
+      ),
+    ),
+  );
 });
 
 const mapStatusCodeError = Effect.fnUntraced(function* (

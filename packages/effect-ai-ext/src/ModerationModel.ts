@@ -18,6 +18,7 @@
  *   invoking the provider.
  */
 
+import * as Arr from "effect/Array";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
@@ -208,7 +209,7 @@ export const make = (params: {
   Effect.sync(() =>
     ModerationModel.of({
       moderate: (options) =>
-        (options.inputs.length === 0
+        (Arr.isReadonlyArrayEmpty(options.inputs)
           ? Effect.succeed(emptyResponse())
           : params
               .moderate({ inputs: options.inputs })

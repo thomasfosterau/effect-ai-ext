@@ -23,6 +23,8 @@
  * @copyright Thomas Foster
  */
 
+import * as Order from "effect/Order";
+import * as Arr from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Predicate from "effect/Predicate";
 import * as Equal from "effect/Equal";
@@ -96,8 +98,13 @@ const processingOrder = (
   if (options.ordered || !options.matchParams) {
     return expected.map((_, index) => index);
   }
-  return [...expected.keys()].sort(
-    (a, b) => Number(expected[b]!.params !== undefined) - Number(expected[a]!.params !== undefined),
+  // Calls that pin params first (a stable sort keeps each group's order).
+  return Arr.sort(
+    expected.keys(),
+    Order.mapInput(
+      Order.flip(Order.Boolean),
+      (index: number) => expected[index]!.params !== undefined,
+    ),
   );
 };
 
@@ -164,13 +171,13 @@ const describeMismatches = (
   extraActual: ReadonlyArray<ToolCall>,
 ): string | undefined => {
   const parts: string[] = [];
-  if (unmatchedExpected.length > 0) {
+  if (Arr.isReadonlyArrayNonEmpty(unmatchedExpected)) {
     parts.push(`missing: ${unmatchedExpected.map((call) => call.name).join(", ")}`);
   }
-  if (extraActual.length > 0) {
+  if (Arr.isReadonlyArrayNonEmpty(extraActual)) {
     parts.push(`unexpected: ${extraActual.map((call) => call.name).join(", ")}`);
   }
-  return parts.length > 0 ? parts.join("; ") : undefined;
+  return Arr.isReadonlyArrayNonEmpty(parts) ? parts.join("; ") : undefined;
 };
 
 /** Builds a scorer comparing `evalCase.toolCalls` against `evalCase.golden.expectedTools` under the given {@link ToolCallCorrectnessOptions}. */
@@ -194,11 +201,12 @@ export const toolCallCorrectness = (
         const reason = describeMismatches(unmatchedExpected, extraActual);
 
         if (mode === "exact") {
-          const isExact = unmatchedExpected.length === 0 && extraActual.length === 0;
+          const isExact =
+            Arr.isReadonlyArrayEmpty(unmatchedExpected) && Arr.isReadonlyArrayEmpty(extraActual);
           return { score: isExact ? 1 : 0, reason };
         }
 
-        const score = expected.length === 0 ? 1 : matchedCount / expected.length;
+        const score = Arr.isReadonlyArrayEmpty(expected) ? 1 : matchedCount / expected.length;
         return { score, reason };
       }),
   });

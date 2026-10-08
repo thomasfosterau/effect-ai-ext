@@ -19,6 +19,7 @@
  * @copyright Thomas Foster
  */
 
+import * as Arr from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import { AiError, LanguageModel } from "effect/ai";
@@ -164,13 +165,13 @@ export const classifyStatements = (
 
 /** The ratio of `"yes"` verdicts to total, vacuously `1` when there's nothing to classify. */
 export const ratioScore = (verdicts: ReadonlyArray<Verdict>): number =>
-  verdicts.length === 0
+  Arr.isReadonlyArrayEmpty(verdicts)
     ? 1
     : verdicts.filter((verdict) => verdict.verdict === "yes").length / verdicts.length;
 
 /** Summarises verdicts into a human-readable `Score.reason`: a pass count, then each `"no"` verdict's statement and reason. */
 export const summarizeVerdicts = (verdicts: ReadonlyArray<Verdict>): string => {
-  if (verdicts.length === 0) return "No statements to evaluate.";
+  if (Arr.isReadonlyArrayEmpty(verdicts)) return "No statements to evaluate.";
   const passCount = verdicts.filter((verdict) => verdict.verdict === "yes").length;
   const failures = verdicts
     .filter((verdict) => verdict.verdict === "no")
@@ -178,7 +179,7 @@ export const summarizeVerdicts = (verdicts: ReadonlyArray<Verdict>): string => {
       verdict.reason ? `- ${verdict.statement}: ${verdict.reason}` : `- ${verdict.statement}`,
     );
   const summary = `${passCount}/${verdicts.length} statements passed.`;
-  return failures.length > 0 ? [summary, ...failures].join("\n") : summary;
+  return Arr.isReadonlyArrayNonEmpty(failures) ? [summary, ...failures].join("\n") : summary;
 };
 
 // ── Composed primitive ───────────────────────────────────────────────
@@ -203,7 +204,7 @@ export const extractThenClassifyRatio = (
   Effect.gen(function* () {
     const statements = yield* extractStatements(options.extract);
 
-    if (statements.length === 0) {
+    if (Arr.isReadonlyArrayEmpty(statements)) {
       return {
         score: 1,
         reason: "No statements to evaluate.",

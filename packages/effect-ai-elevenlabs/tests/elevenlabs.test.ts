@@ -428,6 +428,21 @@ describe("ElevenLabsTranscriptionModel.transcribe", () => {
     expect(form.get("language_code")).toBe("fr");
   });
 
+  it("maps a transcript body that is not JSON at all to an InvalidOutputError", async () => {
+    const { fetch } = makeFetch(
+      () =>
+        new Response("not json", { status: 200, headers: { "content-type": "application/json" } }),
+    );
+
+    const error = await expectFailureInstanceOf(
+      Effect.flatMap(TranscriptionModel.TranscriptionModel, (model) =>
+        model.transcribe({ audio: bytes(1) }),
+      ).pipe(Effect.provide(transcriptionLayer(fetch))),
+      AiError.AiError,
+    );
+    expect(error.reason._tag).toBe("InvalidOutputError");
+  });
+
   it("maps a transcript body that does not decode to an AiError", async () => {
     const { fetch } = makeFetch(() => jsonResponse({ text: 42 }));
 

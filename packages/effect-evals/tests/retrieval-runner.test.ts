@@ -14,6 +14,8 @@
  */
 
 import { describe, expect, it } from "vite-plus/test";
+import * as Arr from "effect/Array";
+import * as Order from "effect/Order";
 import * as Effect from "effect/Effect";
 import { Cache, Dataset, Result, Runner, Threshold } from "../src/index.ts";
 import { runTest } from "./helpers/effect.ts";
@@ -84,7 +86,10 @@ describe("Runner.runRetrievalSuite", () => {
       "recall@10",
       "ndcg@10",
     ]);
-    expect(Object.keys(result.aggregate.metrics).sort()).toEqual(["ndcg@10", "recall@10"]);
+    expect(Arr.sort(Object.keys(result.aggregate.metrics), Order.String)).toEqual([
+      "ndcg@10",
+      "recall@10",
+    ]);
   });
 
   it("passes the page size to the port and truncates a port that over-returns", async () => {

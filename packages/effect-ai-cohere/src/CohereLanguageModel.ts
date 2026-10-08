@@ -28,6 +28,9 @@
  * @copyright Thomas Foster
  */
 
+import * as Match from "effect/Match";
+import * as Str from "effect/String";
+import * as Arr from "effect/Array";
 import * as Context from "effect/Context";
 import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
@@ -278,35 +281,37 @@ const fileToImageUrl = (part: Prompt.FilePart): string => {
  * non-image file part is rejected — Cohere chat accepts images only (on
  * vision-capable Command models).
  */
+/** One user content part as a request part: text, or an image (the only file type Cohere accepts). */
+const convertUserPart = (
+  part: Prompt.UserMessage["content"][number],
+): Effect.Effect<Wire.RequestContentPart, AiError.AiError> => {
+  if (part.type === "text") {
+    return Effect.succeed({ type: "text", text: part.text });
+  }
+  if (!part.mediaType.startsWith("image/")) {
+    return Effect.fail(
+      failure(
+        "prepareMessages",
+        new AiErrorNs.InvalidUserInputError({
+          description: `Cohere chat supports image files only; received '${part.mediaType}'`,
+        }),
+      ),
+    );
+  }
+  return Effect.succeed({ type: "image_url", image_url: { url: fileToImageUrl(part) } });
+};
+
 const convertUserMessage = (
   message: Prompt.UserMessage,
 ): Effect.Effect<Wire.UserMessageRequest, AiError.AiError> =>
-  Effect.gen(function* () {
-    const parts: Array<Wire.RequestContentPart> = [];
-    let hasNonText = false;
-    for (const part of message.content) {
-      if (part.type === "text") {
-        parts.push({ type: "text", text: part.text });
-        continue;
-      }
-      if (!part.mediaType.startsWith("image/")) {
-        return yield* failure(
-          "prepareMessages",
-          new AiErrorNs.InvalidUserInputError({
-            description: `Cohere chat supports image files only; received '${part.mediaType}'`,
-          }),
-        );
-      }
-      hasNonText = true;
-      parts.push({ type: "image_url", image_url: { url: fileToImageUrl(part) } });
-    }
-    return {
+  Effect.forEach(message.content, (part) => convertUserPart(part), { concurrency: 1 }).pipe(
+    Effect.map((parts): Wire.UserMessageRequest => ({
       role: "user",
-      content: hasNonText
+      content: Arr.some(parts, (part) => part.type !== "text")
         ? parts
         : parts.map((part) => (part.type === "text" ? part.text : "")).join(""),
-    };
-  });
+    })),
+  );
 
 /**
  * Converts an `assistant` message: text parts concatenate into `content`
@@ -332,8 +337,8 @@ const convertAssistantMessage = (
   }
   return {
     role: "assistant",
-    content: text.length > 0 ? text : null,
-    ...(toolCalls.length > 0 ? { tool_calls: toolCalls } : undefined),
+    content: Str.isNonEmpty(text) ? text : null,
+    ...(Arr.isReadonlyArrayNonEmpty(toolCalls) ? { tool_calls: toolCalls } : undefined),
   };
 };
 
@@ -358,29 +363,32 @@ const convertToolMessage = (message: Prompt.ToolMessage): Array<Wire.ToolMessage
  * Effect AI message maps to one Cohere message, except a `tool` message, whose
  * results each become their own Cohere `tool` message.
  */
+/** One Effect AI message as the request messages it becomes (a `tool` message may become several). */
+const convertMessage = (
+  message: Prompt.Message,
+): Effect.Effect<ReadonlyArray<Wire.MessageRequest>, AiError.AiError> =>
+  Match.value(message).pipe(
+    Match.discriminatorsExhaustive("role")({
+      system: (system) =>
+        Effect.succeed<ReadonlyArray<Wire.MessageRequest>>([
+          { role: "system", content: system.content },
+        ]),
+      user: (user) =>
+        Effect.map(convertUserMessage(user), (request): ReadonlyArray<Wire.MessageRequest> => [
+          request,
+        ]),
+      assistant: (assistant) =>
+        Effect.succeed<ReadonlyArray<Wire.MessageRequest>>([convertAssistantMessage(assistant)]),
+      tool: (tool) => Effect.succeed<ReadonlyArray<Wire.MessageRequest>>(convertToolMessage(tool)),
+    }),
+  );
+
 const prepareMessages = (
   prompt: Prompt.Prompt,
 ): Effect.Effect<ReadonlyArray<Wire.MessageRequest>, AiError.AiError> =>
-  Effect.gen(function* () {
-    const messages: Array<Wire.MessageRequest> = [];
-    for (const message of prompt.content) {
-      switch (message.role) {
-        case "system":
-          messages.push({ role: "system", content: message.content });
-          break;
-        case "user":
-          messages.push(yield* convertUserMessage(message));
-          break;
-        case "assistant":
-          messages.push(convertAssistantMessage(message));
-          break;
-        case "tool":
-          messages.push(...convertToolMessage(message));
-          break;
-      }
-    }
-    return messages;
-  });
+  Effect.forEach(prompt.content, (message) => convertMessage(message), { concurrency: 1 }).pipe(
+    Effect.map(Arr.flatten),
+  );
 
 // =============================================================================
 // Tool Conversion
@@ -473,13 +481,12 @@ const prepareTools = (
   AiError.AiError
 > =>
   Effect.gen(function* () {
-    if (options.tools.length === 0 || options.toolChoice === "none") {
+    if (Arr.isReadonlyArrayEmpty(options.tools) || options.toolChoice === "none") {
       return { tools: undefined, toolChoice: undefined };
     }
-    const tools: Array<Wire.ToolRequest> = [];
-    for (const tool of options.tools) {
-      tools.push(yield* buildToolRequest(tool));
-    }
+    const tools = yield* Effect.forEach(options.tools, (tool) => buildToolRequest(tool), {
+      concurrency: 1,
+    });
     return resolveToolChoice(options.toolChoice, tools);
   });
 
@@ -521,26 +528,17 @@ const mapFinishReason = (reason: string | null | undefined): Response.FinishReas
   if (Predicate.isNullish(reason)) {
     return "unknown";
   }
-  switch (reason.toLowerCase()) {
-    case "complete":
-    case "stop":
-    case "stop_sequence":
-      return "stop";
-    case "max_tokens":
-    case "length":
-      return "length";
-    case "tool_call":
-    case "tool_calls":
-      return "tool-calls";
-    case "error_toxic":
-    case "content_filter":
-      return "content-filter";
-    case "error":
-    case "error_limit":
-      return "error";
-    default:
-      return "other";
-  }
+  return Match.value(reason.toLowerCase()).pipe(
+    Match.when(Match.is("complete", "stop", "stop_sequence"), (): Response.FinishReason => "stop"),
+    Match.when(Match.is("max_tokens", "length"), (): Response.FinishReason => "length"),
+    Match.when(Match.is("tool_call", "tool_calls"), (): Response.FinishReason => "tool-calls"),
+    Match.when(
+      Match.is("error_toxic", "content_filter"),
+      (): Response.FinishReason => "content-filter",
+    ),
+    Match.when(Match.is("error", "error_limit"), (): Response.FinishReason => "error"),
+    Match.orElse((): Response.FinishReason => "other"),
+  );
 };
 
 /** The shared usage envelope Cohere reports under either `usage` or `meta`. */
@@ -616,21 +614,28 @@ const makeResponse = (
     });
 
     const text = collectText(body.message.content);
-    if (text.length > 0) {
+    if (Str.isNonEmpty(text)) {
       parts.push({ type: "text", text });
     }
 
     const toolCalls = body.message.tool_calls;
     if (Predicate.isNotNullish(toolCalls)) {
-      for (const toolCall of toolCalls) {
-        parts.push({
-          type: "tool-call",
-          id: toolCall.id ?? (yield* generateId()),
-          name: toolCall.function.name,
-          params: Wire.parseJsonLenient(toolCall.function.arguments ?? "{}"),
-          providerExecuted: false,
-        });
-      }
+      const toolCallParts = yield* Effect.forEach(
+        toolCalls,
+        (toolCall) =>
+          Effect.map(
+            Predicate.isNotNullish(toolCall.id) ? Effect.succeed(toolCall.id) : generateId(),
+            (id): Response.PartEncoded => ({
+              type: "tool-call",
+              id,
+              name: toolCall.function.name,
+              params: Wire.parseJsonLenient(toolCall.function.arguments ?? "{}"),
+              providerExecuted: false,
+            }),
+          ),
+        { concurrency: 1 },
+      );
+      parts.push(...toolCallParts);
     }
 
     parts.push({
@@ -716,7 +721,7 @@ const handleTextDelta = (
     state.textStarted = true;
     out.push({ type: "text-start", id: context.textId });
   }
-  if (Predicate.isNotNullish(text) && text.length > 0) {
+  if (Predicate.isNotNullish(text) && Str.isNonEmpty(text)) {
     out.push({ type: "text-delta", id: context.textId, delta: text });
   }
 };
@@ -730,7 +735,7 @@ const getOrCreateToolAccumulator = (
   const existing = state.tools.get(index);
   if (Predicate.isNotUndefined(existing)) {
     const name = toolCall.function?.name;
-    if (existing.name.length === 0 && Predicate.isNotUndefined(name) && name !== null) {
+    if (Str.isEmpty(existing.name) && Predicate.isNotUndefined(name) && name !== null) {
       existing.name = name;
     }
     return existing;
@@ -766,7 +771,7 @@ const handleToolCallDelta = (
   }
 
   const argsFragment = toolCall.function?.arguments;
-  if (Predicate.isNotNullish(argsFragment) && argsFragment.length > 0) {
+  if (Predicate.isNotNullish(argsFragment) && Str.isNonEmpty(argsFragment)) {
     accumulator.args += argsFragment;
     out.push({ type: "tool-params-delta", id: accumulator.id, delta: argsFragment });
   }
@@ -790,33 +795,26 @@ const handleEvent = (
 
   const content = event.delta?.message?.content;
 
-  switch (event.type) {
-    case "content-start":
-    case "content-delta": {
+  Match.value(event.type).pipe(
+    Match.when(Match.is("content-start", "content-delta"), () => {
       if (Predicate.isNullish(content) || content.type === undefined || content.type === "text") {
         handleTextDelta(content?.text, state, context, out);
       }
-      break;
-    }
-    case "content-end": {
+    }),
+    Match.when("content-end", () => {
       if (state.textStarted && !state.textEnded) {
         state.textEnded = true;
         out.push({ type: "text-end", id: context.textId });
       }
-      break;
-    }
-    case "tool-call-start":
-    case "tool-call-delta": {
-      handleToolCallDelta(event, state, context, out);
-      break;
-    }
-    case "message-end": {
-      finalize(state, context, out, event.delta?.finish_reason, event.delta?.usage);
-      break;
-    }
-    default:
-      break;
-  }
+    }),
+    Match.when(Match.is("tool-call-start", "tool-call-delta"), () =>
+      handleToolCallDelta(event, state, context, out),
+    ),
+    Match.when("message-end", () =>
+      finalize(state, context, out, event.delta?.finish_reason, event.delta?.usage),
+    ),
+    Match.orElse(() => undefined),
+  );
 
   return out;
 };
@@ -849,7 +847,7 @@ const finalize = (
       type: "tool-call",
       id: accumulator.id,
       name: accumulator.name,
-      params: Wire.parseJsonLenient(accumulator.args.length > 0 ? accumulator.args : "{}"),
+      params: Wire.parseJsonLenient(Str.isNonEmpty(accumulator.args) ? accumulator.args : "{}"),
       providerExecuted: false,
     });
   }

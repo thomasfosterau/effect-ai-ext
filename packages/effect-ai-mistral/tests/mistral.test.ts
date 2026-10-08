@@ -314,6 +314,19 @@ describe("MistralLanguageModel.generateText", () => {
     expect(messages[2]).toMatchObject({ role: "tool", tool_call_id: "call_1", content: "sunny" });
   });
 
+  it("maps a success body that is not JSON at all to an InvalidOutputError", async () => {
+    const { fetch } = makeFetch(
+      () =>
+        new Response("not json", { status: 200, headers: { "content-type": "application/json" } }),
+    );
+
+    const error = await expectFailureInstanceOf(
+      LanguageModel.generateText({ prompt: "hi" }).pipe(Effect.provide(modelLayer(fetch))),
+      AiError.AiError,
+    );
+    expect(error.reason._tag).toBe("InvalidOutputError");
+  });
+
   it("maps an undecodable success body to an AiError", async () => {
     const { fetch } = makeFetch(() => jsonResponse({ not: "a completion" }));
 

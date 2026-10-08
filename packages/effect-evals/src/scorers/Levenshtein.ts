@@ -9,6 +9,7 @@
  * @copyright Thomas Foster
  */
 
+import * as Str from "effect/String";
 import * as Effect from "effect/Effect";
 import * as Scorer from "../Scorer.ts";
 import type { StringCase } from "./StringCase.ts";
@@ -20,8 +21,8 @@ import type { StringCase } from "./StringCase.ts";
  */
 const levenshteinDistance = (a: string, b: string): number => {
   if (a === b) return 0;
-  if (a.length === 0) return b.length;
-  if (b.length === 0) return a.length;
+  if (Str.isEmpty(a)) return b.length;
+  if (Str.isEmpty(b)) return a.length;
   if (a.length < b.length) [a, b] = [b, a];
 
   let previousRow = Array.from({ length: b.length + 1 }, (_, index) => index);
