@@ -64,10 +64,14 @@ export const gatewayBaseUrl = (
 ): string =>
   `https://gateway.ai.cloudflare.com/v1/${config.accountId}/${config.gatewayId}/${provider}`;
 
-/** The header {@link cfAigAuthorizationHeader} builds. */
-export interface CfAigAuthorizationHeader {
+/**
+ * The header {@link cfAigAuthorizationHeader} builds. A type alias, not an
+ * interface, so it keeps the implicit index signature that lets it be passed
+ * where a `Record<string, string>` of headers is expected.
+ */
+export type CfAigAuthorizationHeader = {
   readonly "cf-aig-authorization": string;
-}
+};
 
 /**
  * The `cf-aig-authorization` header Cloudflare's authenticated-gateway
