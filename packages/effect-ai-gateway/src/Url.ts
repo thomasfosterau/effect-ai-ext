@@ -60,7 +60,7 @@ export const gatewayUrlConfig: Config.Config<GatewayUrlConfig> = Config.all({
  */
 export const gatewayBaseUrl = (
   config: GatewayUrlConfig,
-  provider: AIGatewayProviders | (string & {}),
+  provider: AIGatewayProviders | (string & Record<never, never>),
 ): string =>
   `https://gateway.ai.cloudflare.com/v1/${config.accountId}/${config.gatewayId}/${provider}`;
 

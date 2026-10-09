@@ -114,7 +114,7 @@ export class Config extends Context.Service<Config, ConfigService>()(
  * @see {@link make} for the service effect
  */
 export const model = (
-  model: (string & {}) | Model,
+  model: (string & Record<never, never>) | Model,
   config?: Omit<ConfigService, "model">,
 ): AiModel.Model<"cohere", LanguageModel.LanguageModel, CohereClient> =>
   AiModel.make("cohere", model, layer({ model, config }));
@@ -131,7 +131,7 @@ export const make = Effect.fnUntraced(function* ({
   model,
   config: providerConfig,
 }: {
-  readonly model: (string & {}) | Model;
+  readonly model: (string & Record<never, never>) | Model;
   readonly config?: Omit<ConfigService, "model"> | undefined;
 }): Effect.fn.Return<LanguageModel.LanguageModel, never, CohereClient> {
   const client = yield* CohereClient;
@@ -219,7 +219,7 @@ export const make = Effect.fnUntraced(function* ({
  * layer, drawing {@link CohereClient} from another layer.
  */
 export const layer = (options: {
-  readonly model: (string & {}) | Model;
+  readonly model: (string & Record<never, never>) | Model;
   readonly config?: Omit<ConfigService, "model"> | undefined;
 }): Layer.Layer<LanguageModel.LanguageModel, never, CohereClient> =>
   Layer.effect(LanguageModel.LanguageModel, make(options));

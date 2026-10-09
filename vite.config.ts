@@ -127,13 +127,6 @@ export default defineConfig({
       "effect/no-unknown-parameters": "warn",
       "effect/no-unsafe-dictionary-type": "warn",
       "effect/no-runtime-typeof": "warn",
-      // Every `{}` type here is the `(string & {})` half of a model-id
-      // parameter (`Model | (string & {})`): it keeps the known ids in
-      // autocomplete while accepting any string, the spelling upstream
-      // `@effect/ai-anthropic` uses for the same parameter. The rule's
-      // suggested `Record<string, never>` is not assignable from a string, so
-      // it has no satisfiable fix for that idiom (#98).
-      "effect/avoid-object-type": "off",
       "typescript/no-explicit-any": "off",
       "typescript/no-empty-object-type": "off",
       "typescript/ban-ts-comment": "off",

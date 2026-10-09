@@ -44,7 +44,7 @@ export const RERANKER_MODELS: ReadonlyArray<Model> = [
 /** Configuration for constructing a {@link VoyageRerankerModel}. */
 export interface Options {
   /** The Voyage reranker model id. Any string is accepted. */
-  readonly model: (string & {}) | Model;
+  readonly model: (string & Record<never, never>) | Model;
   /**
    * Whether Voyage truncates over-length inputs (`true`) instead of failing
    * the request. Voyage defaults to `true`.

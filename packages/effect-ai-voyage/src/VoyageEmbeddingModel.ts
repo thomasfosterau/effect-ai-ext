@@ -107,7 +107,7 @@ const isKnownModel = (model: string): model is Model => Object.hasOwn(EMBEDDING_
 /** Configuration for constructing a {@link VoyageEmbeddingModel}. */
 export interface Options {
   /** The Voyage embedding model id. Any string is accepted. */
-  readonly model: (string & {}) | Model;
+  readonly model: (string & Record<never, never>) | Model;
   /**
    * Voyage's retrieval-aware input type. Embed stored documents with
    * `"document"` and search queries with `"query"`; omit to embed as-is.

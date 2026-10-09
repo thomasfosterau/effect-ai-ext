@@ -37,7 +37,7 @@ export type Model = "scribe_v1" | "scribe_v1_experimental";
 /** Construction-time defaults for an {@link ElevenLabsTranscriptionModel}. */
 export interface Settings {
   /** Scribe model id (default `scribe_v1`). */
-  readonly modelId?: (string & {}) | Model | undefined;
+  readonly modelId?: (string & Record<never, never>) | Model | undefined;
   /** Default language-code hint; a call's `language` overrides it. */
   readonly languageCode?: string | undefined;
   /** Timestamp granularity (`word` or `character`; default `word`). */
