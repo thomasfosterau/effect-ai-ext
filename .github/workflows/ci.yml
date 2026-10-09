@@ -69,10 +69,14 @@ jobs:
       # The suites again under Istanbul, failing if any package's coverage
       # drops below its floor (`coverageFloor` in each package's
       # vite.config.ts, #100). effect-web runs no coverage step, so its
-      # thresholds bite only locally; here the ratchet is a CI gate. It also
-      # refreshes coverage/coverage-final.json, though nothing in CI reads it.
+      # thresholds bite only locally; here the ratchet is a CI gate. `-r` runs
+      # each package's own suite against only its own tests: the root task
+      # alone merges every package's tests into one map, so another package's
+      # tests can cover a file and hide a drop. `-r` includes the root task,
+      # so it also refreshes coverage/coverage-final.json (fallow's map),
+      # though nothing in CI reads it.
       - name: Coverage floors
-        run: vp run test:coverage
+        run: vp run -r test:coverage
       - name: Build
         run: vp run -r build
       # Imports every built entry under real Node ESM and checks every value

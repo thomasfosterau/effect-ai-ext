@@ -61,9 +61,11 @@ export interface PackageConfigOptions {
   readonly coverageExclude?: ReadonlyArray<string> | undefined;
   /**
    * The package's coverage ratchet (see `CoverageFloor`). Declared as the
-   * `coverageFloor` named export of the package's `vite.config.ts`, which the
-   * root config also reads, so `vp run -r test:coverage` (per package) and
-   * `vp run test:coverage` (root) enforce the same numbers.
+   * `coverageFloor` named export of the package's `vite.config.ts`. The gate is
+   * `vp run -r test:coverage`, which measures each package with only its own
+   * tests. The root config also reads it for its per-package glob thresholds,
+   * a weaker extra check: same numbers, but measured with every package's
+   * tests, so another package's tests can hide a drop.
    */
   readonly coverageFloor?: CoverageFloor;
 }

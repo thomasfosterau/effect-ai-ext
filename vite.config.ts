@@ -338,7 +338,11 @@ export default defineConfig({
       include: ["packages/*/src/**/*.ts"],
       exclude: ["**/*.d.ts", "packages/effect-evals/src/cli/main.ts"],
       // Per package, not global: a glob's numbers aggregate only the files it
-      // matches, so one package's surplus never hides another's drop.
+      // matches, so one package's surplus never offsets another's drop. A
+      // weaker extra check, not the gate: the map here merges every package's
+      // tests, so a package's files also count lines another package's tests
+      // reach. The gate is `vp run -r test:coverage`, where each package's
+      // own config measures it with only its own tests (#100).
       thresholds: Object.fromEntries(
         Object.entries(coverageFloors).map(([dir, floor]) => [
           `packages/${dir}/src/**`,

@@ -42,7 +42,7 @@
   - No live-key or live-network tests: stub at `FetchHttpClient.Fetch` (capture the request, return a canned `Response` or SSE stream) or at the abstraction's `make` seam.
   - Effect helpers live per package in `tests/helpers/effect.ts` (`runTest`, `runTestExit`, `expectFailureInstanceOf`, `recordingTracer`); import from `vite-plus/test` (never `vitest`; the `vite-plus/prefer-vite-plus-imports` lint rule enforces it) and provide layers per test with `Effect.provide`.
   - Streaming providers also prove backpressure (a chunked stub, no unbounded buffering) and interruption (interrupting the Effect cancels the in-flight HTTP stream).
-  - **Coverage is a ratchet (#100).** Each package's `vite.config.ts` exports a `coverageFloor` (lines / branches / functions / statements), set from its measured coverage rounded down to the integer; `vite.package.ts` holds the shared target, effect-web's 90 / 85 / 90 / 90, which a metric the floor omits falls back to. Both `vp run test:coverage` (root, per-package glob thresholds) and `vp run -r test:coverage` fail when a package drops below its floor. When a change raises a package's coverage, raise its floor in the same PR; never lower a floor or exclude files to get a change through, add the tests instead. A new package adds its floor to `coverageFloors` in the root `vite.config.ts`.
+  - **Coverage is a ratchet (#100).** Each package's `vite.config.ts` exports a `coverageFloor` (lines / branches / functions / statements), set from its measured coverage rounded down to the integer; `vite.package.ts` holds the shared target, effect-web's 90 / 85 / 90 / 90, which a metric the floor omits falls back to. The gate is `vp run -r test:coverage`, which measures each package with only its own tests and fails when one drops below its floor (CI runs it). The root `vp run test:coverage` applies the same floors as per-package glob thresholds, a weaker extra check: its map merges every package's tests, so another package's tests can hide a drop. When a change raises a package's coverage, raise its floor in the same PR; never lower a floor or exclude files to get a change through, add the tests instead. A new package adds its floor to `coverageFloors` in the root `vite.config.ts`.
 - **No live credentials, tokens or secrets** in code or fixtures.
 
 ## Commands
@@ -53,7 +53,7 @@
 - `vp run -r build` — `vp pack` → every package's `dist/`.
 - `vp run docgen` — builds every package, then type-checks and runs every JSDoc `@example` with `@effect/docgen` (`tsc` + `tsx`) against the built `dist/` (each `docgen.json` maps the package names onto `dist/` through `examplesCompilerOptions.paths`) and writes the git-ignored API reference to `packages/*/docs/`. CI runs it.
 - `vp run check:dist` — builds every package, then imports every built entry and subpath under Node ESM and fails if a value export the bundled `.d.ts` declares is missing at runtime (which the src-resolving suites cannot see), and launches the `effect-evals` bin from a packed tarball under `node_modules`.
-- `vp run test:coverage` — every package's unit suite under one Istanbul map at `coverage/coverage-final.json`, which `fallow audit` reads for exact per-function CRAP scores (without the map fallow scores every function as uncovered); fails if any package's coverage drops below its `coverageFloor`. CI runs it.
+- `vp run test:coverage` — every package's unit suite under one Istanbul map at `coverage/coverage-final.json`, which `fallow audit` reads for exact per-function CRAP scores (without the map fallow scores every function as uncovered). Its per-package floor thresholds are only a weaker extra check, since every package's tests count toward each package; `vp run -r test:coverage` is the coverage gate, runs this root task too, and is what CI runs.
 - `pnpm audit --audit-level high` — the dependency audit CI runs (network).
 - `pnpm changeset` — add a changeset.
 
@@ -67,7 +67,7 @@ Before you report work as done, run the gates below in order and quote each comm
 2. `vp check`
 3. `vp run check`
 4. `vp run -r test:unit`
-5. `vp run test:coverage` (the coverage floors)
+5. `vp run -r test:coverage` (the coverage floors)
 6. `vp run -r build`
 7. `vp run check:dist`
 8. `vp run docgen`
