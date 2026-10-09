@@ -376,7 +376,9 @@ const extractParam = (evalCase: GEvalCase, param: EvaluationParam): Option.Optio
     // Not `Match.exhaustive`: eval files are type-stripped, never
     // type-checked, so an unknown param can arrive from an untyped caller.
     // It is reported as missing (`MissingEvaluationParamError`), not a defect.
-    Match.orElse(() => Option.none()),
+    // The `never` parameter keeps the compile-time check: a new
+    // `EvaluationParam` without its own `Match.when` is a type error here.
+    Match.orElse((_unknown: never) => Option.none()),
   );
 
 /** Options for {@link gEval}. */
@@ -456,9 +458,9 @@ const extractConversationalParam = (
     Match.when("scenario", () => renderField(evalCase.scenario)),
     Match.when("expectedOutcome", () => renderField(evalCase.expectedOutcome)),
     Match.when("context", () => renderField(evalCase.context)),
-    // An unknown param from an untyped caller is reported as missing, as in
-    // `extractParam`.
-    Match.orElse(() => Option.none()),
+    // An unknown param from an untyped caller is reported as missing, and the
+    // `never` parameter keeps the compile-time check, as in `extractParam`.
+    Match.orElse((_unknown: never) => Option.none()),
   );
 
 /** Options for {@link gEvalConversational}. */
