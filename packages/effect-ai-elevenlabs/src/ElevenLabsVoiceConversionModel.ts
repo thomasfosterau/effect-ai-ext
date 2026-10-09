@@ -34,7 +34,7 @@ export type Model = "eleven_multilingual_sts_v2" | "eleven_english_sts_v2";
 /** Construction-time defaults for an {@link ElevenLabsVoiceConversionModel}. */
 export interface Settings {
   /** ElevenLabs speech-to-speech model id (e.g. `eleven_multilingual_sts_v2`). */
-  readonly modelId?: (string & {}) | Model | undefined;
+  readonly modelId?: (string & Record<never, never>) | Model | undefined;
   /**
    * Explicit ElevenLabs `output_format` (e.g. `mp3_44100_128`). Wins over a
    * call's neutral `format`.

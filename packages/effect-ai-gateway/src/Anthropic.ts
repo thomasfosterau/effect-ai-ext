@@ -46,7 +46,7 @@ const ANTHROPIC_PROVIDER = "anthropic";
  */
 export const anthropicLanguageModelLayer = (
   binding: GatewayBinding,
-  options: { readonly model: AnthropicLanguageModel.Model | (string & {}) },
+  options: { readonly model: AnthropicLanguageModel.Model | (string & Record<never, never>) },
 ): Layer.Layer<LanguageModel.LanguageModel> =>
   Layer.unwrap(
     Effect.gen(function* () {
@@ -78,7 +78,7 @@ export const anthropicLanguageModelLayer = (
  * `Binding.ts`'s raw `ai.gateway(id).run()` seam.
  */
 export const anthropicLanguageModelLayerFromUrl = (options: {
-  readonly model: AnthropicLanguageModel.Model | (string & {});
+  readonly model: AnthropicLanguageModel.Model | (string & Record<never, never>);
 }): Layer.Layer<LanguageModel.LanguageModel, Config.ConfigError> =>
   Layer.unwrap(
     Effect.gen(function* () {

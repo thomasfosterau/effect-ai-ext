@@ -21,22 +21,21 @@ import {
   makeOpenAiModerationModel,
   type OpenAiModerationOptions,
 } from "@thomasfosterau/effect-ai-gateway";
+import { stubAiBinding } from "./helpers/ai";
 import { expectFailureInstanceOf, runTest } from "./helpers/effect";
 
 /** Builds a stub `Ai` binding whose `gateway(id).run(data)` is canned. */
 const stubAi = (response: { status: number; body: unknown }) => {
   const calls: unknown[] = [];
-  const ai = {
-    gateway: (_gatewayId: string) => ({
-      run: async (data: unknown) => {
-        calls.push(data);
-        return new Response(JSON.stringify(response.body), {
-          status: response.status,
-          headers: { "content-type": "application/json" },
-        });
-      },
-    }),
-  } as unknown as Ai;
+  const ai = stubAiBinding(() => ({
+    run: async (data) => {
+      calls.push(data);
+      return new Response(JSON.stringify(response.body), {
+        status: response.status,
+        headers: { "content-type": "application/json" },
+      });
+    },
+  }));
   return { ai, calls };
 };
 
@@ -212,13 +211,11 @@ describe("makeOpenAiModerationModel", () => {
   });
 
   it("fails with AiError (not a defect) when the gateway call itself rejects", async () => {
-    const ai = {
-      gateway: () => ({
-        run: async () => {
-          throw new Error("socket hang up");
-        },
-      }),
-    } as unknown as Ai;
+    const ai = stubAiBinding(() => ({
+      run: async () => {
+        throw new Error("socket hang up");
+      },
+    }));
 
     const failure = await expectFailureInstanceOf(moderate(ai, ["..."]), AiError.AiError);
 
@@ -226,11 +223,9 @@ describe("makeOpenAiModerationModel", () => {
   });
 
   it("fails with AiError on a 200 whose body is not JSON at all", async () => {
-    const ai = {
-      gateway: () => ({
-        run: async () => new Response("<html>gateway error</html>", { status: 200 }),
-      }),
-    } as unknown as Ai;
+    const ai = stubAiBinding(() => ({
+      run: async () => new Response("<html>gateway error</html>", { status: 200 }),
+    }));
 
     const failure = await expectFailureInstanceOf(moderate(ai, ["..."]), AiError.AiError);
 

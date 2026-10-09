@@ -127,13 +127,6 @@ export default defineConfig({
       "effect/no-unknown-parameters": "warn",
       "effect/no-unsafe-dictionary-type": "warn",
       "effect/no-runtime-typeof": "warn",
-      // Every `{}` type here is the `(string & {})` half of a model-id
-      // parameter (`Model | (string & {})`): it keeps the known ids in
-      // autocomplete while accepting any string, the spelling upstream
-      // `@effect/ai-anthropic` uses for the same parameter. The rule's
-      // suggested `Record<string, never>` is not assignable from a string, so
-      // it has no satisfiable fix for that idiom (#98).
-      "effect/avoid-object-type": "off",
       "typescript/no-explicit-any": "off",
       "typescript/no-empty-object-type": "off",
       "typescript/ban-ts-comment": "off",
@@ -228,16 +221,16 @@ export default defineConfig({
       },
       // Test fixtures are the seams under test, not domain code: a
       // wall-clock `Date` standing in for a publication stamp, a `CI`
-      // variable toggled to drive a reporter, a stub that implements only
-      // the slice of a platform interface (the Workers `Ai` binding) the code
-      // under test calls, or an input that breaks its type on purpose to
-      // reach a failure path (`as unknown as T`, #98). Each stays visible as
-      // a warning, because a fixture cannot be written another way.
+      // variable toggled to drive a reporter, or a single type assertion
+      // that narrows a stub or a decoded fixture. Each stays visible as a
+      // warning, because a fixture cannot be written another way. `avoid-any`
+      // and `no-chained-type-assertions` are not relaxed here: a partial
+      // Workers `Ai` binding goes through the gateway's typed
+      // `stubAiBinding`, and an input that breaks its type on purpose
+      // through `effect-evals`' `unsafeCoerce` (#98).
       {
         files: ["**/tests/**/*.ts"],
         rules: {
-          "effect/avoid-any": "warn",
-          "effect/no-chained-type-assertions": "warn",
           "effect/require-safety-comment-for-type-assertion": "warn",
           "effect/use-clock-service": "warn",
           "effect/avoid-process-env": "warn",

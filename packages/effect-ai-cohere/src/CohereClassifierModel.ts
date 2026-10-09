@@ -51,7 +51,7 @@ export interface Options {
    *
    * @default "command-a-03-2025"
    */
-  readonly model?: (string & {}) | CohereLanguageModel.Model | undefined;
+  readonly model?: (string & Record<never, never>) | CohereLanguageModel.Model | undefined;
   /**
    * Chat request tuning (temperature, etc.) applied to each classification
    * request. Defaults to a temperature of 0 for deterministic labelling.

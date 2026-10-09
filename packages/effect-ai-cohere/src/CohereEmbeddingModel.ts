@@ -51,7 +51,7 @@ export interface Options {
    *
    * @default "embed-v4.0"
    */
-  readonly model?: (string & {}) | undefined;
+  readonly model?: string | undefined;
   /**
    * The output vector dimension, pinned on every request.
    *

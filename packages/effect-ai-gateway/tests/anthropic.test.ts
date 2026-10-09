@@ -19,17 +19,16 @@ import * as Layer from "effect/Layer";
 import { LanguageModel } from "effect/ai";
 import { FetchHttpClient } from "effect/http";
 import { anthropicLanguageModelLayer } from "@thomasfosterau/effect-ai-gateway";
+import { stubAiBinding } from "./helpers/ai";
 import { runTest } from "./helpers/effect";
 
 const GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/acct/website/anthropic";
 
 /** Builds a stub `Ai` binding whose `gateway(id).getUrl(provider)` is canned. */
 const stubAi = (url: string): Ai =>
-  ({
-    gateway: (_gatewayId: string) => ({
-      getUrl: async (_provider?: string) => url,
-    }),
-  }) as unknown as Ai;
+  stubAiBinding(() => ({
+    getUrl: async (_provider?: string) => url,
+  }));
 
 interface CapturedRequest {
   readonly url: string;

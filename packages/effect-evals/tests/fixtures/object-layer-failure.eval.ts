@@ -1,7 +1,7 @@
 /**
- * A fixture whose `layer` construction fails with a plain object, which the report renders as JSON. It is neither an
- * `Error` nor a string nor a `ConfigError`, so the file is recorded as
- * failed with that rendering.
+ * A fixture whose `layer` construction fails with a plain object, which the
+ * report renders as JSON. It is neither an `Error` nor a string nor a
+ * `ConfigError`, so the file is recorded as failed with that rendering.
  *
  * @module tests/fixtures/object-layer-failure.eval
  *

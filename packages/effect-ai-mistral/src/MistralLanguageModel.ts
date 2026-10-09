@@ -108,7 +108,7 @@ export class Config extends Context.Service<Config, ConfigService>()(
  * @see {@link make} for the service effect
  */
 export const model = (
-  model: (string & {}) | Model,
+  model: (string & Record<never, never>) | Model,
   config?: Omit<ConfigService, "model">,
 ): AiModel.Model<"mistral", LanguageModel.LanguageModel, MistralClient> =>
   AiModel.make("mistral", model, layer({ model, config }));
@@ -125,7 +125,7 @@ export const make = Effect.fnUntraced(function* ({
   model,
   config: providerConfig,
 }: {
-  readonly model: (string & {}) | Model;
+  readonly model: (string & Record<never, never>) | Model;
   readonly config?: Omit<ConfigService, "model"> | undefined;
 }): Effect.fn.Return<LanguageModel.LanguageModel, never, MistralClient> {
   const client = yield* MistralClient;
@@ -212,7 +212,7 @@ export const make = Effect.fnUntraced(function* ({
  * layer, drawing {@link MistralClient} from another layer.
  */
 export const layer = (options: {
-  readonly model: (string & {}) | Model;
+  readonly model: (string & Record<never, never>) | Model;
   readonly config?: Omit<ConfigService, "model"> | undefined;
 }): Layer.Layer<LanguageModel.LanguageModel, never, MistralClient> =>
   Layer.effect(LanguageModel.LanguageModel, make(options));
@@ -681,7 +681,7 @@ const handleTextDelta = (
   context: StreamContext,
   out: Array<Response.StreamPartEncoded>,
 ): void => {
-  if (!Predicate.isNotNullish(content) || Str.isEmpty(content)) {
+  if (Predicate.isNullish(content) || Str.isEmpty(content)) {
     return;
   }
   if (!state.textStarted) {

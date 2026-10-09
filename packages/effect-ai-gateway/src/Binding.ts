@@ -48,7 +48,7 @@ export interface GatewayBinding {
  */
 export const gatewayUrl = (
   binding: GatewayBinding,
-  provider: AIGatewayProviders | (string & {}),
+  provider: AIGatewayProviders | (string & Record<never, never>),
 ): Effect.Effect<string> =>
   Effect.orDie(Effect.tryPromise(() => binding.ai.gateway(binding.gatewayId).getUrl(provider)));
 

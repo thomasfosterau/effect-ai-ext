@@ -21,6 +21,7 @@ import {
   makeCohereEmbeddingModel,
   makeCohereReranker,
 } from "@thomasfosterau/effect-ai-gateway";
+import { stubAiBinding } from "./helpers/ai";
 import { expectFailureInstanceOf, runTest } from "./helpers/effect";
 
 /**
@@ -35,41 +36,35 @@ const EMBEDDING_DIMENSIONS = 1024;
 /** Builds a stub `Ai` binding whose `gateway(id).run(data)` is canned. */
 const stubAi = (response: { status: number; body: unknown }) => {
   const calls: unknown[] = [];
-  const ai = {
-    gateway: (_gatewayId: string) => ({
-      run: async (data: unknown) => {
-        calls.push(data);
-        return new Response(JSON.stringify(response.body), {
-          status: response.status,
-          headers: { "content-type": "application/json" },
-        });
-      },
-    }),
-  } as unknown as Ai;
+  const ai = stubAiBinding(() => ({
+    run: async (data) => {
+      calls.push(data);
+      return new Response(JSON.stringify(response.body), {
+        status: response.status,
+        headers: { "content-type": "application/json" },
+      });
+    },
+  }));
   return { ai, calls };
 };
 
 /** Builds a stub `Ai` binding whose `gateway(id).run(data)` rejects. */
 const stubAiReject = (): Ai =>
-  ({
-    gateway: (_gatewayId: string) => ({
-      run: async () => {
-        throw new Error("gateway unreachable");
-      },
-    }),
-  }) as unknown as Ai;
+  stubAiBinding(() => ({
+    run: async () => {
+      throw new Error("gateway unreachable");
+    },
+  }));
 
 /** Builds a stub `Ai` binding whose `gateway(id).run(data)` returns a 200 response with an unparseable body. */
 const stubAiMalformedBody = (): Ai =>
-  ({
-    gateway: (_gatewayId: string) => ({
-      run: async () =>
-        new Response("not valid json", {
-          status: 200,
-          headers: { "content-type": "application/json" },
-        }),
-    }),
-  }) as unknown as Ai;
+  stubAiBinding(() => ({
+    run: async () =>
+      new Response("not valid json", {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+  }));
 
 const binding = (ai: Ai) => ({ ai, gatewayId: "website" });
 

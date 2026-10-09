@@ -98,7 +98,7 @@ export const defaultDimension = (model: string): number | undefined =>
   isKnownModel(model) ? EMBEDDING_MODELS[model].defaultDimension : undefined;
 
 /** Whether `model` is one of the ids in {@link EMBEDDING_MODELS}. */
-const isKnownModel = (model: string): model is Model => model in EMBEDDING_MODELS;
+const isKnownModel = (model: string): model is Model => Object.hasOwn(EMBEDDING_MODELS, model);
 
 // =============================================================================
 // Options
@@ -107,7 +107,7 @@ const isKnownModel = (model: string): model is Model => model in EMBEDDING_MODEL
 /** Configuration for constructing a {@link VoyageEmbeddingModel}. */
 export interface Options {
   /** The Voyage embedding model id. Any string is accepted. */
-  readonly model: (string & {}) | Model;
+  readonly model: (string & Record<never, never>) | Model;
   /**
    * Voyage's retrieval-aware input type. Embed stored documents with
    * `"document"` and search queries with `"query"`; omit to embed as-is.

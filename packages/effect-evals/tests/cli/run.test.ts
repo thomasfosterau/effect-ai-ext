@@ -17,6 +17,7 @@ import { NodePath } from "@effect/platform-node";
 import { Cache } from "../../src/index.ts";
 import { runEvals } from "../../src/cli/Run.ts";
 import { runTest } from "../helpers/effect.ts";
+import { unsafeCoerce } from "../helpers/unsafe.ts";
 
 /** The in-memory result cache plus the `Path` service discovery and loading read. */
 const testLayer = Layer.merge(Cache.layerMemory, NodePath.layer);
@@ -175,7 +176,7 @@ describe("cli/Run.runEvals", () => {
   it("returns a failed-run report instead of throwing when glob discovery itself errors", async () => {
     // node:fs/promises' glob throws synchronously on a non-string cwd;
     // bypass the type system to exercise runEvals' own error mapping.
-    const malformedCwd = 123 as unknown as string;
+    const malformedCwd = unsafeCoerce<string>(123);
 
     const report = await runTest(
       runEvals({

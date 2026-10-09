@@ -53,7 +53,7 @@ export interface Settings {
   /** Default ElevenLabs voice id, used when a call omits `voice`. */
   readonly voiceId?: string | undefined;
   /** ElevenLabs model id (e.g. `eleven_multilingual_v2`). */
-  readonly modelId?: (string & {}) | Model | undefined;
+  readonly modelId?: (string & Record<never, never>) | Model | undefined;
   /**
    * Explicit ElevenLabs `output_format` (e.g. `mp3_44100_128`). Wins over a
    * call's neutral `format` / `sampleRate`.
