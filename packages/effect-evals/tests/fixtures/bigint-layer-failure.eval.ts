@@ -1,7 +1,8 @@
 /**
- * A fixture whose `layer` construction fails with a `BigInt`, which `JSON.stringify` cannot serialise, so the report falls back to `String(value)`. It is neither an
- * `Error` nor a string nor a `ConfigError`, so the file is recorded as
- * failed with that rendering.
+ * A fixture whose `layer` construction fails with a `BigInt`, which
+ * `JSON.stringify` cannot serialise, so the report falls back to
+ * `String(value)`. It is neither an `Error` nor a string nor a `ConfigError`,
+ * so the file is recorded as failed with that rendering.
  *
  * @module tests/fixtures/bigint-layer-failure.eval
  *

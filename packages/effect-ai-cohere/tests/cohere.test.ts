@@ -842,6 +842,25 @@ describe("CohereLanguageModel.streamText", () => {
     expect((toolCall as { name?: string } | undefined)?.name).toBe("get_weather");
   });
 
+  it("fails the stream when an event frame carries a non-finite number literal", async () => {
+    // `1e400` overflows a double: `JSON.parse` read it as `Infinity`, but
+    // `Schema.Json` rejects a non-finite number, so the frame reaches the
+    // event decoder as a raw string and the stream fails as an `AiError`.
+    const { fetch } = makeFetch(() =>
+      sseResponse([
+        '{"type":"message-end","delta":{"finish_reason":"COMPLETE","usage":{"tokens":{"input_tokens":1e400,"output_tokens":2}}}}',
+      ]),
+    );
+
+    await expectFailureInstanceOf(
+      LanguageModel.streamText({ prompt: "hi" }).pipe(
+        Stream.runCollect,
+        Effect.provide(modelLayer(fetch)),
+      ),
+      AiError.AiError,
+    );
+  });
+
   it("fails the stream when an event frame is not valid JSON", async () => {
     const { fetch } = makeFetch(() => sseResponse(["this is not json"]));
 

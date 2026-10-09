@@ -976,6 +976,25 @@ describe("MistralLanguageModel response edge cases", () => {
     expect(response.finishReason).toBe("error");
   });
 
+  it("fails the stream when a chunk frame carries a non-finite number literal", async () => {
+    // `1e400` overflows a double: `JSON.parse` read it as `Infinity`, but
+    // `Schema.Json` rejects a non-finite number, so the frame reaches the
+    // chunk decoder as a raw string and the stream fails as an `AiError`.
+    const { fetch } = makeFetch(() =>
+      sseResponse([
+        '{"id":"s1","model":"mistral-large-latest","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":1e400,"completion_tokens":2,"total_tokens":5}}',
+      ]),
+    );
+
+    await expectFailureInstanceOf(
+      LanguageModel.streamText({ prompt: "hi" }).pipe(
+        Stream.runCollect,
+        Effect.provide(modelLayer(fetch)),
+      ),
+      AiError.AiError,
+    );
+  });
+
   it("fails the stream when a chunk frame is not valid JSON", async () => {
     const { fetch } = makeFetch(() => sseResponse(["this is not json"]));
 
