@@ -4,8 +4,10 @@
  * The code under test reaches the binding only through
  * `ai.gateway(gatewayId).getUrl(provider)` and `.run(data, options)`
  * (`src/Binding.ts`). A stub implements that slice with `AiGateway`'s own
- * signatures, so a stub that drifts from the Workers types fails to compile
- * rather than hiding behind an `as unknown as Ai`.
+ * signatures rather than hiding behind an `as unknown as Ai`, so a stub that
+ * drifts from the Workers types shows as a type error in the IDE and in a
+ * manual `tsc` over `tests/`. No gate catches it: this package's
+ * `tsconfig.json` type-checks `src` only, and the suites run type-stripped.
  *
  * @module tests/unit/helpers/ai
  */
