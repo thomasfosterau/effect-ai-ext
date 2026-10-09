@@ -289,7 +289,8 @@ export default defineConfig({
       },
       // Dist-level import check (scripts/check-dist.mjs, #32): imports every
       // built entry and subpath under Node ESM, fails on a value export the
-      // bundled `.d.ts` declares but the bundle lacks, and launches the
+      // bundled `.d.ts` declares but the bundle lacks, type-checks every
+      // bundled `.d.ts` with `skipLibCheck: false` (#111), and launches the
       // `effect-evals` bin from a packed tarball under `node_modules` (#42).
       // Reads `dist/`, hence the build edges.
       "check:dist": {
