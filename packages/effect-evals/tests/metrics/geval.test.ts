@@ -22,6 +22,7 @@ import { LanguageModel } from "effect/ai";
 import * as Prompt from "effect/ai/Prompt";
 import { EvalCase, GEval, Golden, Metric, Threshold } from "../../src/index.ts";
 import { expectFailureInstanceOf, runTest } from "../helpers/effect.ts";
+import { unsafeCoerce } from "../helpers/unsafe.ts";
 
 // ── Stub judge model ─────────────────────────────────────────────────
 
@@ -406,7 +407,7 @@ describe("gEval — missing evaluation params", () => {
     });
 
     const caseWithNullExpected: TranslationCase = {
-      golden: { input: "Bonjour", expected: null as unknown as string },
+      golden: { input: "Bonjour", expected: unsafeCoerce<string>(null) },
       output: "Hello",
     };
 

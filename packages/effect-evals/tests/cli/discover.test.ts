@@ -18,6 +18,7 @@ import * as Path from "effect/Path";
 import { NodeServices } from "@effect/platform-node";
 import { findEvalFiles, GlobError } from "../../src/cli/Discover.ts";
 import { expectFailureInstanceOf, runTest } from "../helpers/effect.ts";
+import { unsafeCoerce } from "../helpers/unsafe.ts";
 
 const DIRECTORIES = [
   "packages/jobs/evals",
@@ -102,7 +103,7 @@ describe("Discover.findEvalFiles", () => {
     // bypass the type system to exercise the catch-path without feeding
     // GlobError's own (schema-validated) `patterns` field bad data.
     const patterns = ["**/*.eval.ts"];
-    const malformedCwd = 123 as unknown as string;
+    const malformedCwd = unsafeCoerce<string>(123);
 
     const error = await expectFailureInstanceOf(
       findEvalFiles(patterns, malformedCwd).pipe(Effect.provide(NodeServices.layer)),

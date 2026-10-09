@@ -9,20 +9,19 @@ import * as Cause from "effect/Cause";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
 import { gatewayRun, gatewayUrl } from "@thomasfosterau/effect-ai-gateway";
+import { stubAiBinding } from "./helpers/ai";
 import { runTest } from "./helpers/effect";
 
 /** Builds a stub `Ai` binding whose `gateway(id).getUrl(provider)` is canned. */
-const stubAi = (behaviour: { url?: string; reject?: true }) => {
+const stubAi = (behaviour: { readonly url: string } | { readonly reject: true }) => {
   const calls: Array<{ gatewayId: string; provider: string | undefined }> = [];
-  const ai = {
-    gateway: (gatewayId: string) => ({
-      getUrl: async (provider?: string) => {
-        calls.push({ gatewayId, provider });
-        if (behaviour.reject) throw new Error("gateway unreachable");
-        return behaviour.url;
-      },
-    }),
-  } as unknown as Ai;
+  const ai = stubAiBinding((gatewayId) => ({
+    getUrl: async (provider?: string) => {
+      calls.push({ gatewayId, provider });
+      if ("reject" in behaviour) throw new Error("gateway unreachable");
+      return behaviour.url;
+    },
+  }));
   return { ai, calls };
 };
 
@@ -51,14 +50,12 @@ describe("gatewayUrl", () => {
 describe("gatewayRun", () => {
   it("runs the universal-endpoint request through the binding and returns the raw Response", async () => {
     const calls: unknown[] = [];
-    const ai = {
-      gateway: (_gatewayId: string) => ({
-        run: async (data: unknown) => {
-          calls.push(data);
-          return new Response(JSON.stringify({ ok: true }), { status: 200 });
-        },
-      }),
-    } as unknown as Ai;
+    const ai = stubAiBinding(() => ({
+      run: async (data) => {
+        calls.push(data);
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      },
+    }));
 
     const response = await runTest(
       gatewayRun(
@@ -78,13 +75,11 @@ describe("gatewayRun", () => {
     // (a transient connectivity blip) must be a recoverable, typed failure
     // so callers like `generateEmbedding` can degrade to `null` uniformly,
     // not crash as a defect.
-    const ai = {
-      gateway: (_gatewayId: string) => ({
-        run: async () => {
-          throw new Error("gateway unreachable");
-        },
-      }),
-    } as unknown as Ai;
+    const ai = stubAiBinding(() => ({
+      run: async () => {
+        throw new Error("gateway unreachable");
+      },
+    }));
 
     const exit = await Effect.runPromiseExit(
       gatewayRun(
@@ -106,18 +101,16 @@ describe("gatewayRun", () => {
     // #706/#730 lesson applied to this package's universal-run seam.
     let receivedSignal: AbortSignal | undefined;
     let aborted = false;
-    const ai = {
-      gateway: (_gatewayId: string) => ({
-        run: (_data: unknown, options?: { signal?: AbortSignal }) =>
-          new Promise<never>((_resolve, reject) => {
-            receivedSignal = options?.signal;
-            options?.signal?.addEventListener("abort", () => {
-              aborted = true;
-              reject(new Error("aborted"));
-            });
-          }),
-      }),
-    } as unknown as Ai;
+    const ai = stubAiBinding(() => ({
+      run: (_data, options) =>
+        new Promise<never>((_resolve, reject) => {
+          receivedSignal = options?.signal;
+          options?.signal?.addEventListener("abort", () => {
+            aborted = true;
+            reject(new Error("aborted"));
+          });
+        }),
+    }));
 
     const exit = await runTest(
       Effect.exit(

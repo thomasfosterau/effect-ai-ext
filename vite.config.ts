@@ -228,16 +228,16 @@ export default defineConfig({
       },
       // Test fixtures are the seams under test, not domain code: a
       // wall-clock `Date` standing in for a publication stamp, a `CI`
-      // variable toggled to drive a reporter, a stub that implements only
-      // the slice of a platform interface (the Workers `Ai` binding) the code
-      // under test calls, or an input that breaks its type on purpose to
-      // reach a failure path (`as unknown as T`, #98). Each stays visible as
-      // a warning, because a fixture cannot be written another way.
+      // variable toggled to drive a reporter, or a single type assertion
+      // that narrows a stub or a decoded fixture. Each stays visible as a
+      // warning, because a fixture cannot be written another way. `avoid-any`
+      // and `no-chained-type-assertions` are not relaxed here: a partial
+      // Workers `Ai` binding goes through the gateway's typed
+      // `stubAiBinding`, and an input that breaks its type on purpose
+      // through `effect-evals`' `unsafeCoerce` (#98).
       {
         files: ["**/tests/**/*.ts"],
         rules: {
-          "effect/avoid-any": "warn",
-          "effect/no-chained-type-assertions": "warn",
           "effect/require-safety-comment-for-type-assertion": "warn",
           "effect/use-clock-service": "warn",
           "effect/avoid-process-env": "warn",

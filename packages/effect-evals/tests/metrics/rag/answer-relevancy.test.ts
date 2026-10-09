@@ -10,6 +10,7 @@ import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import { AnswerRelevancy, EvalCase, GEval, Golden, Metric, Threshold } from "../../../src/index.ts";
 import { expectFailureInstanceOf, runTest } from "../../helpers/effect.ts";
+import { unsafeCoerce } from "../../helpers/unsafe.ts";
 import { deadJudge, makeJudgeStub, provideJudge } from "./helpers.ts";
 
 const RagGolden = Golden.Golden(Schema.String, Schema.String);
@@ -59,7 +60,7 @@ describe("AnswerRelevancy.answerRelevancy", () => {
 
   it("fails with the typed error, never calling the judge, when output is absent", async () => {
     const metric = AnswerRelevancy.answerRelevancy({ threshold: Threshold.minScore(0.5) });
-    const caseWithoutOutput = { golden: { input: "x" } } as unknown as RagTestCase;
+    const caseWithoutOutput = unsafeCoerce<RagTestCase>({ golden: { input: "x" } });
 
     const model = await deadJudge();
 
