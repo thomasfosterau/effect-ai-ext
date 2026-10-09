@@ -11,6 +11,12 @@
  * `import { make } from "@thomasfosterau/effect-ai-gateway"` threw a
  * `SyntaxError` under Node while every src-level test passed.
  *
+ * Every published package's bundled `dist/**\/*.d.ts` is also TYPE-CHECKED
+ * with `skipLibCheck: false` (#111), keeping only diagnostics located in
+ * that package's own `dist`: a declaration bundler can emit a reference to a
+ * namespace the bundle never declares, which the value-export check cannot
+ * see (see `checkDeclarations`).
+ *
  * Every published package that declares a `bin` is also PACKED (`pnpm pack`),
  * unpacked into `node_modules/` of a scratch directory and its bin launched
  * from there (issue #42). Node refuses to type-strip TypeScript under
@@ -47,9 +53,12 @@ const packagesDir = path.join(root, "packages");
 
 /** Every published package's built subpath entries. */
 const targets = [];
+/** Every published package's directory and manifest. */
+const published = [];
 for (const dir of readdirSync(packagesDir).sort()) {
   const manifest = JSON.parse(readFileSync(path.join(packagesDir, dir, "package.json"), "utf8"));
   if (manifest.private) continue;
+  published.push({ dir: path.join(packagesDir, dir), manifest });
   for (const [subpath, conditions] of Object.entries(manifest.publishConfig.exports)) {
     const specifier = subpath === "." ? manifest.name : `${manifest.name}/${subpath.slice(2)}`;
     targets.push({
@@ -104,6 +113,99 @@ for (const { specifier, dts } of targets) {
   } catch (error) {
     failures++;
     console.error(`FAIL ${specifier}: ${String(error)}`);
+  }
+}
+
+/**
+ * Type-checks every bundled `dist/**\/*.d.ts` of the package in `dir` with
+ * `skipLibCheck: false`, as a strict consumer's compiler would (#111). The
+ * value-export check above cannot see a broken declaration: the gateway's
+ * bundle once typed two exports as `RerankerModel_d_exports.Service`, a
+ * namespace it never declared: "Cannot find namespace" (TS2503, or TS2833
+ * when the checker can suggest a name) for every consumer with
+ * `skipLibCheck: false`, and a silently degraded type for everyone else.
+ *
+ * Only diagnostics located in this package's own `dist` count. Third-party
+ * declarations raise their own noise under `skipLibCheck: false`
+ * (`@cloudflare/workers-types` against `lib.dom`), which is not this
+ * package's to fix. Workspace siblings resolve to their built `.d.ts`
+ * through `paths`, never the `src` their development `exports` point at.
+ *
+ * `types` is the package's own `tsconfig.json` `compilerOptions.types` (each
+ * an installed devDependency), so the gateway is checked with
+ * `@cloudflare/workers-types` loaded: its bundle names the ambient `Ai`,
+ * `AIGatewayProviders` and `AIGatewayUniversalRequest` globals without a
+ * reference to that package, which a consumer without the types would see as
+ * unresolved names (#113), and `effect-evals` with `node`. A package whose
+ * tsconfig names none gets no ambient types.
+ */
+const parsedSources = new Map();
+const checkDeclarations = (dir, paths) => {
+  const distDir = path.join(dir, "dist");
+  const rootNames = readdirSync(distDir, { recursive: true })
+    .filter((f) => f.endsWith(".d.ts"))
+    .map((f) => path.join(distDir, f));
+  const tsconfig = ts.readConfigFile(path.join(dir, "tsconfig.json"), ts.sys.readFile);
+  const options = {
+    module: ts.ModuleKind.Preserve,
+    moduleResolution: ts.ModuleResolutionKind.Bundler,
+    target: ts.ScriptTarget.ESNext,
+    strict: true,
+    exactOptionalPropertyTypes: true,
+    noEmit: true,
+    skipLibCheck: false,
+    types: tsconfig.config?.compilerOptions?.types ?? [],
+    paths,
+  };
+  const host = ts.createCompilerHost(options);
+  // Ambient `types` resolve from the package directory, where its
+  // devDependencies are installed.
+  host.getCurrentDirectory = () => dir;
+  // One parse of each shared declaration file (effect's, mostly) serves
+  // every package's program.
+  const getSourceFile = host.getSourceFile;
+  host.getSourceFile = (fileName, ...rest) => {
+    let source = parsedSources.get(fileName);
+    if (source === undefined) {
+      source = getSourceFile(fileName, ...rest);
+      if (source !== undefined) parsedSources.set(fileName, source);
+    }
+    return source;
+  };
+  const program = ts.createProgram({ rootNames, options, host });
+  // Only the package's own files are checked (not filtered after a full
+  // check), so effect's thousands of declarations are bound but never
+  // walked: the check costs a few seconds, not a minute.
+  const own = program
+    .getSourceFiles()
+    .filter((source) => source.fileName.startsWith(`${distDir}/`))
+    .flatMap((source) => [
+      ...program.getSyntacticDiagnostics(source),
+      ...program.getSemanticDiagnostics(source),
+    ]);
+  return {
+    files: rootNames.length,
+    diagnostics: [...program.getOptionsDiagnostics(), ...program.getGlobalDiagnostics(), ...own],
+  };
+};
+
+/** Every workspace specifier → its built declaration file, for `paths`. */
+const distPaths = Object.fromEntries(targets.map((t) => [t.specifier, [t.dts]]));
+
+for (const { dir, manifest } of published) {
+  const { files, diagnostics } = checkDeclarations(dir, distPaths);
+  if (diagnostics.length > 0) {
+    failures++;
+    console.error(
+      `FAIL ${manifest.name} .d.ts type-check (skipLibCheck: false):\n` +
+        ts.formatDiagnostics(diagnostics, {
+          getCanonicalFileName: (f) => f,
+          getCurrentDirectory: () => root,
+          getNewLine: () => "\n",
+        }),
+    );
+  } else {
+    console.log(`ok   ${manifest.name} .d.ts type-check (${files} files)`);
   }
 }
 
