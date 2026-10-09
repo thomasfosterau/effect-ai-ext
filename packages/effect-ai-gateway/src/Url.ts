@@ -64,10 +64,15 @@ export const gatewayBaseUrl = (
 ): string =>
   `https://gateway.ai.cloudflare.com/v1/${config.accountId}/${config.gatewayId}/${provider}`;
 
+/** The header {@link cfAigAuthorizationHeader} builds. */
+export interface CfAigAuthorizationHeader {
+  readonly "cf-aig-authorization": string;
+}
+
 /**
  * The `cf-aig-authorization` header Cloudflare's authenticated-gateway
  * feature requires on every request once enabled.
  */
-export const cfAigAuthorizationHeader = (config: GatewayUrlConfig) => ({
+export const cfAigAuthorizationHeader = (config: GatewayUrlConfig): CfAigAuthorizationHeader => ({
   "cf-aig-authorization": `Bearer ${Redacted.value(config.token)}`,
 });

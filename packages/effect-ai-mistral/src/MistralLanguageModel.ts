@@ -681,7 +681,7 @@ const handleTextDelta = (
   context: StreamContext,
   out: Array<Response.StreamPartEncoded>,
 ): void => {
-  if (!Predicate.isNotNullish(content) || Str.isEmpty(content)) {
+  if (Predicate.isNullish(content) || Str.isEmpty(content)) {
     return;
   }
   if (!state.textStarted) {

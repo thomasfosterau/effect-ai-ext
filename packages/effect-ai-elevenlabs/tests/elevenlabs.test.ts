@@ -376,6 +376,11 @@ describe("ElevenLabsTranscriptionModel.transcribe", () => {
     const form = await calls[0]!.request.formData();
     expect(form.get("model_id")).toBe("scribe_v1");
     expect(form.get("file")).toBeInstanceOf(Blob);
+    // Options left undefined are omitted, never sent as the string "undefined".
+    expect(form.has("language_code")).toBe(false);
+    expect(form.has("timestamps_granularity")).toBe(false);
+    expect(form.has("diarize")).toBe(false);
+    expect(form.has("tag_audio_events")).toBe(false);
 
     expect(response.text).toBe("hello world");
     expect(response.language).toBe("en");
@@ -488,6 +493,10 @@ describe("ElevenLabsVoiceConversionModel.convert", () => {
     const form = await calls[0]!.request.formData();
     expect(form.get("model_id")).toBe("eleven_multilingual_sts_v2");
     expect(form.get("audio")).toBeInstanceOf(Blob);
+    // Options left undefined are omitted, never sent as the string "undefined".
+    expect(form.has("seed")).toBe(false);
+    expect(form.has("voice_settings")).toBe(false);
+    expect(form.has("remove_background_noise")).toBe(false);
 
     expect(Array.from(response.audio)).toEqual([5, 6, 7]);
     expect(response.mediaType).toBe("audio/mpeg");

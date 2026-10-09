@@ -423,6 +423,31 @@ describe("gEval — missing evaluation params", () => {
 
     expect(failure.param).toBe("expected");
   });
+
+  it("fails with the typed error for an unknown param an untyped eval file passes", async () => {
+    // Eval files are type-stripped, never type-checked, so a typo in
+    // `evaluationParams` reaches the metric at runtime. It must be the typed
+    // `MissingEvaluationParamError`, not a defect.
+    const metric = GEval.gEval<TranslationCase>({
+      name: "translation-quality",
+      evaluationSteps: ["Check meaning is preserved"],
+      evaluationParams: ["input", unsafeCoerce<GEval.EvaluationParam>("inptu")],
+      threshold: Threshold.minScore(0.5),
+    });
+
+    const model = await deadJudge();
+
+    const failure = (await expectFailureInstanceOf(
+      Metric.evaluate(metric, translationCase).pipe(
+        Effect.provide(provideJudge(model)),
+        Effect.asVoid,
+      ),
+      GEval.MissingEvaluationParamError,
+    )) as GEval.MissingEvaluationParamError;
+
+    expect(failure.param).toBe("inptu");
+    expect(failure.metric).toBe("translation-quality");
+  });
 });
 
 // ── Conversational rendering ─────────────────────────────────────────
@@ -460,6 +485,25 @@ describe("gEvalConversational", () => {
     expect(calls[0]?.user).toContain("[user] My order hasn't arrived");
     expect(calls[0]?.user).toContain("[assistant] Can you share the order number?");
     expect(calls[0]?.user).toContain("scenario:\ndelayed-order");
+  });
+
+  it("fails with the typed error for an unknown param an untyped eval file passes", async () => {
+    const metric = GEval.gEvalConversational<SupportCase>({
+      name: "helpfulness",
+      evaluationSteps: ["Check the assistant asks for information it needs to help"],
+      evaluationParams: ["scenario", unsafeCoerce<GEval.ConversationalEvaluationParam>("senario")],
+      threshold: Threshold.minScore(0.5),
+    });
+
+    const model = await deadJudge();
+
+    const failure = (await expectFailureInstanceOf(
+      Metric.evaluate(metric, supportCase).pipe(Effect.provide(provideJudge(model)), Effect.asVoid),
+      GEval.MissingEvaluationParamError,
+    )) as GEval.MissingEvaluationParamError;
+
+    expect(failure.param).toBe("senario");
+    expect(failure.metric).toBe("helpfulness");
   });
 
   it("renders turns via the exported renderTurns helper", () => {
