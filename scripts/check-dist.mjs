@@ -136,7 +136,8 @@ for (const { specifier, dts } of targets) {
  * `@cloudflare/workers-types` loaded: its bundle names the ambient `Ai`,
  * `AIGatewayProviders` and `AIGatewayUniversalRequest` globals without a
  * reference to that package, which a consumer without the types would see as
- * unresolved names (#113). Everything else gets no ambient types.
+ * unresolved names (#113), and `effect-evals` with `node`. A package whose
+ * tsconfig names none gets no ambient types.
  */
 const parsedSources = new Map();
 const checkDeclarations = (dir, paths) => {
