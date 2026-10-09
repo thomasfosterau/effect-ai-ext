@@ -185,15 +185,15 @@ const emptyResponse = (): ClassifyResponse =>
     usage: new ClassifierUsage({ inputTokens: undefined }),
   });
 
-/**
- * Validates a provider response against the request it answered and normalises
- * each classification to descending score order.
- */
 /** Highest-scoring class first. */
 const byScoreDescending: Order.Order<ClassScore> = Order.flip(
   Order.mapInput(Order.Number, (cls: ClassScore) => cls.score),
 );
 
+/**
+ * Validates a provider response against the request it answered and normalises
+ * each classification to descending score order.
+ */
 const mapProviderResponse = (
   inputCount: number,
   labels: ReadonlyArray<string> | undefined,

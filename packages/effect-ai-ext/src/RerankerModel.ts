@@ -157,15 +157,15 @@ const emptyResponse = (): RerankResponse =>
     usage: new RerankerUsage({ inputTokens: undefined }),
   });
 
-/**
- * Validates a provider response against the request it answered and normalises
- * it to a {@link RerankResponse} sorted by descending relevance.
- */
 /** Most relevant document first. */
 const byRelevanceDescending: Order.Order<RerankedDocument> = Order.flip(
   Order.mapInput(Order.Number, (document: RerankedDocument) => document.relevanceScore),
 );
 
+/**
+ * Validates a provider response against the request it answered and normalises
+ * it to a {@link RerankResponse} sorted by descending relevance.
+ */
 const mapProviderResponse = (
   documentCount: number,
   topN: number | undefined,
