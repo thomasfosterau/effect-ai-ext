@@ -386,13 +386,13 @@ describe("gEval — missing evaluation params", () => {
 
     const model = await deadJudge();
 
-    const failure = (await expectFailureInstanceOf(
+    const failure = await expectFailureInstanceOf(
       Metric.evaluate(metric, caseWithoutExpected).pipe(
         Effect.provide(provideJudge(model)),
         Effect.asVoid,
       ),
       GEval.MissingEvaluationParamError,
-    )) as GEval.MissingEvaluationParamError;
+    );
 
     expect(failure.param).toBe("expected");
     expect(failure.metric).toBe("translation-quality");
@@ -413,13 +413,13 @@ describe("gEval — missing evaluation params", () => {
 
     const model = await deadJudge();
 
-    const failure = (await expectFailureInstanceOf(
+    const failure = await expectFailureInstanceOf(
       Metric.evaluate(metric, caseWithNullExpected).pipe(
         Effect.provide(provideJudge(model)),
         Effect.asVoid,
       ),
       GEval.MissingEvaluationParamError,
-    )) as GEval.MissingEvaluationParamError;
+    );
 
     expect(failure.param).toBe("expected");
   });
@@ -437,13 +437,13 @@ describe("gEval — missing evaluation params", () => {
 
     const model = await deadJudge();
 
-    const failure = (await expectFailureInstanceOf(
+    const failure = await expectFailureInstanceOf(
       Metric.evaluate(metric, translationCase).pipe(
         Effect.provide(provideJudge(model)),
         Effect.asVoid,
       ),
       GEval.MissingEvaluationParamError,
-    )) as GEval.MissingEvaluationParamError;
+    );
 
     expect(failure.param).toBe("inptu");
     expect(failure.metric).toBe("translation-quality");
@@ -497,10 +497,10 @@ describe("gEvalConversational", () => {
 
     const model = await deadJudge();
 
-    const failure = (await expectFailureInstanceOf(
+    const failure = await expectFailureInstanceOf(
       Metric.evaluate(metric, supportCase).pipe(Effect.provide(provideJudge(model)), Effect.asVoid),
       GEval.MissingEvaluationParamError,
-    )) as GEval.MissingEvaluationParamError;
+    );
 
     expect(failure.param).toBe("senario");
     expect(failure.metric).toBe("helpfulness");
