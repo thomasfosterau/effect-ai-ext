@@ -443,7 +443,9 @@ interface ResolvedToolChoice {
  * Maps Effect AI's tool-choice directive onto Cohere's, filtering the tool set
  * for a specific-tool or `oneOf` subset. Cohere expresses only `REQUIRED` /
  * `NONE` / (omitted = auto), so a pinned tool is enforced by narrowing the
- * `tools` array to that tool and requiring a call.
+ * `tools` array to that tool and requiring a call. `"none"` keeps the full
+ * tool set and sends `NONE`, so the model sees the tools but cannot call them
+ * (#121).
  */
 const resolveToolChoice = (
   toolChoice: LanguageModel.ProviderOptions["toolChoice"],
@@ -481,7 +483,7 @@ const prepareTools = (
   AiError.AiError
 > =>
   Effect.gen(function* () {
-    if (Arr.isReadonlyArrayEmpty(options.tools) || options.toolChoice === "none") {
+    if (Arr.isReadonlyArrayEmpty(options.tools)) {
       return { tools: undefined, toolChoice: undefined };
     }
     const tools = yield* Effect.forEach(options.tools, (tool) => buildToolRequest(tool), {

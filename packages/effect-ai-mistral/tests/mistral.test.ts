@@ -433,6 +433,21 @@ const weatherHandlers = weatherToolkit.toLayer({
   get_weather: ({ city }) => Effect.succeed(`sunny in ${city}`),
 });
 
+/** The exact wire definition `weatherTool` is sent as. */
+const weatherToolRequest = {
+  type: "function",
+  function: {
+    name: "get_weather",
+    description: "Look up the weather for a city",
+    parameters: {
+      type: "object",
+      properties: { city: { type: "string" } },
+      required: ["city"],
+      additionalProperties: true,
+    },
+  },
+};
+
 describe("MistralLanguageModel tool calling", () => {
   it("sends tool definitions and resolves the model's tool call", async () => {
     const { calls, fetch } = makeFetch(() =>
@@ -507,6 +522,51 @@ describe("MistralLanguageModel tool calling", () => {
     );
 
     expect(calls[0]?.body.tool_choice).toBe("any");
+  });
+
+  it('sends the full tool set with Mistral\'s "none" for a none tool choice', async () => {
+    const { calls, fetch } = makeFetch(() => jsonResponse(completion()));
+
+    const response = await runTest(
+      LanguageModel.generateText({
+        prompt: "weather?",
+        toolkit: weatherToolkit,
+        toolChoice: "none",
+      }).pipe(Effect.provide(modelLayer(fetch)), Effect.provide(weatherHandlers)),
+    );
+
+    // #121: the model sees the tools but is forbidden from calling them.
+    expect(calls[0]?.body.tool_choice).toBe("none");
+    expect(calls[0]?.body.tools).toEqual([weatherToolRequest]);
+    expect(response.text).toBe("Bonjour");
+    expect(response.toolCalls).toHaveLength(0);
+  });
+
+  it('keeps Mistral\'s "auto" for an auto oneOf subset', async () => {
+    const { calls, fetch } = makeFetch(() => jsonResponse(completion()));
+
+    await runTest(
+      LanguageModel.generateText({
+        prompt: "weather?",
+        toolkit: weatherToolkit,
+        toolChoice: { mode: "auto", oneOf: ["get_weather"] },
+      }).pipe(Effect.provide(modelLayer(fetch)), Effect.provide(weatherHandlers)),
+    );
+
+    expect(calls[0]?.body.tool_choice).toBe("auto");
+    expect(calls[0]?.body.tools).toEqual([weatherToolRequest]);
+  });
+
+  it("sends neither tools nor tool_choice without a toolkit", async () => {
+    const { calls, fetch } = makeFetch(() => jsonResponse(completion()));
+
+    // Without a toolkit, LanguageModel forwards toolChoice "none" with no tools.
+    await runTest(
+      LanguageModel.generateText({ prompt: "hi" }).pipe(Effect.provide(modelLayer(fetch))),
+    );
+
+    expect(calls[0]?.body).not.toHaveProperty("tools");
+    expect(calls[0]?.body).not.toHaveProperty("tool_choice");
   });
 });
 

@@ -435,14 +435,19 @@ interface ResolvedToolChoice {
 
 /**
  * Maps Effect AI's tool-choice directive onto Mistral's, filtering the tool
- * set for a `oneOf` subset. `required` becomes Mistral's `"any"`.
+ * set for a `oneOf` subset. `required` becomes Mistral's `"any"`. `"none"`
+ * keeps the full tool set and sends Mistral's `"none"`, so the model sees the
+ * tools but cannot call them (#121).
  */
 const resolveToolChoice = (
   toolChoice: LanguageModel.ProviderOptions["toolChoice"],
   tools: ReadonlyArray<Wire.ToolRequest>,
 ): ResolvedToolChoice => {
-  if (toolChoice === "auto" || toolChoice === "none") {
-    return { tools, toolChoice };
+  if (toolChoice === "auto") {
+    return { tools, toolChoice: "auto" };
+  }
+  if (toolChoice === "none") {
+    return { tools, toolChoice: "none" };
   }
   if (toolChoice === "required") {
     return { tools, toolChoice: "any" };
@@ -467,7 +472,7 @@ const prepareTools = (
   AiError.AiError
 > =>
   Effect.gen(function* () {
-    if (Arr.isReadonlyArrayEmpty(options.tools) || options.toolChoice === "none") {
+    if (Arr.isReadonlyArrayEmpty(options.tools)) {
       return { tools: undefined, toolChoice: undefined };
     }
     const tools = yield* Effect.forEach(options.tools, (tool) => buildToolRequest(tool), {
