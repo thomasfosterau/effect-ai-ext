@@ -55,12 +55,12 @@ import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
 import { FetchHttpClient, HttpClient } from "effect/http";
 import { ModerationModel } from "@thomasfosterau/effect-ai-ext";
-import type { GatewayBinding } from "./Binding";
+import type { GatewayBinding, GatewayProvider } from "./Binding";
 import { requestViaBinding, requestViaUrl } from "./internal/transport";
 import * as Url from "./Url";
 
-/** The AI Gateway provider slug for OpenAI (`AIGatewayProviders["openai"]`). */
-const OPENAI_PROVIDER: AIGatewayProviders = "openai";
+/** The AI Gateway provider slug for OpenAI (a {@link GatewayProvider}). */
+const OPENAI_PROVIDER: GatewayProvider = "openai";
 
 /** The gateway endpoint path for OpenAI's moderations API. */
 const MODERATIONS_ENDPOINT = "moderations";

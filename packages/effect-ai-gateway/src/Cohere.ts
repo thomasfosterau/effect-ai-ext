@@ -29,12 +29,12 @@ import type { AiError } from "effect/ai";
 import { EmbeddingModel } from "effect/ai";
 import { FetchHttpClient, HttpClient } from "effect/http";
 import * as RerankerModel from "@thomasfosterau/effect-ai-ext/RerankerModel";
-import type { GatewayBinding } from "./Binding";
+import type { GatewayBinding, GatewayProvider } from "./Binding";
 import { requestViaBinding, requestViaUrl } from "./internal/transport";
 import * as Url from "./Url";
 
-/** The AI Gateway provider slug for Cohere (`AIGatewayProviders["cohere"]`). */
-const COHERE_PROVIDER: AIGatewayProviders = "cohere";
+/** The AI Gateway provider slug for Cohere (a {@link GatewayProvider}). */
+const COHERE_PROVIDER: GatewayProvider = "cohere";
 
 /** `AiError.module` for every failure this module reports. */
 const MODULE = "Cohere";

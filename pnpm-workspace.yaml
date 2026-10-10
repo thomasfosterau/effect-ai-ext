@@ -108,19 +108,16 @@ catalog:
 # `effect/unstable/*` -> `effect/*` path move (issue #51), which older rcs lack.
 # Re-verify by pointing the default catalog's Effect line at the floor before
 # lowering or raising it. `@cloudflare/workers-types` is the gateway's
-# optional, types-only peer (its binding transports; the package ships no
-# runtime code), and it has two floors (#93). The declaration floor is the peer
-# range below: consumers type-check only the gateway's `dist/index.d.ts`, which
-# names just `Ai`, `AIGatewayProviders` and `AIGatewayUniversalRequest`, all
-# first declared in 4.20241214.0. The build floor is higher: the gateway's own
-# source needs `AiGateway.getUrl()` (4.20250312.0) and the `signal` option on
-# `AiGateway.run()` (4.20260410.1, which `gatewayRun` passes so interruption
-# cancels the subrequest); the default catalog's dev pin above already covers
-# it. Raising the peer to the build floor would make `npm install` fail with
-# ERESOLVE for consumers on an older types release, for no type-safety gain.
-# Re-verify the declaration floor by type-checking a consumer of the built
-# dist (packed tarball, `skipLibCheck: false`) against the floor release, not
-# with the gateway's own `check`.
+# optional, types-only peer (#93). Since #113 the gateway's `dist/index.d.ts`
+# names nothing from it: the Worker binding is typed by the gateway's own
+# structural `WorkersAiBinding`, so the peer serves only the consumer's own
+# Worker typing. The range below (4.20241214.0, the first release declaring
+# every name the 0.4.x declarations referenced) is no longer a declaration
+# floor; the gateway's dev pin above is what its binding-compatibility test
+# (`tests/workers-types-binding.test.ts`) checks a real `Ai` against. A
+# release old enough to lack `AiGateway.getUrl()` (4.20250312.0) gives an
+# `Ai` that is not assignable to `WorkersAiBinding`, which the consumer sees
+# at their own call site.
 catalogs:
   peers:
     "@cloudflare/workers-types": ">=4.20241214.0"

@@ -17,6 +17,7 @@
 
 import * as Config from "effect/Config";
 import * as Redacted from "effect/Redacted";
+import type { GatewayProvider } from "./Binding";
 
 /** Config resolved for building a gateway request against its HTTPS endpoint. */
 export interface GatewayUrlConfig {
@@ -58,10 +59,7 @@ export const gatewayUrlConfig: Config.Config<GatewayUrlConfig> = Config.all({
  * (`ai.gateway(id).getUrl(provider)`), hand-built here since there is no
  * binding to ask.
  */
-export const gatewayBaseUrl = (
-  config: GatewayUrlConfig,
-  provider: AIGatewayProviders | (string & Record<never, never>),
-): string =>
+export const gatewayBaseUrl = (config: GatewayUrlConfig, provider: GatewayProvider): string =>
   `https://gateway.ai.cloudflare.com/v1/${config.accountId}/${config.gatewayId}/${provider}`;
 
 /**
