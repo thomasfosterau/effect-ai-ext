@@ -12,7 +12,7 @@ import { gatewayRun, gatewayUrl } from "@thomasfosterau/effect-ai-gateway";
 import { stubAiBinding } from "./helpers/ai";
 import { runTest } from "./helpers/effect";
 
-/** Builds a stub `Ai` binding whose `gateway(id).getUrl(provider)` is canned. */
+/** Builds a stub binding whose `gateway(id).getUrl(provider)` is canned. */
 const stubAi = (behaviour: { readonly url: string } | { readonly reject: true }) => {
   const calls: Array<{ gatewayId: string; provider: string | undefined }> = [];
   const ai = stubAiBinding((gatewayId) => ({

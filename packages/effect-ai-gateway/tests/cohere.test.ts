@@ -20,6 +20,7 @@ import {
   COHERE_RERANK_MODEL,
   makeCohereEmbeddingModel,
   makeCohereReranker,
+  type WorkersAiBinding,
 } from "@thomasfosterau/effect-ai-gateway";
 import { stubAiBinding } from "./helpers/ai";
 import { expectFailureInstanceOf, runTest } from "./helpers/effect";
@@ -33,7 +34,7 @@ import { expectFailureInstanceOf, runTest } from "./helpers/effect";
  */
 const EMBEDDING_DIMENSIONS = 1024;
 
-/** Builds a stub `Ai` binding whose `gateway(id).run(data)` is canned. */
+/** Builds a stub binding whose `gateway(id).run(data)` is canned. */
 const stubAi = (response: { status: number; body: unknown }) => {
   const calls: unknown[] = [];
   const ai = stubAiBinding(() => ({
@@ -48,16 +49,16 @@ const stubAi = (response: { status: number; body: unknown }) => {
   return { ai, calls };
 };
 
-/** Builds a stub `Ai` binding whose `gateway(id).run(data)` rejects. */
-const stubAiReject = (): Ai =>
+/** Builds a stub binding whose `gateway(id).run(data)` rejects. */
+const stubAiReject = (): WorkersAiBinding =>
   stubAiBinding(() => ({
     run: async () => {
       throw new Error("gateway unreachable");
     },
   }));
 
-/** Builds a stub `Ai` binding whose `gateway(id).run(data)` returns a 200 response with an unparseable body. */
-const stubAiMalformedBody = (): Ai =>
+/** Builds a stub binding whose `gateway(id).run(data)` returns a 200 response with an unparseable body. */
+const stubAiMalformedBody = (): WorkersAiBinding =>
   stubAiBinding(() => ({
     run: async () =>
       new Response("not valid json", {
@@ -66,7 +67,7 @@ const stubAiMalformedBody = (): Ai =>
       }),
   }));
 
-const binding = (ai: Ai) => ({ ai, gatewayId: "website" });
+const binding = (ai: WorkersAiBinding) => ({ ai, gatewayId: "website" });
 
 // ── Embeddings ───────────────────────────────────────────────────────
 

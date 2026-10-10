@@ -30,10 +30,7 @@ import { FetchHttpClient, HttpClient, HttpClientRequest } from "effect/http";
 import { gatewayUrl, type GatewayBinding } from "./Binding";
 import * as Url from "./Url";
 
-/**
- * The AI Gateway provider slug for Anthropic
- * (`AIGatewayProviders["anthropic"]` in `@cloudflare/workers-types`).
- */
+/** The AI Gateway provider slug for Anthropic (a `GatewayProvider`). */
 const ANTHROPIC_PROVIDER = "anthropic";
 
 /**

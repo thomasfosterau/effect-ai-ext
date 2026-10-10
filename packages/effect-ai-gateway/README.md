@@ -22,10 +22,11 @@ Both transports share one request body and one lenient response decode per provi
 
 ```sh
 pnpm add @thomasfosterau/effect-ai-gateway effect @effect/ai-anthropic
-# @cloudflare/workers-types is a peer for the binding-based transports (types only)
 ```
 
-`effect` and `@effect/ai-anthropic` (both `>=4.0.0-rc.118`) are peer dependencies (`effect` must be a singleton). `@cloudflare/workers-types` is an optional peer, needed only for the binding-based transports' types: `>=4.20241214.0`, the first release declaring `AIGatewayProviders` / `AIGatewayUniversalRequest`, which the gateway's published types reference.
+`effect` and `@effect/ai-anthropic` (both `>=4.0.0-rc.118`) are peer dependencies (`effect` must be a singleton).
+
+The gateway's published types need nothing from `@cloudflare/workers-types`: it types the Worker's `AI` binding with its own structural slice, `WorkersAiBinding` (`gateway(id)` → `{ getUrl, run }`), and provider slugs as `GatewayProvider`. So a project that type-checks with `skipLibCheck: false` and never installs `@cloudflare/workers-types` (a plain Node process using the `…FromUrl` variants, say) still type-checks the gateway. `@cloudflare/workers-types` stays an optional peer (`>=4.20241214.0`) for your own Worker's typing: a Worker's `env.AI`, typed `Ai` by that package, is assignable to `WorkersAiBinding`, so you pass it unchanged. That needs a release that declares `AiGateway.getUrl()`, `4.20250312.0` or later; on an older one, upgrade it or type the binding yourself.
 
 ## Usage
 
@@ -39,7 +40,8 @@ import {
   makeOpenAiModerationModel,
 } from "@thomasfosterau/effect-ai-gateway";
 
-// Inside a Worker with an `AI` binding (`Ai` is from @cloudflare/workers-types):
+// Inside a Worker with an `AI` binding. `Ai` is from @cloudflare/workers-types,
+// and any `WorkersAiBinding` works too.
 declare const env: { AI: Ai };
 const gateway = { ai: env.AI, gatewayId: "my-gateway" };
 

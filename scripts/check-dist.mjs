@@ -126,18 +126,20 @@ for (const { specifier, dts } of targets) {
  * `skipLibCheck: false`, and a silently degraded type for everyone else.
  *
  * Only diagnostics located in this package's own `dist` count. Third-party
- * declarations raise their own noise under `skipLibCheck: false`
- * (`@cloudflare/workers-types` against `lib.dom`), which is not this
- * package's to fix. Workspace siblings resolve to their built `.d.ts`
+ * declarations can raise their own noise under `skipLibCheck: false`, which
+ * is not this package's to fix. Workspace siblings resolve to their built `.d.ts`
  * through `paths`, never the `src` their development `exports` point at.
  *
- * `types` is the package's own `tsconfig.json` `compilerOptions.types` (each
- * an installed devDependency), so the gateway is checked with
- * `@cloudflare/workers-types` loaded: its bundle names the ambient `Ai`,
- * `AIGatewayProviders` and `AIGatewayUniversalRequest` globals without a
- * reference to that package, which a consumer without the types would see as
- * unresolved names (#113), and `effect-evals` with `node`. A package whose
- * tsconfig names none gets no ambient types.
+ * No package loads ambient `types`: a consumer's compiler has only what it
+ * installs and lists itself, so a bundle must not lean on any package's
+ * globals (`node`, or an optional peer such as `@cloudflare/workers-types`).
+ * The gateway is therefore checked without workers-types, which proves its
+ * `.d.ts` self-contained: it types the Worker binding with its own structural
+ * slice rather than that package's ambient `Ai`, `AIGatewayProviders` and
+ * `AIGatewayUniversalRequest` (#113). `lib` is pinned to the one
+ * `tsconfig.base.json` sets (`esnext`, `dom`, `dom.iterable`) rather than
+ * left to the target's default: bundles name DOM globals the runtimes they
+ * target provide (`Response` in the gateway, `Blob` in elevenlabs).
  */
 const parsedSources = new Map();
 const checkDeclarations = (dir, paths) => {
@@ -145,7 +147,6 @@ const checkDeclarations = (dir, paths) => {
   const rootNames = readdirSync(distDir, { recursive: true })
     .filter((f) => f.endsWith(".d.ts"))
     .map((f) => path.join(distDir, f));
-  const tsconfig = ts.readConfigFile(path.join(dir, "tsconfig.json"), ts.sys.readFile);
   const options = {
     module: ts.ModuleKind.Preserve,
     moduleResolution: ts.ModuleResolutionKind.Bundler,
@@ -154,12 +155,13 @@ const checkDeclarations = (dir, paths) => {
     exactOptionalPropertyTypes: true,
     noEmit: true,
     skipLibCheck: false,
-    types: tsconfig.config?.compilerOptions?.types ?? [],
+    lib: ["lib.esnext.d.ts", "lib.dom.d.ts", "lib.dom.iterable.d.ts"],
+    types: [],
     paths,
   };
   const host = ts.createCompilerHost(options);
-  // Ambient `types` resolve from the package directory, where its
-  // devDependencies are installed.
+  // Third-party declarations resolve from the package directory, where its
+  // dependencies are installed.
   host.getCurrentDirectory = () => dir;
   // One parse of each shared declaration file (effect's, mostly) serves
   // every package's program.

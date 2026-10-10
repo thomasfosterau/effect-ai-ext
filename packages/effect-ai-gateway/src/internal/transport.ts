@@ -28,7 +28,7 @@ import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import { AiError } from "effect/ai";
 import { HttpBody, HttpClient, HttpClientRequest } from "effect/http";
-import { gatewayRun, type GatewayBinding } from "../Binding";
+import { gatewayRun, type GatewayBinding, type GatewayUniversalRequest } from "../Binding";
 
 /** Which provider module and method an `AiError` is reported from. */
 export interface Origin {
@@ -121,7 +121,7 @@ export const decodeResponse = <S extends Schema.Top>(
 export const requestViaBinding = <S extends Schema.Top>(
   origin: Origin,
   binding: GatewayBinding,
-  data: AIGatewayUniversalRequest,
+  data: GatewayUniversalRequest,
   schema: S,
 ): Effect.Effect<S["Type"], AiError.AiError, S["DecodingServices"]> =>
   decodeResponse(
@@ -132,7 +132,7 @@ export const requestViaBinding = <S extends Schema.Top>(
         status: response.status,
         text: Effect.tryPromise(() => response.text()).pipe(Effect.orElseSucceed(() => "")),
         json: Effect.tryPromise({
-          try: () => response.json<unknown>(),
+          try: () => response.json(),
           catch: (cause) => bodyReadFailure(origin, cause),
         }),
       })),

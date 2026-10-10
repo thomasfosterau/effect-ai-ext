@@ -20,11 +20,12 @@ import {
   OPENAI_MODERATION_MODEL,
   makeOpenAiModerationModel,
   type OpenAiModerationOptions,
+  type WorkersAiBinding,
 } from "@thomasfosterau/effect-ai-gateway";
 import { stubAiBinding } from "./helpers/ai";
 import { expectFailureInstanceOf, runTest } from "./helpers/effect";
 
-/** Builds a stub `Ai` binding whose `gateway(id).run(data)` is canned. */
+/** Builds a stub binding whose `gateway(id).run(data)` is canned. */
 const stubAi = (response: { status: number; body: unknown }) => {
   const calls: unknown[] = [];
   const ai = stubAiBinding(() => ({
@@ -39,7 +40,7 @@ const stubAi = (response: { status: number; body: unknown }) => {
   return { ai, calls };
 };
 
-const binding = (ai: Ai) => ({ ai, gatewayId: "website" });
+const binding = (ai: WorkersAiBinding) => ({ ai, gatewayId: "website" });
 
 /** One `omni-moderation` result, in the provider's wire shape. */
 const omniResult = (
@@ -56,7 +57,11 @@ const omniBody = (results: ReadonlyArray<unknown>, extra: Record<string, unknown
 });
 
 /** Moderates `inputs`; with no `options`, through the constructor's own default. */
-const moderate = (ai: Ai, inputs: ReadonlyArray<string>, options?: OpenAiModerationOptions) =>
+const moderate = (
+  ai: WorkersAiBinding,
+  inputs: ReadonlyArray<string>,
+  options?: OpenAiModerationOptions,
+) =>
   Effect.gen(function* () {
     const model = yield* options === undefined
       ? makeOpenAiModerationModel(binding(ai))
