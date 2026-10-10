@@ -22,6 +22,10 @@
  * value: `auto` omits `tool_choice`, `required` sends `REQUIRED`, `none`
  * sends `NONE`, and a specific-tool / `oneOf` directive is expressed by
  * filtering the `tools` array (plus `REQUIRED` when the mode demands a call).
+ * `tool_choice` (`REQUIRED` / `NONE`, sent for `toolChoice: "required"`, a
+ * named tool, or `"none"` with a toolkit) is only accepted by Command R7B and
+ * newer; on older models (`command-r`, `command-r-plus` and their dated
+ * releases) use `"auto"`.
  *
  * @module CohereLanguageModel
  *
@@ -58,7 +62,9 @@ const MODULE = "CohereLanguageModel";
 
 /**
  * A selection of well-known Cohere Command chat model ids, offered for
- * autocomplete only — the constructors accept any string.
+ * autocomplete only — the constructors accept any string. The `command-r` and
+ * `command-r-plus` ids predate Command R7B and reject `tool_choice`, so use
+ * `toolChoice: "auto"` with them.
  */
 export type Model =
   | "command-a-03-2025"

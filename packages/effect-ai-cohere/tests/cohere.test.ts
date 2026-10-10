@@ -671,8 +671,14 @@ describe("CohereLanguageModel tool calling", () => {
     );
 
     // #121: the model sees the tools but is forbidden from calling them.
-    expect(calls[0]?.body.tool_choice).toBe("NONE");
-    expect(calls[0]?.body.tools).toEqual([weatherToolRequest]);
+    // The whole body is pinned, so a stray or missing field fails the test.
+    expect(calls[0]?.body).toEqual({
+      model: "command-a-03-2025",
+      messages: [{ role: "user", content: "weather?" }],
+      stream: false,
+      tools: [weatherToolRequest],
+      tool_choice: "NONE",
+    });
     expect(response.text).toBe("Bonjour");
     expect(response.toolCalls).toHaveLength(0);
   });
@@ -787,6 +793,44 @@ describe("CohereLanguageModel finish reasons", () => {
 // ── Streaming ─────────────────────────────────────────────────────────
 
 describe("CohereLanguageModel.streamText", () => {
+  it('streams with the full tool set and Cohere\'s "NONE" for a none tool choice', async () => {
+    const { calls, fetch } = makeFetch(() =>
+      sseResponse([
+        { type: "message-start", id: "s9", delta: { message: { role: "assistant" } } },
+        {
+          type: "content-start",
+          index: 0,
+          delta: { message: { content: { type: "text", text: "" } } },
+        },
+        { type: "content-delta", index: 0, delta: { message: { content: { text: "Bonjour" } } } },
+        { type: "content-end", index: 0 },
+        { type: "message-end", delta: { finish_reason: "COMPLETE" } },
+      ]),
+    );
+
+    const parts = await runTest(
+      LanguageModel.streamText({
+        prompt: "weather?",
+        toolkit: weatherToolkit,
+        toolChoice: "none",
+      }).pipe(
+        Stream.runCollect,
+        Effect.provide(modelLayer(fetch)),
+        Effect.provide(weatherHandlers),
+      ),
+    );
+
+    // #121: the streaming request carries the same tools and directive.
+    expect(calls[0]?.body).toEqual({
+      model: "command-a-03-2025",
+      messages: [{ role: "user", content: "weather?" }],
+      stream: true,
+      tools: [weatherToolRequest],
+      tool_choice: "NONE",
+    });
+    expect(parts.some((part) => part.type === "tool-call")).toBe(false);
+  });
+
   it("emits bracketed text parts and a finish part from an SSE stream", async () => {
     const { fetch } = makeFetch(() =>
       sseResponse([

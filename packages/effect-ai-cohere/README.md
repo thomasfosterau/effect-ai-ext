@@ -35,7 +35,7 @@ const program = LanguageModel.generateText({ prompt: "Explain Effect in one line
 );
 ```
 
-`CohereClient.layer` accepts an `apiUrl` override — the same client can be repointed at the Cloudflare AI Gateway route for BYOK. Structured output uses Cohere's native `response_format` JSON-schema mode; tool-call parameters are returned as parsed JSON and validated against the toolkit. Streaming is available via `LanguageModel.streamText`.
+`CohereClient.layer` accepts an `apiUrl` override — the same client can be repointed at the Cloudflare AI Gateway route for BYOK. Structured output uses Cohere's native `response_format` JSON-schema mode; tool-call parameters are returned as parsed JSON and validated against the toolkit. Cohere's `tool_choice` (`REQUIRED` / `NONE`, sent for `toolChoice: "required"`, a named tool, or `"none"` with a toolkit) is only accepted by Command R7B and newer; on older models (`command-r`, `command-r-plus` and their dated releases) use `"auto"`. Streaming is available via `LanguageModel.streamText`.
 
 ### Embeddings, reranking, classification
 
