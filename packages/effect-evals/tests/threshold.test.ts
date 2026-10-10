@@ -6,6 +6,7 @@
 
 import { describe, expect, it } from "vite-plus/test";
 import { Threshold } from "../src/index.ts";
+import { unsafeCoerce } from "./helpers/unsafe.ts";
 
 describe("Threshold.minScore", () => {
   const policy = Threshold.minScore(0.7);
@@ -54,5 +55,20 @@ describe("Threshold.describe", () => {
 
   it("renders strict as == 1 (strict)", () => {
     expect(Threshold.describe(Threshold.strict)).toBe("== 1 (strict)");
+  });
+});
+
+describe("an unknown policy `_tag`", () => {
+  // Reachable only from an untyped (type-stripped) eval file. Both functions
+  // match exhaustively, so the policy throws (and the run dies) instead of
+  // counting as a silent fail or rendering `undefined`.
+  const bogus = unsafeCoerce<Threshold.Threshold>({ _tag: "AtLeast", threshold: 0.5 });
+
+  it("makes passes throw", () => {
+    expect(() => Threshold.passes(bogus, 1)).toThrow("effect/match/Match/exhaustive: absurd");
+  });
+
+  it("makes describe throw", () => {
+    expect(() => Threshold.describe(bogus)).toThrow("effect/match/Match/exhaustive: absurd");
   });
 });

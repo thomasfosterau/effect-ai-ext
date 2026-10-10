@@ -373,11 +373,13 @@ const extractParam = (evalCase: GEvalCase, param: EvaluationParam): Option.Optio
     Match.when("expected", () => renderField(evalCase.golden.expected)),
     Match.when("context", () => renderField(evalCase.golden.context)),
     Match.when("retrievedContext", () => renderField(evalCase.retrievedContext)),
-    // Not `Match.exhaustive`: eval files are type-stripped, never
-    // type-checked, so an unknown param can arrive from an untyped caller.
-    // It is reported as missing (`MissingEvaluationParamError`), not a defect.
-    // The `never` parameter keeps the compile-time check: a new
-    // `EvaluationParam` without its own `Match.when` is a type error here.
+    // Exhaustive at compile time, lenient at run time. The `never` parameter
+    // makes a new `EvaluationParam` without its own `Match.when` a type
+    // error here, as `Match.exhaustive` would. Unlike `Match.exhaustive`,
+    // which throws, the fallback returns `none`: eval files are
+    // type-stripped, never type-checked, so an unknown param can arrive from
+    // an untyped caller, and it is reported as missing
+    // (`MissingEvaluationParamError`), not a defect.
     Match.orElse((_unknown: never) => Option.none()),
   );
 
