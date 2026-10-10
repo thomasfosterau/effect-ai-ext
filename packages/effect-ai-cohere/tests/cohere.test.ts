@@ -548,6 +548,21 @@ const weatherHandlers = weatherToolkit.toLayer({
   get_weather: ({ city }) => Effect.succeed(`sunny in ${city}`),
 });
 
+/** The exact wire definition `weatherTool` is sent as. */
+const weatherToolRequest = {
+  type: "function",
+  function: {
+    name: "get_weather",
+    description: "Look up the weather for a city",
+    parameters: {
+      type: "object",
+      properties: { city: { type: "string" } },
+      required: ["city"],
+      additionalProperties: true,
+    },
+  },
+};
+
 const toolCallReply = (over?: Record<string, unknown>) =>
   chatReply({
     message: {
@@ -642,6 +657,42 @@ describe("CohereLanguageModel tool calling", () => {
 
     expect(calls[0]?.body.tool_choice).toBeUndefined();
     expect(calls[0]?.body.tools).toHaveLength(1);
+  });
+
+  it('sends the full tool set with Cohere\'s "NONE" for a none tool choice', async () => {
+    const { calls, fetch } = makeFetch(() => jsonResponse(chatReply()));
+
+    const response = await runTest(
+      LanguageModel.generateText({
+        prompt: "weather?",
+        toolkit: weatherToolkit,
+        toolChoice: "none",
+      }).pipe(Effect.provide(modelLayer(fetch)), Effect.provide(weatherHandlers)),
+    );
+
+    // #121: the model sees the tools but is forbidden from calling them.
+    // The whole body is pinned, so a stray or missing field fails the test.
+    expect(calls[0]?.body).toEqual({
+      model: "command-a-03-2025",
+      messages: [{ role: "user", content: "weather?" }],
+      stream: false,
+      tools: [weatherToolRequest],
+      tool_choice: "NONE",
+    });
+    expect(response.text).toBe("Bonjour");
+    expect(response.toolCalls).toHaveLength(0);
+  });
+
+  it("sends neither tools nor tool_choice without a toolkit", async () => {
+    const { calls, fetch } = makeFetch(() => jsonResponse(chatReply()));
+
+    // Without a toolkit, LanguageModel forwards toolChoice "none" with no tools.
+    await runTest(
+      LanguageModel.generateText({ prompt: "hi" }).pipe(Effect.provide(modelLayer(fetch))),
+    );
+
+    expect(calls[0]?.body).not.toHaveProperty("tools");
+    expect(calls[0]?.body).not.toHaveProperty("tool_choice");
   });
 
   it("synthesises an id for a tool call the model returned without one", async () => {
@@ -742,6 +793,44 @@ describe("CohereLanguageModel finish reasons", () => {
 // ── Streaming ─────────────────────────────────────────────────────────
 
 describe("CohereLanguageModel.streamText", () => {
+  it('streams with the full tool set and Cohere\'s "NONE" for a none tool choice', async () => {
+    const { calls, fetch } = makeFetch(() =>
+      sseResponse([
+        { type: "message-start", id: "s9", delta: { message: { role: "assistant" } } },
+        {
+          type: "content-start",
+          index: 0,
+          delta: { message: { content: { type: "text", text: "" } } },
+        },
+        { type: "content-delta", index: 0, delta: { message: { content: { text: "Bonjour" } } } },
+        { type: "content-end", index: 0 },
+        { type: "message-end", delta: { finish_reason: "COMPLETE" } },
+      ]),
+    );
+
+    const parts = await runTest(
+      LanguageModel.streamText({
+        prompt: "weather?",
+        toolkit: weatherToolkit,
+        toolChoice: "none",
+      }).pipe(
+        Stream.runCollect,
+        Effect.provide(modelLayer(fetch)),
+        Effect.provide(weatherHandlers),
+      ),
+    );
+
+    // #121: the streaming request carries the same tools and directive.
+    expect(calls[0]?.body).toEqual({
+      model: "command-a-03-2025",
+      messages: [{ role: "user", content: "weather?" }],
+      stream: true,
+      tools: [weatherToolRequest],
+      tool_choice: "NONE",
+    });
+    expect(parts.some((part) => part.type === "tool-call")).toBe(false);
+  });
+
   it("emits bracketed text parts and a finish part from an SSE stream", async () => {
     const { fetch } = makeFetch(() =>
       sseResponse([

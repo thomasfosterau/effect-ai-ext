@@ -433,6 +433,21 @@ const weatherHandlers = weatherToolkit.toLayer({
   get_weather: ({ city }) => Effect.succeed(`sunny in ${city}`),
 });
 
+/** The exact wire definition `weatherTool` is sent as. */
+const weatherToolRequest = {
+  type: "function",
+  function: {
+    name: "get_weather",
+    description: "Look up the weather for a city",
+    parameters: {
+      type: "object",
+      properties: { city: { type: "string" } },
+      required: ["city"],
+      additionalProperties: true,
+    },
+  },
+};
+
 describe("MistralLanguageModel tool calling", () => {
   it("sends tool definitions and resolves the model's tool call", async () => {
     const { calls, fetch } = makeFetch(() =>
@@ -508,11 +523,101 @@ describe("MistralLanguageModel tool calling", () => {
 
     expect(calls[0]?.body.tool_choice).toBe("any");
   });
+
+  it('sends the full tool set with Mistral\'s "none" for a none tool choice', async () => {
+    const { calls, fetch } = makeFetch(() => jsonResponse(completion()));
+
+    const response = await runTest(
+      LanguageModel.generateText({
+        prompt: "weather?",
+        toolkit: weatherToolkit,
+        toolChoice: "none",
+      }).pipe(Effect.provide(modelLayer(fetch)), Effect.provide(weatherHandlers)),
+    );
+
+    // #121: the model sees the tools but is forbidden from calling them.
+    // The whole body is pinned, so a stray or missing field fails the test.
+    expect(calls[0]?.body).toEqual({
+      model: "mistral-large-latest",
+      messages: [{ role: "user", content: "weather?" }],
+      stream: false,
+      tools: [weatherToolRequest],
+      tool_choice: "none",
+    });
+    expect(response.text).toBe("Bonjour");
+    expect(response.toolCalls).toHaveLength(0);
+  });
+
+  it('keeps Mistral\'s "auto" for an auto oneOf subset', async () => {
+    const { calls, fetch } = makeFetch(() => jsonResponse(completion()));
+
+    await runTest(
+      LanguageModel.generateText({
+        prompt: "weather?",
+        toolkit: weatherToolkit,
+        toolChoice: { mode: "auto", oneOf: ["get_weather"] },
+      }).pipe(Effect.provide(modelLayer(fetch)), Effect.provide(weatherHandlers)),
+    );
+
+    expect(calls[0]?.body.tool_choice).toBe("auto");
+    expect(calls[0]?.body.tools).toEqual([weatherToolRequest]);
+  });
+
+  it("sends neither tools nor tool_choice without a toolkit", async () => {
+    const { calls, fetch } = makeFetch(() => jsonResponse(completion()));
+
+    // Without a toolkit, LanguageModel forwards toolChoice "none" with no tools.
+    await runTest(
+      LanguageModel.generateText({ prompt: "hi" }).pipe(Effect.provide(modelLayer(fetch))),
+    );
+
+    expect(calls[0]?.body).not.toHaveProperty("tools");
+    expect(calls[0]?.body).not.toHaveProperty("tool_choice");
+  });
 });
 
 // ── Streaming ─────────────────────────────────────────────────────────
 
 describe("MistralLanguageModel.streamText", () => {
+  it('streams with the full tool set and Mistral\'s "none" for a none tool choice', async () => {
+    const { calls, fetch } = makeFetch(() =>
+      sseResponse([
+        {
+          id: "s9",
+          model: "mistral-large-latest",
+          choices: [{ index: 0, delta: { role: "assistant", content: "Bonjour" } }],
+        },
+        {
+          id: "s9",
+          model: "mistral-large-latest",
+          choices: [{ index: 0, delta: {}, finish_reason: "stop" }],
+        },
+      ]),
+    );
+
+    const parts = await runTest(
+      LanguageModel.streamText({
+        prompt: "weather?",
+        toolkit: weatherToolkit,
+        toolChoice: "none",
+      }).pipe(
+        Stream.runCollect,
+        Effect.provide(modelLayer(fetch)),
+        Effect.provide(weatherHandlers),
+      ),
+    );
+
+    // #121: the streaming request carries the same tools and directive.
+    expect(calls[0]?.body).toEqual({
+      model: "mistral-large-latest",
+      messages: [{ role: "user", content: "weather?" }],
+      stream: true,
+      tools: [weatherToolRequest],
+      tool_choice: "none",
+    });
+    expect(parts.some((part) => part.type === "tool-call")).toBe(false);
+  });
+
   it("emits bracketed text parts and a finish part from an SSE stream", async () => {
     const { fetch } = makeFetch(() =>
       sseResponse([
