@@ -74,6 +74,15 @@ export const provider: GatewayProvider = known;
 declare const local: GatewayUniversalRequest;
 export const universal: AIGatewayUniversalRequest = local;
 
+// GatewayProvider's literal slugs are exactly workers-types' list, so a slug
+// added to or dropped from either side fails here. The open string member is
+// filtered out by shape (\`string\` extends it; no literal does): it accepts
+// any string, so the slug assignment above alone can never catch drift.
+type Literals<T> = T extends string ? (string extends T ? never : T) : never;
+type Equals<A, B> =
+  (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
+export const sameSlugs: Equals<Literals<GatewayProvider>, AIGatewayProviders> = true;
+
 // A release whose run() options predate \`signal\` ({ gateway?, extraHeaders? })
 // still fits: GatewayRunOptions names both, as never.
 declare const olderGateway: {

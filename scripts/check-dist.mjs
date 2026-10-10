@@ -17,6 +17,10 @@
  * namespace the bundle never declares, which the value-export check cannot
  * see (see `checkDeclarations`).
  *
+ * The gateway's built declarations are also compiled against a Worker-shaped
+ * probe with `@cloudflare/workers-types` loaded, proving a Worker's `env.AI`
+ * is accepted unchanged (see `checkWorkersBinding`).
+ *
  * Every published package that declares a `bin` is also PACKED (`pnpm pack`),
  * unpacked into `node_modules/` of a scratch directory and its bin launched
  * from there (issue #42). Node refuses to type-strip TypeScript under
@@ -208,6 +212,103 @@ for (const { dir, manifest } of published) {
     );
   } else {
     console.log(`ok   ${manifest.name} .d.ts type-check (${files} files)`);
+  }
+}
+
+/**
+ * Compiles a Worker-shaped probe against the gateway's BUILT `dist/index.d.ts`
+ * with `@cloudflare/workers-types` loaded (and no `lib.dom`, as a Workers
+ * project is configured), expecting no diagnostics: a Worker's `env.AI`,
+ * typed `Ai` by that package, is accepted unchanged wherever the gateway
+ * takes a binding (#113). `tests/workers-types-binding.test.ts` proves the
+ * same against `src`; this proves the declaration bundler kept it so. The
+ * probe is a virtual file beside the gateway, so workers-types (its
+ * devDependency) resolves from there.
+ */
+const checkWorkersBinding = (dir, paths) => {
+  const probe = path.join(dir, "check-dist-workers-binding.ts");
+  const text = `
+import {
+  anthropicLanguageModelLayer,
+  gatewayRun,
+  gatewayUrl,
+  makeCohereEmbeddingModel,
+  makeCohereReranker,
+  makeOpenAiModerationModel,
+  type GatewayBinding,
+} from "@thomasfosterau/effect-ai-gateway";
+
+declare const env: { readonly AI: Ai };
+const binding: GatewayBinding = { ai: env.AI, gatewayId: "website" };
+export const probes = [
+  gatewayUrl({ ai: env.AI, gatewayId: "website" }, "anthropic"),
+  gatewayRun(binding, { provider: "cohere", endpoint: "v2/rerank", headers: {}, query: {} }),
+  anthropicLanguageModelLayer(binding, { model: "claude" }),
+  makeCohereEmbeddingModel(binding, { inputType: "search_query" }),
+  makeCohereReranker(binding),
+  makeOpenAiModerationModel(binding),
+];
+`;
+  const options = {
+    module: ts.ModuleKind.Preserve,
+    moduleResolution: ts.ModuleResolutionKind.Bundler,
+    target: ts.ScriptTarget.ESNext,
+    strict: true,
+    exactOptionalPropertyTypes: true,
+    noEmit: true,
+    skipLibCheck: true,
+    lib: ["lib.esnext.d.ts"],
+    types: ["@cloudflare/workers-types"],
+    paths,
+  };
+  const host = ts.createCompilerHost(options);
+  host.getCurrentDirectory = () => dir;
+  const getSourceFile = host.getSourceFile;
+  host.getSourceFile = (fileName, languageVersion, ...rest) =>
+    fileName === probe
+      ? ts.createSourceFile(fileName, text, languageVersion, true)
+      : getSourceFile(fileName, languageVersion, ...rest);
+  const fileExists = host.fileExists;
+  host.fileExists = (fileName) => fileName === probe || fileExists(fileName);
+  const program = ts.createProgram({ rootNames: [probe], options, host });
+  const source = program.getSourceFile(probe);
+  const diagnostics = [
+    ...program.getOptionsDiagnostics(),
+    ...program.getGlobalDiagnostics(),
+    ...program.getSyntacticDiagnostics(source),
+    ...program.getSemanticDiagnostics(source),
+  ];
+  // A probe that silently resolved the gateway from anywhere but its dist
+  // would prove nothing.
+  const dts = path.join(dir, "dist", "index.d.ts");
+  if (program.getSourceFile(dts) === undefined) {
+    throw new Error(`probe did not load ${path.relative(root, dts)}`);
+  }
+  return diagnostics;
+};
+
+const gateway = published.find(
+  ({ manifest }) => manifest.name === "@thomasfosterau/effect-ai-gateway",
+);
+if (gateway !== undefined) {
+  try {
+    const diagnostics = checkWorkersBinding(gateway.dir, distPaths);
+    if (diagnostics.length > 0) {
+      failures++;
+      console.error(
+        `FAIL ${gateway.manifest.name} accepts a workers-types \`Ai\` binding:\n` +
+          ts.formatDiagnostics(diagnostics, {
+            getCanonicalFileName: (f) => f,
+            getCurrentDirectory: () => root,
+            getNewLine: () => "\n",
+          }),
+      );
+    } else {
+      console.log(`ok   ${gateway.manifest.name} accepts a workers-types \`Ai\` binding`);
+    }
+  } catch (error) {
+    failures++;
+    console.error(`FAIL ${gateway.manifest.name} workers-types binding probe: ${String(error)}`);
   }
 }
 
