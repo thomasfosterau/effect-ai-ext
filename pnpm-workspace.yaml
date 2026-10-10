@@ -45,10 +45,10 @@ catalog:
   # docgen depends on `effect` itself, and from 4.0.1 on that dependency is
   # `^4.0.1`, which the `effect` singleton override (4.0.0) would silently
   # mask. Bump it with the Effect line.
-  "@effect/docgen": 4.0.0
-  "@effect/ai-anthropic": 4.0.0
-  "@effect/language-service": ^0.87.3
-  "@effect/platform-node": 4.0.0
+  "@effect/docgen": 4.0.2
+  "@effect/ai-anthropic": 4.0.2
+  "@effect/language-service": ^0.87.4
+  "@effect/platform-node": 4.0.2
   # Transitive only (via @effect/platform-node's `^` range); pinned and
   # overridden so it cannot float ahead of `effect` — 4.0.0 peers on
   # `effect ^4.0.0`, which the singleton override would silently mask.
@@ -56,7 +56,7 @@ catalog:
   # Dependabot's `effect` group never proposes it, and nothing flags a stale
   # pin — the `effect` override rewrites its peer spec too, so
   # `pnpm peers check` stays silent. Keep it equal to `effect` below.
-  "@effect/platform-node-shared": 4.0.0
+  "@effect/platform-node-shared": 4.0.2
   # Effect Language Service as a native (TypeScript-Go) binary — the TS7 side
   # of the 6/7 split. `effect-tsgo patch --typescript --oxlint` (the root
   # `prepare`) overwrites the native `tsc` binary with an Effect-patched build
@@ -79,7 +79,7 @@ catalog:
   # Must equal the vitest that vite-plus bundles (see `vitest` below); vite-plus
   # refuses to run coverage on a mismatch.
   "@vitest/coverage-istanbul": 5.0.1
-  effect: 4.0.0
+  effect: 4.0.2
   # The dead-code / health gate (`.fallowrc.json`; the Claude Code PreToolUse
   # hook `.claude/hooks/fallow-gate.sh` runs `fallow audit` before every agent
   # `git commit` / `git push`).
