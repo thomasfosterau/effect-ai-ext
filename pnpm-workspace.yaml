@@ -109,18 +109,17 @@ catalog:
 # Re-verify by pointing the default catalog's Effect line at the floor before
 # lowering or raising it. `@cloudflare/workers-types` is the gateway's
 # optional, types-only peer (#93). Since #113 the gateway's `dist/index.d.ts`
-# names nothing from it: the Worker binding is typed by the gateway's own
-# structural `WorkersAiBinding`, so the peer serves only the consumer's own
-# Worker typing. The range below (4.20241214.0, the first release declaring
-# every name the 0.4.x declarations referenced) is no longer a declaration
-# floor; the gateway's dev pin above is what its binding-compatibility test
-# (`tests/workers-types-binding.test.ts`) checks a real `Ai` against. A
-# release old enough to lack `AiGateway.getUrl()` (4.20250312.0) gives an
-# `Ai` that is not assignable to `WorkersAiBinding`, which the consumer sees
-# at their own call site.
+# names nothing from it, so there is no longer a declaration floor: the Worker
+# binding is typed by the gateway's own structural `WorkersAiBinding`. The
+# floor is instead the first release whose `Ai` is assignable to
+# `WorkersAiBinding`: 4.20250312.0, the first whose `AiGateway` declares
+# `getUrl()` (an `env.AI` from 4.20241214.0 or 4.20250311.0 fails with
+# TS2345 at the consumer's call site). The gateway's dev pin above is what its
+# binding-compatibility test (`tests/workers-types-binding.test.ts`) checks a
+# real `Ai` against; re-verify assignability at the floor before moving it.
 catalogs:
   peers:
-    "@cloudflare/workers-types": ">=4.20241214.0"
+    "@cloudflare/workers-types": ">=4.20250312.0"
     "@effect/ai-anthropic": ">=4.0.0-rc.118"
     "@effect/platform-node": ">=4.0.0-rc.118"
     effect: ">=4.0.0-rc.118"
