@@ -1,5 +1,16 @@
 # @thomasfosterau/effect-ai-mistral
 
+## 0.3.3
+
+### Patch Changes
+
+- 13a7edd: Streamed frames and tool-call arguments are parsed with `Schema.fromJsonString(Schema.Json)` instead of a `try`/`catch` around `JSON.parse` (#98). Text that is not JSON is still handed on as the raw string, as before. The one difference is a number literal too large for a finite double (`1e400`), which `JSON.parse` turned into `Infinity`: such text is no longer treated as JSON and is handed on as the raw string.
+  
+  An SSE frame containing such a literal therefore fails schema decoding, so the stream fails with an `AiError`, as any other malformed frame does.
+- 00c8f92: `toolChoice: "none"` now sends the tool definitions with `tool_choice: "none"`, so the model sees the tools but cannot call them. Previously it dropped `tools` and `tool_choice` from the chat-completions request body entirely (#121). A request without a toolkit still sends neither field.
+- a651e14: Model-id and provider-id parameters are spelled `Model | (string & Record<never, never>)` instead of `Model | (string & {})` (#98). The accepted values are unchanged: any string is still accepted, and the known ids still autocomplete. In `effect-ai-cohere`, the embedding and reranker `model` options, which have no list of known ids, are now plain `string`.
+- 79921eb: Build with `vp pack` (tsdown) instead of tsup. Every entry point and subpath keeps the same file name and the same runtime and type exports; only the internal chunk files under `dist/` are named differently, and the bundled declarations name types by their own names instead of minified aliases. The published `src/` is reformatted by Oxfmt with no code change.
+
 ## 0.3.2
 
 ### Patch Changes
