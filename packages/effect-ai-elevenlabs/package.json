@@ -1,6 +1,6 @@
 {
   "name": "@thomasfosterau/effect-ai-elevenlabs",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Effect AI provider for ElevenLabs — SpeechModel (TTS, one-shot + streaming), TranscriptionModel (Scribe STT), and VoiceConversionModel (speech-to-speech).",
   "keywords": [
     "ai",

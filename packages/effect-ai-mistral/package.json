@@ -1,6 +1,6 @@
 {
   "name": "@thomasfosterau/effect-ai-mistral",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Effect AI provider for Mistral — a LanguageModel implementation over Mistral's chat completions API.",
   "keywords": [
     "ai",
