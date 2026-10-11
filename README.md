@@ -1,5 +1,7 @@
 # effect-ai-ext
 
+**Disclaimer:** This repository has mostly been written by Claude Code. The packages are experimental (pre-1.0), definitely not production-ready. Use at your own risk.
+
 Idiomatic extensions to Effect's AI module (`effect/ai`): more providers and richer service abstractions, purely additive and written to feel like they belong in `effect/ai` itself. This is the monorepo home of the `@thomasfosterau/effect-ai-*` family and `@thomasfosterau/effect-evals`.
 
 ## Packages
