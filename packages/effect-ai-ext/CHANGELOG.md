@@ -1,5 +1,16 @@
 # @thomasfosterau/effect-ai-ext
 
+## 0.5.0
+
+### Minor Changes
+
+- 52cae13: **Breaking:** `ModerationModel`'s boolean verdict is renamed from `flagged` to `isFlagged` (#98), following the Effect lint preset's boolean-prefix convention. Both `ModerationResult.isFlagged` and the `ProviderResponse` contract a provider hands `ModerationModel.make` now use the new name: read `result.isFlagged` instead of `result.flagged`, and have a custom provider return `{ isFlagged, categories }`. `fromLanguageModel` still asks the model for a `flagged` field (the moderation APIs' own name) and decodes it to `isFlagged`. `ModerationResult`'s own Schema-encoded form uses `isFlagged` too, so a previously encoded `ModerationResult` / `ModerationResponse` (for example in a cache) holding `flagged` no longer decodes.
+
+### Patch Changes
+
+- 132f796: README: the "`RerankerModel` moved here" section now says the gateway's deprecated re-export was removed in effect-ai-gateway 0.5.0, so `@thomasfosterau/effect-ai-ext/RerankerModel` is the only import path.
+- 79921eb: Build with `vp pack` (tsdown) instead of tsup. Every entry point and subpath keeps the same file name and the same runtime and type exports; only the internal chunk files under `dist/` are named differently, and the bundled declarations name types by their own names instead of minified aliases. The published `src/` is reformatted by Oxfmt with no code change.
+
 ## 0.4.2
 
 ### Patch Changes

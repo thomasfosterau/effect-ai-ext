@@ -1,5 +1,24 @@
 # @thomasfosterau/effect-evals
 
+## 0.5.0
+
+### Minor Changes
+
+- 52cae13: `jsonValidity` now recovers only from the failure that is a verdict on the output, and lets anything else fail the run (#98):
+  
+  - `jsonValidity` scores `0` for text `JSON.parse` rejects (its `SyntaxError`), as before. Anything else thrown while parsing (possible only when `output` is not the string `JsonCase` promises) is now a defect that fails the run instead of a silent `0`.
+  - `schemaMatch` / `schemaMatchValue`: no behaviour change. Their catch is now typed to `SchemaError`, which was already the decode's only failure; a defect in a schema's own transformation already failed the run, and still does.
+  - The runner still treats an unparseable cache entry as a miss; anything else thrown while reading one is a defect.
+
+### Patch Changes
+
+- 9d5b1df: Drop the dead `docs/decisions/run-the-toolchain-under-node.md` citations from the CLI's doc comments and README (stating the reason inline instead), put the description ahead of the tags in the bin, loader and CLI-entry module headers, and correct the coverage-config file name in `cli/main`'s header.
+- 79921eb: The bundled declarations now type the value side of the `EvalCase`, `Golden`, `Metadata` and `Score` namespaces: `EvalCase.EvalCase`, `Golden.Golden`, `Golden.ConversationalGolden`, `Metadata.Metadata` and `Score.Score` are declared as the schema constructors they already were at runtime, where the previous declarations exported only their types. The `effect-evals` bin's missing-build message now names `vp run -r build`.
+- 13a7edd: The `terminal` reporter now writes through Effect's `Console` service (`Console.log`) instead of calling `console.log` directly, so a program that provides its own `Console` receives the table there; with the default `Console` the output is unchanged (#98).
+- b85a31a: `Threshold.passes` and `Threshold.describe` now throw (so the run dies) on a policy with an unknown `_tag`, possible only from an untyped eval file, where `passes` used to count it silently as a fail and `describe` returned `undefined`. This shipped in #119 without a changeset; typed callers are unaffected.
+- 99c8d7d: Replace the dead `docs/decisions/effect-evals-as-the-evaluation-toolkit.md` citations in the `Cache` and `Reporter` module docs with the website issue that records the decision (website#922), stating the reason inline.
+- 79921eb: Build with `vp pack` (tsdown) instead of tsup. Every entry point and subpath keeps the same file name and the same runtime and type exports; only the internal chunk files under `dist/` are named differently, and the bundled declarations name types by their own names instead of minified aliases. The published `src/` is reformatted by Oxfmt with no code change.
+
 ## 0.4.0
 
 ### Minor Changes

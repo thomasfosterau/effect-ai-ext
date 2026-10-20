@@ -1,5 +1,16 @@
 # @thomasfosterau/effect-ai-voyage
 
+## 0.3.3
+
+### Patch Changes
+
+- a651e14: Model-id and provider-id parameters are spelled `Model | (string & Record<never, never>)` instead of `Model | (string & {})` (#98). The accepted values are unchanged: any string is still accepted, and the known ids still autocomplete. In `effect-ai-cohere`, the embedding and reranker `model` options, which have no list of known ids, are now plain `string`.
+- 79921eb: Build with `vp pack` (tsdown) instead of tsup. Every entry point and subpath keeps the same file name and the same runtime and type exports; only the internal chunk files under `dist/` are named differently, and the bundled declarations name types by their own names instead of minified aliases. The published `src/` is reformatted by Oxfmt with no code change.
+- Updated dependencies [52cae13]
+- Updated dependencies [132f796]
+- Updated dependencies [79921eb]
+  - @thomasfosterau/effect-ai-ext@0.5.0
+
 ## 0.3.2
 
 ### Patch Changes
