@@ -95,7 +95,7 @@ catalog:
   # aliased core package, and `vitest` must match vite-plus's exact pin
   # (1.0.0 → 5.0.1) because the `vitest: "catalog:"` override forces every
   # resolution to the catalog singleton.
-  vite-plus: 1.0.0
+  vite-plus: 1.1.0
   vite: npm:@voidzero-dev/vite-plus-core@1.0.0
   vitest: 5.0.1
 
