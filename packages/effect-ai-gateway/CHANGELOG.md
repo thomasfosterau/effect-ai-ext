@@ -1,5 +1,35 @@
 # @thomasfosterau/effect-ai-gateway
 
+## 0.5.0
+
+### Minor Changes
+
+- 132f796: **Breaking:** two changes ship together, so consumers upgrade once.
+  
+  - **The deprecated `RerankerModel` re-export is removed.** The gateway no longer exports `RerankerModel`, `RerankerUsage`, `RerankedDocument`, `RerankResponse` or `make`, nor the types `RerankOptions`, `ProviderOptions`, `ProviderResponse` and `Service`; each was tagged `@deprecated` in 0.4.x. Import them from `@thomasfosterau/effect-ai-ext/RerankerModel` instead, which exports the same values. `makeCohereReranker` and `makeCohereRerankerFromUrl` are unchanged and still return that module's `Service`.
+  - **The optional `@cloudflare/workers-types` peer floor is now `>=4.20250312.0`** (was `>=4`). A Worker's `env.AI` from an older workers-types release is no longer assignable to `GatewayBinding.ai`, because its `AiGateway` lacks `getUrl()`: upgrade `@cloudflare/workers-types` to `4.20250312.0` or later. The gateway's published types no longer reference that package at all (see the `WorkersAiBinding` patch note), so a project that doesn't install it is unaffected.
+  
+  Also fixes the bundled declarations of `makeCohereReranker` and `makeCohereRerankerFromUrl`: `Cohere.ts` now imports `@thomasfosterau/effect-ai-ext/RerankerModel` directly instead of through the gateway's internal re-export module (deleted), so `dist/index.d.ts` types their result as that module's `Service` again rather than through a `RerankerModel_d_exports` namespace the `vp pack` declaration bundle never declared.
+- 52cae13: **Breaking:** the OpenAI moderation models (`makeOpenAiModerationModel`, `makeOpenAiModerationModelFromUrl`) report the provider's `flagged` verdict as `isFlagged`, following `@thomasfosterau/effect-ai-ext`'s `ModerationModel` rename (#98). The wire field is still OpenAI's `flagged`; it is renamed where the response is decoded. Read `result.isFlagged` instead of `result.flagged`.
+
+### Patch Changes
+
+- 8816de6: `cfAigAuthorizationHeader` now declares its return type as the exact header it builds, the new exported `CfAigAuthorizationHeader` type (`{ readonly "cf-aig-authorization": string }`), instead of `Record<string, string>` (#98). The value is unchanged, and the new type is still assignable wherever a `Record<string, string>` is expected.
+- 1ad16db: The published declarations no longer name `@cloudflare/workers-types`' ambient `Ai`, `AIGatewayProviders` and `AIGatewayUniversalRequest` globals, which a consumer that type-checks with `skipLibCheck: false` and doesn't install that optional peer saw as TS2304 (#113). The gateway now types them itself, with new exports:
+  
+  - `WorkersAiBinding` (`gateway(id)` → `WorkersAiGateway`, the `getUrl` / `run` slice the gateway calls) is the type of `GatewayBinding.ai`. A Worker's `env.AI`, typed `Ai` by `@cloudflare/workers-types` `4.20250312.0` or later (the new peer floor, see the breaking note), is assignable to it, so binding callers pass it unchanged.
+  - `GatewayProvider` (the known provider slugs, autocompleted, or any string) types the `provider` parameter of `gatewayUrl` and `gatewayBaseUrl`.
+  - `GatewayUniversalRequest` types `gatewayRun`'s request, and `GatewayRunOptions` the options it passes to `run()`.
+  
+  `@cloudflare/workers-types` stays an optional peer, needed only for your own Worker's typing; its floor rises to `>=4.20250312.0` (see the breaking note).
+- 99c8d7d: Replace the dead `docs/decisions/effect-ai-gateway.md` citations in the `Anthropic` and `Cohere` module docs with the website issues that record the decisions (website#847, website#472).
+- a651e14: Model-id and provider-id parameters are spelled `Model | (string & Record<never, never>)` instead of `Model | (string & {})` (#98). The accepted values are unchanged: any string is still accepted, and the known ids still autocomplete. In `effect-ai-cohere`, the embedding and reranker `model` options, which have no list of known ids, are now plain `string`.
+- 79921eb: Build with `vp pack` (tsdown) instead of tsup. Every entry point and subpath keeps the same file name and the same runtime and type exports; only the internal chunk files under `dist/` are named differently, and the bundled declarations name types by their own names instead of minified aliases. The published `src/` is reformatted by Oxfmt with no code change.
+- Updated dependencies [52cae13]
+- Updated dependencies [132f796]
+- Updated dependencies [79921eb]
+  - @thomasfosterau/effect-ai-ext@0.5.0
+
 ## 0.4.1
 
 ### Patch Changes
