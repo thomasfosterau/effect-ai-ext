@@ -72,8 +72,10 @@ catalog:
   # three.
   "@effect/tsgo": 0.47.2
   # The Effect rule set for Oxlint (`vp lint`), on top of @effect/tsgo's
-  # `recommended` preset. See the scoped `effect` override below.
-  "@mpsuesser/oxlint-plugin-effect": ^0.5.0
+  # `recommended` preset. From 0.6.0 it depends on stable `effect` 4.0.0, so the
+  # singleton override below resolves it onto the catalog `effect` (the 0.5.0
+  # scoped `beta.100` override is gone).
+  "@mpsuesser/oxlint-plugin-effect": ^0.6.0
   "@types/node": ^26.6.5
   "@typescript/native": "npm:typescript@7.0.2"
   # Must equal the vitest that vite-plus bundles (see `vitest` below); vite-plus
@@ -132,12 +134,6 @@ overrides:
   effect: "catalog:"
   # Keep equal to `effect`'s pin above — bumped by hand (see its catalog entry).
   "@effect/platform-node-shared": "catalog:"
-  # @mpsuesser/oxlint-plugin-effect@0.5.0 is built on effect beta.100 and calls
-  # `Schema.isIncludes` (renamed `isIncluding` in rc.118) when it loads, so the
-  # singleton override above would crash `vp lint`. Scoped override: only the
-  # lint plugin keeps its own Effect (copied from effect-web; website#2015).
-  # Remove once the plugin ships an rc.118+ build.
-  "@mpsuesser/oxlint-plugin-effect>effect": "4.0.0-beta.100"
 
 peerDependencyRules:
   allowAny:
