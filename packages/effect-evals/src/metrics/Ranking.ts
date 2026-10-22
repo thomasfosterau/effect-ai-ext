@@ -135,7 +135,7 @@ export const ndcg = (evidence: Evidence): number => {
   const actual = dcg(topK(evidence).map((handle) => gradeOf(evidence, handle)));
   const ideal = dcg(
     Arr.sort(
-      Object.values(evidence.relevant).filter((grade) => grade > 0),
+      EffectRecord.values(evidence.relevant).filter((grade) => grade > 0),
       Order.flip(Order.Number),
     ).slice(0, evidence.k),
   );
@@ -148,7 +148,7 @@ export const ndcg = (evidence: Evidence): number => {
  * with no relevant document.
  */
 export const recall = (evidence: Evidence): number => {
-  const total = Object.values(evidence.relevant).filter((grade) => grade > 0).length;
+  const total = EffectRecord.values(evidence.relevant).filter((grade) => grade > 0).length;
   if (total === 0) return 0;
   const found = topK(evidence).filter((handle) => gradeOf(evidence, handle) > 0).length;
   return found / total;
@@ -202,7 +202,7 @@ export const scoreCase = (
 const describe = (metric: RankingMetricName, evidence: Evidence, value: number): string => {
   const page = topK(evidence);
   const relevantOnPage = page.filter((handle) => gradeOf(evidence, handle) > 0).length;
-  const relevantTotal = Object.values(evidence.relevant).filter((grade) => grade > 0).length;
+  const relevantTotal = EffectRecord.values(evidence.relevant).filter((grade) => grade > 0).length;
   const first = page.findIndex((handle) => gradeOf(evidence, handle) > 0);
   return Match.value(metric).pipe(
     Match.when(

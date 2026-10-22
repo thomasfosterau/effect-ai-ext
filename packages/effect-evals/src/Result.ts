@@ -11,6 +11,10 @@
  * @copyright Thomas Foster
  */
 
+import * as Arr from "effect/Array";
+import * as Option from "effect/Option";
+import * as Predicate from "effect/Predicate";
+import * as EffectRecord from "effect/Record";
 import type { Score } from "./Score.ts";
 
 /** One trial's outcome for a metric: a score, or the scorer's Effect failed. */
@@ -79,17 +83,21 @@ const NO_SCORED_TRIALS = "no scored trials";
  * gave none), falling back to the most recent `Errored` trial's error when
  * no trial scored, and a placeholder when there are no trials at all.
  */
-export const lastReason = (metric: MetricAggregate): string => {
-  for (let i = metric.trials.length - 1; i >= 0; i--) {
-    const trial = metric.trials[i];
-    if (trial?._tag === "Scored") return trial.score.reason ?? NO_REASON_GIVEN;
-  }
-  for (let i = metric.trials.length - 1; i >= 0; i--) {
-    const trial = metric.trials[i];
-    if (trial?._tag === "Errored") return `error: ${String(trial.error)}`;
-  }
-  return NO_TRIALS_RECORDED;
-};
+export const lastReason = (metric: MetricAggregate): string =>
+  Arr.findLast(metric.trials, (trial) =>
+    Predicate.isTagged(trial, "Scored")
+      ? Option.some(trial.score.reason ?? NO_REASON_GIVEN)
+      : Option.none(),
+  ).pipe(
+    Option.orElse(() =>
+      Arr.findLast(metric.trials, (trial) =>
+        Predicate.isTagged(trial, "Errored")
+          ? Option.some(`error: ${String(trial.error)}`)
+          : Option.none(),
+      ),
+    ),
+    Option.getOrElse(() => NO_TRIALS_RECORDED),
+  );
 
 /** Renders a {@link Summary} as `mean=… stddev=… [min, max]`, or a placeholder when every trial errored. */
 export const formatSpread = (summary: Summary | undefined): string =>
@@ -154,23 +162,32 @@ export interface Aggregate {
  * `metrics` map rather than `NaN`.
  */
 export const aggregate = (result: SuiteResult): Aggregate => {
-  const sums = new Map<string, { sum: number; cases: number }>();
-  let successfulCases = 0;
-  for (const caseResult of result.cases) {
-    const scored = caseResult.metrics.some((metric) => metric.summary !== undefined);
-    if (caseResult.taskFailures.length < caseResult.trials || scored) successfulCases += 1;
-    for (const metric of caseResult.metrics) {
-      if (metric.summary === undefined) continue;
-      const entry = sums.get(metric.metric) ?? { sum: 0, cases: 0 };
-      entry.sum += metric.summary.mean;
-      entry.cases += 1;
-      sums.set(metric.metric, entry);
-    }
-  }
-  const metrics: Record<string, MetricAggregateAcrossCases> = {};
-  for (const [name, { sum, cases }] of sums) {
-    metrics[name] = { mean: sum / cases, cases };
-  }
+  const successfulCases = Arr.filter(
+    result.cases,
+    (caseResult) =>
+      caseResult.taskFailures.length < caseResult.trials ||
+      caseResult.metrics.some((metric) => metric.summary !== undefined),
+  ).length;
+  const sums = Arr.reduce(
+    Arr.flatMap(result.cases, (caseResult) => caseResult.metrics),
+    EffectRecord.empty<string, { readonly sum: number; readonly cases: number }>(),
+    (acc, metric) => {
+      if (metric.summary === undefined) return acc;
+      const { mean } = metric.summary;
+      return EffectRecord.set(
+        acc,
+        metric.metric,
+        Option.match(EffectRecord.get(acc, metric.metric), {
+          onNone: () => ({ sum: mean, cases: 1 }),
+          onSome: (entry) => ({ sum: entry.sum + mean, cases: entry.cases + 1 }),
+        }),
+      );
+    },
+  );
+  const metrics = EffectRecord.map(sums, ({ sum, cases }): MetricAggregateAcrossCases => ({
+    mean: sum / cases,
+    cases,
+  }));
   return {
     metrics,
     totalCases: result.cases.length,

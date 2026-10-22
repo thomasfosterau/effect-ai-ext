@@ -37,6 +37,7 @@ import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import type * as Path from "effect/Path";
 import * as EffectResult from "effect/Result";
+import * as Schema from "effect/Schema";
 import type * as Types from "effect/Types";
 import * as Cache from "../Cache.ts";
 import type * as EvalFile from "../EvalFile.ts";
@@ -58,17 +59,17 @@ export interface RunConfig {
   readonly cwd?: string;
 }
 
+/** `JSON.stringify` as a codec: `None` where it would throw or return `undefined`. */
+const encodeJson = Schema.encodeOption(Schema.fromJsonString(Schema.Unknown));
+
 /** A human-readable message for any error this module handles — typed CLI errors get a precise reason; anything else falls back to its own message or a JSON dump. */
 const describeError = (error: unknown): string => {
   if (error instanceof GlobError) return `glob discovery failed: ${describeError(error.cause)}`;
   if (error instanceof EvalFileImportError) return `import failed: ${describeError(error.cause)}`;
   if (error instanceof InvalidEvalFileError) return error.reason;
-  if (error instanceof Error) return error.message;
+  if (Predicate.isError(error)) return error.message;
   if (Predicate.isString(error)) return error;
-  return EffectResult.getOrElse(
-    EffectResult.try(() => JSON.stringify(error)),
-    () => String(error),
-  );
+  return Option.getOrElse(encodeJson(error), () => String(error));
 };
 
 const buildRunnerOptions = (
@@ -178,20 +179,27 @@ export const runEvals = (
     }
 
     const filterSubstring = Option.getOrUndefined(config.filter);
-    const ran: Array<FileResult> = [];
-    const skipped: Array<SkippedFile> = [];
-    const failed: Array<FailedFile> = [];
 
     const outcomes = yield* Effect.forEach(
       filesResult.success,
       (file) => processFile(file, config, filterSubstring),
       { concurrency: 1 },
     );
-    for (const outcome of outcomes) {
-      if (outcome._tag === "Ran") ran.push(outcome.result);
-      else if (outcome._tag === "Skipped") skipped.push(outcome.result);
-      else if (outcome._tag === "Failed") failed.push(outcome.result);
-    }
+    const ran = Arr.filterMap(outcomes, (outcome) =>
+      Predicate.isTagged(outcome, "Ran")
+        ? EffectResult.succeed(outcome.result)
+        : EffectResult.failVoid,
+    );
+    const skipped = Arr.filterMap(outcomes, (outcome) =>
+      Predicate.isTagged(outcome, "Skipped")
+        ? EffectResult.succeed(outcome.result)
+        : EffectResult.failVoid,
+    );
+    const failed = Arr.filterMap(outcomes, (outcome) =>
+      Predicate.isTagged(outcome, "Failed")
+        ? EffectResult.succeed(outcome.result)
+        : EffectResult.failVoid,
+    );
 
     const passed =
       Arr.isReadonlyArrayEmpty(failed) && ran.every((f) => f.suites.every((s) => s.passed));

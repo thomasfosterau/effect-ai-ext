@@ -36,8 +36,11 @@ import * as Arr from "effect/Array";
 import { ConfigError } from "effect/Config";
 import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
+import * as Predicate from "effect/Predicate";
+import * as EffectRecord from "effect/Record";
 import * as EffectResult from "effect/Result";
 import * as Schedule from "effect/Schedule";
+import * as Schema from "effect/Schema";
 import { AiError } from "effect/ai";
 import * as Cache from "./Cache.ts";
 import * as Dataset from "./Dataset.ts";
@@ -199,8 +202,14 @@ const retryAiErrors = <A, E, R>(
     Effect.retry({ schedule, while: (error) => AiError.isAiError(error) && error.isRetryable }),
   );
 
-/** The one failure `JSON.parse` reports for unparseable text. */
-const isSyntaxError = (cause: unknown): cause is SyntaxError => cause instanceof SyntaxError;
+/**
+ * The JSON codec for cache entries: decodes with `JSON.parse` and encodes with
+ * `JSON.stringify`, failing with a `SchemaError` where those would throw (or,
+ * on encode, return `undefined`).
+ */
+const CacheEntryJson = Schema.fromJsonString(Schema.Unknown);
+const decodeCacheEntry = Schema.decodeUnknownEffect(CacheEntryJson);
+const encodeCacheEntry = Schema.encodeEffect(CacheEntryJson);
 
 /** Resolves a cache key unless caching is bypassed for this run. */
 const cacheKeyFor = (
@@ -222,16 +231,12 @@ const cacheGetJson = <A>(
         ),
       );
     if (raw === undefined) return undefined;
-    // An unparseable entry (`JSON.parse`'s `SyntaxError`) is a cache miss;
-    // anything else is a defect, not a reason to re-run silently (#98).
-    return yield* Effect.try({
+    // An unparseable entry is a cache miss (#98).
+    return yield* decodeCacheEntry(raw).pipe(
       // SAFETY: the entry under this content-hash key was written by
       // `cacheSetJson` from a value of type `A`.
-      try: () => JSON.parse(raw) as A,
-      catch: (cause) => cause,
-    }).pipe(
-      Effect.catchIf(isSyntaxError, () => Effect.succeed<A | undefined>(undefined)),
-      Effect.orDie,
+      Effect.map((entry) => entry as A),
+      Effect.catchTag("SchemaError", () => Effect.succeed<A | undefined>(undefined)),
     );
   });
 
@@ -240,7 +245,7 @@ const cacheSetJson = <A>(
   value: A,
 ): Effect.Effect<void, never, Cache.KeyValueStore.KeyValueStore> =>
   Cache.KeyValueStore.KeyValueStore.pipe(
-    Effect.flatMap((kv) => kv.set(key, JSON.stringify(value))),
+    Effect.flatMap((kv) => encodeCacheEntry(value).pipe(Effect.flatMap((raw) => kv.set(key, raw)))),
     Effect.catch((error) => Effect.logWarning("effect-evals cache write failed", error)),
   );
 
@@ -340,6 +345,8 @@ type TrialRun =
     }
   | { readonly _tag: "TaskFailed"; readonly trial: number; readonly error: unknown };
 
+type TaskSucceededRun = Extract<TrialRun, { readonly _tag: "TaskSucceeded" }>;
+
 const runTrial = <Golden, Output, TaskE, TaskR, MetricE, MetricR>(
   task: TaskDefinition<Golden, Output, TaskE, TaskR>,
   metrics: ReadonlyArray<Metric.Metric<EvaluatedCase<Golden, Output>, MetricE, MetricR>>,
@@ -350,7 +357,7 @@ const runTrial = <Golden, Output, TaskE, TaskR, MetricE, MetricR>(
   Effect.gen(function* () {
     const taskOutcome = yield* runTaskTrial(task, golden, trial, config);
 
-    if (taskOutcome._tag === "Failed") {
+    if (Predicate.isTagged(taskOutcome, "Failed")) {
       return { _tag: "TaskFailed" as const, trial, error: taskOutcome.error };
     }
 
@@ -386,26 +393,31 @@ const runCase = <Golden, Output, TaskE, TaskR, MetricE, MetricR>(
       { concurrency: config.metricConcurrency },
     );
 
-    const taskFailures: Array<Result.TaskTrialFailure> = [];
-    const successes: Array<Extract<TrialRun, { readonly _tag: "TaskSucceeded" }>> = [];
-    for (const run of trialRuns) {
-      if (run._tag === "TaskFailed") taskFailures.push({ trial: run.trial, error: run.error });
-      else successes.push(run);
-    }
+    const [successes, taskFailures] = Arr.partition(
+      trialRuns,
+      (run): EffectResult.Result<TaskSucceededRun, Result.TaskTrialFailure> =>
+        Predicate.isTagged(run, "TaskFailed")
+          ? EffectResult.fail({ trial: run.trial, error: run.error })
+          : EffectResult.succeed(run),
+    );
 
     // One name → outcome map per successful trial, so aggregating below is
     // O(trials × metrics) instead of an O(trials × metrics²) linear scan.
-    const outcomesByMetric = successes.map(
-      (run) => new Map(run.metricOutcomes.map((entry) => [entry.metric, entry.outcome] as const)),
+    const outcomesByMetric = successes.map((run) =>
+      EffectRecord.fromEntries(
+        run.metricOutcomes.map((entry) => [entry.metric, entry.outcome] as const),
+      ),
     );
 
     const metricAggregates = metrics.map((metric): Result.MetricAggregate => {
-      const outcomes = outcomesByMetric
-        .map((byMetric) => byMetric.get(metric.name))
-        .filter((outcome): outcome is Result.MetricTrialOutcome => outcome !== undefined);
-      const scores = outcomes
-        .filter((outcome) => outcome._tag === "Scored")
-        .map((outcome) => outcome.score.score);
+      const outcomes = Arr.getSomes(
+        outcomesByMetric.map((byMetric) => EffectRecord.get(byMetric, metric.name)),
+      );
+      const scores = Arr.filterMap(outcomes, (outcome) =>
+        Predicate.isTagged(outcome, "Scored")
+          ? EffectResult.succeed(outcome.score.score)
+          : EffectResult.failVoid,
+      );
       const errorCount = outcomes.length - scores.length;
       const summary = Arr.isReadonlyArrayNonEmpty(scores) ? Result.summarize(scores) : undefined;
       const passed =

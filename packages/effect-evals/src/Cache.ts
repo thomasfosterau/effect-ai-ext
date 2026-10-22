@@ -35,6 +35,8 @@ import * as Order from "effect/Order";
 import * as Arr from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Predicate from "effect/Predicate";
+import * as EffectRecord from "effect/Record";
+import * as Schema from "effect/Schema";
 import { KeyValueStore } from "effect/persistence";
 
 export { KeyValueStore };
@@ -87,15 +89,20 @@ const canonicalize = (value: unknown): Canonical => {
   if (value instanceof Set) return { __set: Array.from(value, canonicalize) };
   if (Array.isArray(value)) return value.map(canonicalize);
   if (Predicate.isObject(value)) {
-    const sorted: Record<string, Canonical> = {};
-    for (const key of Arr.sort(Object.keys(value), Order.String))
-      sorted[key] = canonicalize(value[key]);
-    return sorted;
+    return EffectRecord.fromEntries(
+      Arr.map(Arr.sort(EffectRecord.keys(value), Order.String), (key) => [
+        key,
+        canonicalize(value[key]),
+      ]),
+    );
   }
   // Only a function is left. `JSON.stringify` drops one exactly as it drops
   // `undefined` (an omitted key, a `null` array slot), so the key is unchanged.
   return undefined;
 };
+
+/** `JSON.stringify` as a codec, for the canonical form of a cache key's inputs. */
+const encodeCanonicalJson = Schema.encodeEffect(Schema.fromJsonString(Schema.Unknown));
 
 const encoder = new TextEncoder();
 const toHex = (bytes: ArrayBuffer): string =>
@@ -109,16 +116,14 @@ const toHex = (bytes: ArrayBuffer): string =>
  * theoretical one).
  */
 export const hashKey = (input: CacheKeyInput): Effect.Effect<string> =>
-  Effect.tryPromise({
-    try: async () => {
-      const digest = await crypto.subtle.digest(
-        "SHA-256",
-        encoder.encode(JSON.stringify(canonicalize(input))),
-      );
-      return toHex(digest);
-    },
-    catch: (cause) => cause,
-  }).pipe(
+  encodeCanonicalJson(canonicalize(input)).pipe(
+    Effect.flatMap((json) =>
+      Effect.tryPromise({
+        try: () => crypto.subtle.digest("SHA-256", encoder.encode(json)),
+        catch: (cause) => cause,
+      }),
+    ),
+    Effect.map(toHex),
     // An input `JSON.stringify` cannot serialise (a cycle, a `BigInt`) is a
     // caller bug, and SHA-256 over bytes cannot fail, so either is a defect.
     Effect.orDie,

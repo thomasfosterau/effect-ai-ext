@@ -97,21 +97,6 @@ export default defineConfig({
       // "effect/Option"`) this family shares with its consumers.
       "effect/prefer-namespace-imports": "off",
 
-      // ---- Effect preset: ported-code allowances ---------------------------
-      // The modules under packages/*/src are ports of behaviour the
-      // applications carry today, which predates the Effect oxlint preset. The
-      // rules below sit at `warn` so a port stays committable while each site
-      // stays reported; a new site is a defect, not headroom. Once a rule's
-      // count reaches zero its line is deleted, so it is back at the preset's
-      // `error` (effect-web#48).
-      "effect/imperative-loops": "warn",
-      "effect/avoid-native-object-helpers": "warn",
-      "effect/avoid-non-null-assertion": "warn",
-      "effect/avoid-untagged-errors": "warn",
-      "effect/avoid-direct-json": "warn",
-      "effect/effect-run-in-body": "warn",
-      "effect/avoid-direct-tag-checks": "warn",
-      "effect/avoid-option-getorthrow": "warn",
       // ---- Effect preset: rules this workspace's conventions cut across ----
       // `prefer-option-over-null` also fires on `?: T | undefined`, which is
       // the ONLY spelling of an optional member `exactOptionalPropertyTypes`
@@ -233,6 +218,15 @@ export default defineConfig({
         files: ["packages/effect-evals/tests/cache.test.ts"],
         rules: {
           "effect/avoid-native-object-helpers": "off",
+        },
+      },
+      // `jsonValidity` reports `JSON.parse`'s own `SyntaxError` message as its
+      // reason (the user-facing point of the scorer); Schema's JSON codec
+      // discards that cause for a generic "a valid JSON string" issue.
+      {
+        files: ["packages/effect-evals/src/scorers/JsonValidity.ts"],
+        rules: {
+          "effect/avoid-direct-json": "off",
         },
       },
       // Type-level tests: the expect-error directives ARE the assertions

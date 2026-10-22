@@ -12,6 +12,7 @@
  * @copyright Thomas Foster
  */
 
+import * as Arr from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Number from "effect/Number";
 import { AiError, EmbeddingModel } from "effect/ai";
@@ -20,14 +21,15 @@ import type { StringCase } from "./StringCase.ts";
 
 /** Dot-product cosine similarity, `[-1, 1]`; `0` when either vector is the zero vector. */
 const cosineSimilarity = (a: ReadonlyArray<number>, b: ReadonlyArray<number>): number => {
-  let dot = 0;
-  let normA = 0;
-  let normB = 0;
-  for (let i = 0; i < a.length; i++) {
-    dot += a[i]! * b[i]!;
-    normA += a[i]! * a[i]!;
-    normB += b[i]! * b[i]!;
-  }
+  const { dot, normA, normB } = Arr.reduce(
+    Arr.zip(a, b),
+    { dot: 0, normA: 0, normB: 0 },
+    (sums, [x, y]) => ({
+      dot: sums.dot + x * y,
+      normA: sums.normA + x * x,
+      normB: sums.normB + y * y,
+    }),
+  );
   const denominator = Math.sqrt(normA) * Math.sqrt(normB);
   return denominator === 0 ? 0 : dot / denominator;
 };
@@ -57,9 +59,20 @@ export const embeddingSimilarity: Scorer.Scorer<
       const model = yield* EmbeddingModel.EmbeddingModel;
       const response = yield* model.embedMany([evalCase.output, expected]);
       const [outputEmbedding, expectedEmbedding] = response.embeddings;
+      if (outputEmbedding === undefined || expectedEmbedding === undefined) {
+        // `embedMany` already rejects a response with the wrong embedding
+        // count; this narrows the destructured pair for the type checker.
+        return yield* AiError.make({
+          module: "EmbeddingSimilarity",
+          method: "evaluate",
+          reason: new AiError.InvalidOutputError({
+            description: `Expected 2 embeddings but received ${response.embeddings.length}`,
+          }),
+        });
+      }
 
       return {
-        score: toUnitScore(cosineSimilarity(outputEmbedding!.vector, expectedEmbedding!.vector)),
+        score: toUnitScore(cosineSimilarity(outputEmbedding.vector, expectedEmbedding.vector)),
       };
     }),
 });
