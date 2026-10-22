@@ -78,9 +78,20 @@ jobs:
       # checks. `changeset:publish` builds every package (`vp run -r build`)
       # before publishing, so a build break still stops the publish.
       - run: pnpm install --frozen-lockfile --ignore-scripts
-      # The job installs no npm CLI of its own: `changeset publish` runs
-      # `pnpm publish` (pnpm 11 publishes natively, never via npm) and pnpm
-      # performs the trusted-publishing (OIDC) exchange itself (#63).
+      # Once the version PR has merged, `changeset:publish` builds every
+      # package, publishes each with `pnpm -r publish --ignore-scripts` and
+      # then runs `changeset git-tag` (#108, mirroring effect-web's `release`
+      # script). `--ignore-scripts` keeps any `prepublishOnly` / `prepack` /
+      # `publish` lifecycle script a package might add out of this id-token
+      # job; `pnpm -r publish` skips every version already on the registry.
+      # `git-tag` tags each package version not yet tagged locally or on
+      # `origin` and writes a `git-tag` event per new tag to the file the
+      # action names in `CHANGESETS_OUTPUT`; the action reads those events to
+      # push the tags and create the GitHub releases.
+      #
+      # The job installs no npm CLI of its own: pnpm 11 publishes natively
+      # (never via npm) and performs the trusted-publishing (OIDC) exchange
+      # itself (#63).
       #
       # v2 of the action pairs with Changesets CLI v3 (`@changesets/cli` in the
       # root devDependencies) and renamed v1's `version` / `publish` / `commit`
