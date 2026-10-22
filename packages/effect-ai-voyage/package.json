@@ -1,6 +1,6 @@
 {
   "name": "@thomasfosterau/effect-ai-voyage",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Effect AI provider for Voyage AI — EmbeddingModel and RerankerModel implementations over Voyage's embeddings and rerank APIs.",
   "keywords": [
     "ai",

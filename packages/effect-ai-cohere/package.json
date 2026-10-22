@@ -1,6 +1,6 @@
 {
   "name": "@thomasfosterau/effect-ai-cohere",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Effect AI provider for Cohere — LanguageModel (Command chat), EmbeddingModel, RerankerModel, and ClassifierModel over Cohere's v2 API.",
   "keywords": [
     "ai",
