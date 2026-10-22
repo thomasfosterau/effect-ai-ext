@@ -13,7 +13,7 @@
     "fallow:audit": "fallow audit",
     "changeset": "changeset",
     "changeset:version": "changeset version && vp fmt",
-    "changeset:publish": "vp run -r build && changeset publish"
+    "changeset:publish": "vp run -r build && pnpm -r --filter './packages/*' publish --access public --no-git-checks --ignore-scripts && changeset git-tag"
   },
   "devDependencies": {
     "@changesets/cli": "catalog:",
