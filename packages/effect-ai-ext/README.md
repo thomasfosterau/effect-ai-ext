@@ -30,21 +30,25 @@ import { LanguageModel, EmbeddingModel, RerankerModel } from "@thomasfosterau/ef
 
 The re-exports are the **same identities** as `effect/ai` (`effect` is the singleton peer), so mixing the two import styles is safe — nothing is wrapped or shadowed. Prefer importing straight from `effect/ai` when you only need upstream modules.
 
-## Modules & their upstream-merge story
+## Modules
 
-Each module is also available as a per-module subpath (mirroring how `effect` itself ships), e.g. `@thomasfosterau/effect-ai-ext/RerankerModel`.
+Each module is also available as a per-module subpath (mirroring how `effect` itself ships), e.g. `@thomasfosterau/effect-ai-ext/RerankerModel`. Every module exports the same set of names: the service tag (`RerankerModel.RerankerModel`, …), its `Service` interface, the caller options, the normalised `ProviderOptions` / `ProviderResponse` a provider implements, the `Schema.Class` response and usage models, and `make`.
 
-| Module | Operation(s) | If it merged upstream |
-| --- | --- | --- |
-| `RerankerModel` | `rerank` | Would be `effect/ai/RerankerModel` — the sibling of `EmbeddingModel` for relevance reordering. Validates indices (in range, unique, count ≤ `topN`), sorts by descending score, short-circuits empty inputs. |
-| `ClassifierModel` | `classify`, `fromLanguageModel` | Would be `effect/ai/ClassifierModel` — single/multi-label text classification with confidences and optional example-shots. |
-| `SpeechModel` | `generate`, `stream` | Would be `effect/ai/SpeechModel` — text-to-speech with both a one-shot buffer surface and a streaming surface, like `LanguageModel.generateText`/`streamText`. |
-| `TranscriptionModel` | `transcribe` | Would be `effect/ai/TranscriptionModel` — speech-to-text with optional segment timestamps and detected language. |
-| `ImageModel` | `generate` | Would be `effect/ai/ImageModel` — prompt-to-image with base64-or-bytes result parts. |
-| `ModerationModel` | `moderate`, `fromLanguageModel` | Would be `effect/ai/ModerationModel` — per-category policy scores plus an `isFlagged` verdict. |
-| `VoiceConversionModel` | `convert` | Would be `effect/ai/VoiceConversionModel` — re-voice audio into a target voice. |
+| Module | Operation(s) | Caller options | Response | `make` validates |
+| --- | --- | --- | --- | --- |
+| `RerankerModel` | `rerank` | `RerankOptions`: `query`, `documents`, `topN?` | `RerankResponse`: `results` (`RerankedDocument`: `index`, `relevanceScore`), sorted by descending score; `usage.inputTokens` | every `index` names an input document, indices are unique, count ≤ `topN` (or the document count); no documents → empty response, provider not called |
+| `ClassifierModel` | `classify` | `ClassifyOptions`: `inputs`, `labels?`, `multiLabel?`, `examples?` (`ClassifyExample`: `text`, `label`) | `ClassifyResponse`: one `Classification` (`classes`: `ClassScore` `label` / `score`) per input; `usage.inputTokens` | one classification per input, finite scores, labels within `labels` when given; no inputs → empty response |
+| `SpeechModel` | `generate`, `stream` | `SpeechOptions`: `text`, `voice?`, `format?`, `sampleRate?` | `SpeechResponse`: `audio` (`Uint8Array`), `mediaType`, `usage.inputCharacters`; `stream` yields `Uint8Array` chunks | non-empty audio (`generate`); `stream` passes through, traced |
+| `TranscriptionModel` | `transcribe` | `TranscriptionOptions`: `audio` (`Uint8Array` or `Stream<Uint8Array>`), `mediaType?`, `language?` | `TranscriptionResponse`: `text`, `segments?` (`TranscriptionSegment`: `text`, `start`, `end`), `language?`, `usage.durationSeconds` | segment timestamps finite with `end >= start` |
+| `ImageModel` | `generate` | `ImageOptions`: `prompt`, `size?`, `format?`, `count?` | `ImageResponse`: `images` (`ImagePart`: `data` as bytes or base64 string, `mediaType`), `usage.inputTokens` | at least one image, at most `count` |
+| `ModerationModel` | `moderate` | `ModerationOptions`: `inputs` | `ModerationResponse`: one `ModerationResult` (`isFlagged`, `categories`: category → score) per input; `usage.inputTokens` | one result per input, scores finite in `[0, 1]`; no inputs → empty response |
+| `VoiceConversionModel` | `convert` | `VoiceConversionOptions`: `audio` (`Uint8Array` or `Stream<Uint8Array>`), `targetVoice`, `format?` | `VoiceConversionResponse`: `audio`, `mediaType`, `usage.durationSeconds` | non-empty audio |
 
-`ClassifierModel` and `ModerationModel` additionally expose a `fromLanguageModel` adapter that backs the abstraction with **any** `LanguageModel` via structured-output prompting (`LanguageModel.generateObject`), running the model's output back through the same `make` validation path.
+A result that fails validation fails the call with an `AiError` whose reason is `InvalidOutputError`. Every operation is wrapped in `Effect.withSpan("<Module>.<operation>")`.
+
+`ClassifierModel` and `ModerationModel` additionally export `fromLanguageModel`, an `Effect<Service, never, LanguageModel>` that backs the abstraction with **any** `LanguageModel` via structured-output prompting (`LanguageModel.generateObject`), running the model's output back through the same `make` validation path.
+
+Were they to merge upstream, each module would become `effect/ai/<Module>`, the sibling of `EmbeddingModel`.
 
 ## Example
 
@@ -52,8 +56,7 @@ Each module is also available as a per-module subpath (mirroring how `effect` it
 import { Effect } from "effect";
 import { RerankerModel } from "@thomasfosterau/effect-ai-ext";
 
-// A provider package builds the service via RerankerModel.make(...);
-// consumers depend on the tag.
+// Consumers depend on the tag; a provider layer supplies it.
 const program = Effect.gen(function* () {
   const reranker = yield* RerankerModel.RerankerModel;
   const response = yield* reranker.rerank({
@@ -63,6 +66,27 @@ const program = Effect.gen(function* () {
   });
   return response.results; // sorted by descending relevanceScore
 });
+```
+
+Implementing the service in a provider: `make` takes the provider hook and returns the validated service.
+
+```ts
+import { Effect, Layer } from "effect";
+import * as RerankerModel from "@thomasfosterau/effect-ai-ext/RerankerModel";
+
+const KeywordReranker = Layer.effect(
+  RerankerModel.RerankerModel,
+  RerankerModel.make({
+    rerank: ({ query, documents }) =>
+      Effect.succeed({
+        results: documents.map((document, index) => ({
+          index,
+          relevanceScore: document.includes(query) ? 1 : 0,
+        })),
+        usage: { inputTokens: undefined },
+      }),
+  }),
+);
 ```
 
 Backing a classifier with a language model:

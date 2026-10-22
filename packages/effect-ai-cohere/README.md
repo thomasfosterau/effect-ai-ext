@@ -1,12 +1,6 @@
 # @thomasfosterau/effect-ai-cohere
 
-A first-party [Effect](https://effect.website) AI provider for **Cohere**. Effect ships no `@effect/ai-cohere` package, so this implements each capability directly against Cohere's v2 API.
-
-- **`CohereClient`** — the low-level HTTP client for `/v2/chat` (regular + streaming), `/v2/embed`, and `/v2/rerank`, every failure mapped to `AiError`. Its `apiUrl` override is the BYOK routing contract used by the Cloudflare AI Gateway package.
-- **`CohereLanguageModel`** — the `LanguageModel` implementation over Command chat models: prompt / tool / structured-output conversion and response decoding, exposed through `layer`, `model`, and `make`.
-- **`CohereEmbeddingModel`** — the `EmbeddingModel` implementation over `embed-v4.0` (pinned model + 1024-dim output; retrieval-aware `inputType`).
-- **`CohereRerankerModel`** — the effect-ai-ext `RerankerModel` implementation over `rerank-v3.5`.
-- **`CohereClassifierModel`** — the effect-ai-ext `ClassifierModel` implementation, backed by Cohere chat + structured output.
+A first-party [Effect](https://effect.website) AI provider for **Cohere**. Effect ships no `@effect/ai-cohere` package, so this implements each capability directly against Cohere's v2 API: `LanguageModel` and `EmbeddingModel` from `effect/ai`, and `RerankerModel` and `ClassifierModel` from [`@thomasfosterau/effect-ai-ext`](https://github.com/thomasfosterau/effect-ai-ext/tree/trunk/packages/effect-ai-ext).
 
 ## Install
 
@@ -14,49 +8,112 @@ A first-party [Effect](https://effect.website) AI provider for **Cohere**. Effec
 pnpm add @thomasfosterau/effect-ai-cohere effect
 ```
 
-`effect` (`>=4.0.0-rc.118`) is a peer dependency (it must be a singleton).
+`effect` (`>=4.0.0-rc.118`) is a peer dependency: it must be a single copy across your app. `@thomasfosterau/effect-ai-ext` is a dependency; add it yourself to import the `RerankerModel` / `ClassifierModel` tags.
 
 ## Usage
 
 ```ts
-import { Effect, Layer, Redacted } from "effect";
-import { FetchHttpClient } from "effect/http";
+import { Config, Effect, Layer } from "effect";
 import { LanguageModel } from "effect/ai";
+import { FetchHttpClient } from "effect/http";
 import { CohereClient, CohereLanguageModel } from "@thomasfosterau/effect-ai-cohere";
 
-const ModelLayer = CohereLanguageModel.layer({ model: "command-a-03-2025" }).pipe(
-  Layer.provide(CohereClient.layer({ apiKey: Redacted.make(process.env.COHERE_API_KEY!) })),
-  Layer.provide(FetchHttpClient.layer),
+const CohereClientLive = CohereClient.layerConfig({
+  apiKey: Config.Redacted("COHERE_API_KEY"),
+}).pipe(Layer.provide(FetchHttpClient.layer));
+
+const CohereLive = CohereLanguageModel.layer({ model: "command-a-03-2025" }).pipe(
+  Layer.provide(CohereClientLive),
 );
 
 const program = LanguageModel.generateText({ prompt: "Explain Effect in one line" }).pipe(
   Effect.map((response) => response.text),
-  Effect.provide(ModelLayer),
+  Effect.provide(CohereLive),
 );
 ```
-
-`CohereClient.layer` accepts an `apiUrl` override — the same client can be repointed at the Cloudflare AI Gateway route for BYOK. Structured output uses Cohere's native `response_format` JSON-schema mode; tool-call parameters are returned as parsed JSON and validated against the toolkit. Cohere's `tool_choice` (`REQUIRED` / `NONE`, sent for `toolChoice: "required"`, a named tool, or `"none"` with a toolkit) is only accepted by Command R7B and newer; on older models (`command-r`, `command-r-plus` and their dated releases) use `"auto"`. Streaming is available via `LanguageModel.streamText`.
 
 ### Embeddings, reranking, classification
 
 ```ts
+import { Config, Effect, Layer } from "effect";
+import { EmbeddingModel } from "effect/ai";
+import { FetchHttpClient } from "effect/http";
+import { RerankerModel } from "@thomasfosterau/effect-ai-ext";
 import {
+  CohereClassifierModel,
   CohereClient,
   CohereEmbeddingModel,
   CohereRerankerModel,
 } from "@thomasfosterau/effect-ai-cohere";
-import { EmbeddingModel } from "effect/ai";
-import { RerankerModel } from "@thomasfosterau/effect-ai-ext";
 
-const EmbedLayer = CohereEmbeddingModel.layer({ inputType: "search_document" }).pipe(
-  Layer.provide(CohereClient.layer({ apiKey: Redacted.make(process.env.COHERE_API_KEY!) })),
-  Layer.provide(FetchHttpClient.layer),
-);
+const CohereClientLive = CohereClient.layerConfig({
+  apiKey: Config.Redacted("COHERE_API_KEY"),
+}).pipe(Layer.provide(FetchHttpClient.layer));
+
+const CohereLive = Layer.mergeAll(
+  CohereEmbeddingModel.layer({ inputType: "search_document" }),
+  CohereRerankerModel.layer(),
+  CohereClassifierModel.layer(),
+).pipe(Layer.provide(CohereClientLive));
+
+const program = Effect.gen(function* () {
+  const embedder = yield* EmbeddingModel.EmbeddingModel;
+  const reranker = yield* RerankerModel.RerankerModel;
+  const { embeddings } = yield* embedder.embedMany(["hello", "world"]);
+  const { results } = yield* reranker.rerank({
+    query: "greeting",
+    documents: ["hello", "tax law"],
+  });
+  return { embeddings, results };
+}).pipe(Effect.provide(CohereLive));
 ```
 
-## A note on classification
+## API
 
-Cohere's dedicated Classify surface is v1-legacy: there is no `v2/classify`, and `/v1/classify` now requires a fine-tuned Embed model (default-model classification was deprecated 2025-01-31). `CohereClassifierModel` therefore backs the `ClassifierModel` abstraction with Cohere **chat + structured output** over a Command model — covering the full `ClassifyOptions` contract (caller label sets, open-set, multi-label, example-shot) on a supported v2 surface. See `CohereClassifierModel`'s module docs for the full rationale.
+### `CohereClient`
+
+The low-level HTTP client over an `HttpClient` from context. Its `Service` has `chat` and `chatStream` (`/v2/chat`, SSE), `embed` (`/v2/embed`) and `rerank` (`/v2/rerank`).
+
+| Export | What it is |
+| --- | --- |
+| `CohereClient` | The `Context.Service` tag. |
+| `make(options)` / `layer(options)` | The service, effectfully or as a `Layer` requiring `HttpClient`. |
+| `layerConfig(options?)` | The same, each option read from a `Config` (`apiKey: Config<Redacted \| undefined>`, `apiUrl: Config<string>`); fails with `ConfigError`. |
+| `defaultApiUrl` | `"https://api.cohere.com"`. |
+
+`Options`: `apiKey?: Redacted<string>` (sent as a bearer token; omit it when a proxy injects the credential), `apiUrl?: string` (override it to point the client at a proxy or a gateway route for BYOK), `transformClient?: (client: HttpClient) => HttpClient`.
+
+### `CohereLanguageModel`
+
+The `LanguageModel` over Command chat models.
+
+| Export | What it is |
+| --- | --- |
+| `layer({ model, config? })` / `make({ model, config? })` | The service as a layer requiring `CohereClient`, or as an effect. |
+| `model(model, config?)` | An `AiModel.Model<"cohere", LanguageModel, CohereClient>` descriptor. |
+| `Config` / `ConfigService` | Request defaults in context: `model`, `temperature`, `topP` (Cohere's `p`), `topK` (`k`), `maxTokens`, `seed`, `stopSequences`, `presencePenalty`, `frequencyPenalty`. Context values override the construction-time `config`. |
+| `withConfigOverride(overrides)` | Applies overrides to one effect (data-first or data-last). |
+| `Model` | Well-known model ids, for autocomplete only. |
+
+Structured output uses Cohere's native `response_format` JSON-schema mode; tool-call parameters are returned as parsed JSON and validated against the toolkit. Cohere's `tool_choice` (`REQUIRED` / `NONE`, sent for `toolChoice: "required"`, a named tool, or `"none"` with a toolkit) is only accepted by Command R7B and newer; on older models (`command-r`, `command-r-plus` and their dated releases) use `"auto"`. User messages accept image file parts; any other media type fails with an `AiError`.
+
+### `CohereEmbeddingModel`
+
+An `EmbeddingModel` over `/v2/embed`. `layer(options)` / `make(options)` take `inputType` (`InputType`: `"search_document"`, `"search_query"`, `"classification"`, `"clustering"`, `"image"`), `model?` (default `EMBEDDING_MODEL`, `"embed-v4.0"`) and `outputDimension?` (default `EMBEDDING_DIMENSIONS`, `1024`, sent on every request).
+
+### `CohereRerankerModel`
+
+A `RerankerModel` over `/v2/rerank`. `layer(options?)` / `make(options?)` take `model?` (default `RERANK_MODEL`, `"rerank-v3.5"`). Cohere bills reranking in search units; they are reported as `usage.inputTokens`.
+
+### `CohereClassifierModel`
+
+A `ClassifierModel` backed by Cohere chat with structured output (`ClassifierModel.fromLanguageModel` over `CohereLanguageModel`). `layer(options?)` / `make(options?)` take `model?` (default `DEFAULT_MODEL`, `"command-a-03-2025"`) and `config?` (chat tuning; temperature defaults to `0` for deterministic labelling).
+
+Cohere's dedicated Classify surface is v1-legacy: there is no `v2/classify`, and `/v1/classify` now requires a fine-tuned Embed model (default-model classification was deprecated 2025-01-31). Chat with structured output covers the full `ClassifyOptions` contract (caller label sets, open-set, multi-label, example shots) on a supported v2 surface.
+
+### Errors
+
+Every transport, HTTP-status and decoding failure leaves the provider as an `AiError` from `effect/ai`, its reason derived from the HTTP status. Unknown or missing response fields never fail an otherwise-valid response.
 
 ## License
 
