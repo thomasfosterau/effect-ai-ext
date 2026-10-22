@@ -14,6 +14,7 @@ import * as FileSystem from "effect/FileSystem";
 import * as Layer from "effect/Layer";
 import * as Path from "effect/Path";
 import * as PlatformError from "effect/PlatformError";
+import * as Schema from "effect/Schema";
 import type { CliReport } from "../../src/cli/Report.ts";
 import { writeJsonReport } from "../../src/cli/Report.ts";
 import { runTest } from "../helpers/effect.ts";
@@ -67,7 +68,9 @@ describe("Report.writeJsonReport", () => {
 
     expect(created).toBe(".effect-evals");
     expect(written?.path).toBe(".effect-evals/results.json");
-    expect(JSON.parse(written?.content ?? "{}")).toEqual(passingReport);
+    expect(
+      Schema.decodeUnknownSync(Schema.fromJsonString(Schema.Unknown))(written?.content ?? "{}"),
+    ).toEqual(passingReport);
   });
 
   it("does not create a directory when the output path has no directory component", async () => {

@@ -10,6 +10,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import * as Arr from "effect/Array";
 import * as Order from "effect/Order";
+import * as Cause from "effect/Cause";
 import * as Config from "effect/Config";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
@@ -566,7 +567,7 @@ describe("Runner.isConfigError", () => {
   });
 
   it("rejects errors that aren't a Config.ConfigError", () => {
-    expect(Runner.isConfigError(new Error("boom"))).toBe(false);
+    expect(Runner.isConfigError(new Cause.NoSuchElementError("boom"))).toBe(false);
     expect(Runner.isConfigError("boom")).toBe(false);
     expect(Runner.isConfigError(undefined)).toBe(false);
   });

@@ -226,6 +226,15 @@ export default defineConfig({
           "effect/use-filesystem-service": "off",
         },
       },
+      // `Cache.hashKey` canonicalises native `Map` / `Set` inputs (a golden
+      // is any user value), so its tests must build native ones: a `HashMap`
+      // would test a different input and break the pinned digest.
+      {
+        files: ["packages/effect-evals/tests/cache.test.ts"],
+        rules: {
+          "effect/avoid-native-object-helpers": "off",
+        },
+      },
       // Type-level tests: the expect-error directives ARE the assertions
       // (a statement that must fail to compile), and every binding exists to
       // be asserted against, never to be read.

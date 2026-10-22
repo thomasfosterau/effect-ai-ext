@@ -12,6 +12,7 @@ import { Command } from "effect/cli";
 import { NodeServices } from "@effect/platform-node";
 import { Cache } from "../../src/index.ts";
 import { cli, version } from "../../src/cli/Cli.ts";
+import { runTest } from "../helpers/effect.ts";
 
 describe("cli/Cli", () => {
   // No "version matches package.json" test: `src/cli/Cli.ts` defines
@@ -22,7 +23,7 @@ describe("cli/Cli", () => {
 
     // `--help` never reaches the `run` handler at runtime, but Command's
     // type system still requires every subcommand's R statically satisfied.
-    await Effect.runPromise(
+    await runTest(
       Command.runWith(cli, { version })(["--help"]).pipe(
         Effect.provide(Layer.merge(Cache.layerMemory, NodeServices.layer)),
       ),
