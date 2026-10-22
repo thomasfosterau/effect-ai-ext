@@ -1,6 +1,7 @@
 {
   "$schema": "../../node_modules/@effect/docgen/schema.json",
   "runExamples": true,
+  "srcLink": "https://github.com/thomasfosterau/effect-ai-ext/blob/trunk/packages/effect-ai-voyage/",
   "enforceVersion": false,
   "exclude": ["src/internal/**/*.ts"],
   "parseCompilerOptions": {

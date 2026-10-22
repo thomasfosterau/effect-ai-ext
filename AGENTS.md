@@ -89,13 +89,13 @@ Issues are the backlog: when you find work you can't do now, file an issue rathe
 
 ## Effect
 
-Consult effect-solutions before writing Effect code; never guess at an Effect pattern. It is not a dependency here and the SessionStart hook doesn't install it, so run it through `pnpm dlx effect-solutions list`, then `pnpm dlx effect-solutions show <topic>…` (needs network). When the guides run out, or offline, read the Effect source each package installs: `packages/<pkg>/node_modules/effect/src`. The pinned version is the `effect` entry in `pnpm-workspace.yaml`; at that rc the schema-backed error is `Schema.TaggedError<Self>()(tag, fields)` (`Schema.TaggedErrorClass` was the beta-line name).
+Never guess at an Effect API: read the installed package. Each package's `node_modules/effect` holds the pinned release's declarations (`dist/*.d.ts`), its source (`src/`) and the guides it ships (`AGENTS.md` / `CLAUDE.md` and the `ai-docs/` examples they link). The pinned version is the catalog's `effect` entry in `pnpm-workspace.yaml`; at that version the schema-backed error is `Schema.TaggedError<Self>()(tag, fields)` (`Schema.TaggedErrorClass` was the beta-line name).
 
 ## Agent sessions
 
 - The SessionStart hook (`.claude/hooks/session-start.sh`, registered in `.claude/settings.json`) runs `pnpm install --frozen-lockfile` (through Corepack when available), which also applies the tsgo patch, and puts `vp` (a re-exec shim that prefers the nearest checkout's `node_modules`) and `fallow` on PATH for non-interactive shells, so the gates run without manual setup. It hydrates no secrets, and nothing here needs one.
 - A PreToolUse hook (`.claude/hooks/fallow-gate.sh`) blocks `git commit` / `git push` when `fallow audit --base origin/trunk` fails; it reads the coverage map on disk, so run `vp run test:coverage` first. A PostToolUse hook runs `vp fmt` on every source, JSON, CSS or Markdown file you write or edit.
-- Every gate in [Verification](#verification) runs in an agent session; `pnpm audit` and `pnpm dlx effect-solutions` need network.
+- Every gate in [Verification](#verification) runs in an agent session; `pnpm audit` needs network.
 
 ## Documentation surfaces
 

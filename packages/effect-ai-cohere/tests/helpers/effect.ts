@@ -6,7 +6,7 @@
  * package's unit suite instead of pulling in `@effect/vitest`.
  *
  * Provide layers per test with `Effect.provide` at the call site, per
- * the effect-solutions testing guide:
+ * the Effect testing docs:
  *
  * ```ts
  * const exit = await runTestExit(requireAdmin.pipe(Effect.provide(layer)));

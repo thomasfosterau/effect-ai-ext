@@ -3,7 +3,7 @@
  *
  * Two small wrappers around `Effect.runPromise` / `runPromiseExit`, plus a
  * failure-type assertion. Provide layers per test with `Effect.provide` at the
- * call site, per the effect-solutions testing guide:
+ * call site, per the Effect testing docs:
  *
  * ```ts
  * const exit = await runTestExit(program.pipe(Effect.provide(layer)));
