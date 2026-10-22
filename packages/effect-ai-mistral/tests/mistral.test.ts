@@ -13,10 +13,12 @@
  */
 
 import { describe, expect, it } from "vite-plus/test";
+import * as Arr from "effect/Array";
 import * as Config from "effect/Config";
 import * as Predicate from "effect/Predicate";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import * as EffectRecord from "effect/Record";
 import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
@@ -58,7 +60,7 @@ const makeFetch = (respond: (captured: CapturedRequest) => Response) => {
     const captured: CapturedRequest = {
       url: request.url,
       authorization: request.headers.get("authorization"),
-      headers: Object.fromEntries(request.headers),
+      headers: EffectRecord.fromEntries(request.headers),
       body,
     };
     calls.push(captured);
@@ -67,11 +69,14 @@ const makeFetch = (respond: (captured: CapturedRequest) => Response) => {
   return { calls, fetch };
 };
 
+/** Serialises a canned response fixture as JSON text. */
+const toJson = Schema.encodeSync(Schema.fromJsonString(Schema.Unknown));
+
 const httpLayer = (fetch: typeof globalThis.fetch) =>
   FetchHttpClient.layer.pipe(Layer.provide(Layer.succeed(FetchHttpClient.Fetch, fetch)));
 
 const jsonResponse = (body: unknown, status = 200): Response =>
-  new Response(JSON.stringify(body), {
+  new Response(toJson(body), {
     status,
     headers: { "content-type": "application/json" },
   });
@@ -79,7 +84,7 @@ const jsonResponse = (body: unknown, status = 200): Response =>
 const sseResponse = (frames: ReadonlyArray<unknown>): Response => {
   const text =
     frames
-      .map((frame) => `data: ${Predicate.isString(frame) ? frame : JSON.stringify(frame)}\n\n`)
+      .map((frame) => `data: ${Predicate.isString(frame) ? frame : toJson(frame)}\n\n`)
       .join("") + "data: [DONE]\n\n";
   return new Response(text, {
     status: 200,
@@ -399,7 +404,7 @@ describe("MistralLanguageModel.generateObject", () => {
           choices: [
             {
               index: 0,
-              message: { role: "assistant", content: JSON.stringify({ city: "Paris" }) },
+              message: { role: "assistant", content: toJson({ city: "Paris" }) },
               finish_reason: "stop",
             },
           ],
@@ -930,7 +935,7 @@ describe("MistralLanguageModel finish reasons", () => {
     ["something_new", "other"],
   ];
 
-  for (const [wire, expected] of cases) {
+  Arr.forEach(cases, ([wire, expected]) => {
     it(`maps the "${wire}" finish reason to "${expected}"`, async () => {
       const { fetch } = makeFetch(() =>
         jsonResponse(
@@ -948,7 +953,7 @@ describe("MistralLanguageModel finish reasons", () => {
 
       expect(response.finishReason).toBe(expected);
     });
-  }
+  });
 });
 
 describe("MistralClient", () => {

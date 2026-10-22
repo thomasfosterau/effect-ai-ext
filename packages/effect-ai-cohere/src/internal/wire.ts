@@ -23,6 +23,7 @@
  */
 
 import * as Option from "effect/Option";
+import * as Predicate from "effect/Predicate";
 import * as Schema from "effect/Schema";
 
 // ── Chat request ──────────────────────────────────────────────────────
@@ -48,7 +49,7 @@ export interface RequestToolCall {
   readonly type: "function";
   readonly function: {
     readonly name: string;
-    readonly arguments: string;
+    readonly arguments: string | undefined;
   };
 }
 
@@ -76,7 +77,7 @@ export interface AssistantMessageRequest {
 export interface ToolMessageRequest {
   readonly role: "tool";
   readonly tool_call_id: string;
-  readonly content: string;
+  readonly content: string | undefined;
 }
 
 /** Any message accepted by the chat request. */
@@ -309,3 +310,13 @@ const decodeJson = Schema.decodeUnknownOption(Schema.fromJsonString(Schema.Json)
  */
 export const parseJsonLenient = (text: string): Schema.Json =>
   Option.getOrElse(decodeJson(text), () => text);
+
+const encodeJson = Schema.encodeSync(Schema.fromJsonString(Schema.Unknown));
+
+/**
+ * Serialises `value` as JSON text, with `JSON.stringify`'s contract: an
+ * `undefined` value (a tool that returns nothing) has no JSON text, so it
+ * stays `undefined` and its key is left off the serialised request body.
+ */
+export const stringifyJson = <A>(value: A): string | undefined =>
+  Predicate.isUndefined(value) ? undefined : encodeJson(value);
