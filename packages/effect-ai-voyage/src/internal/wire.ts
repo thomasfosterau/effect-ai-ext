@@ -81,9 +81,6 @@ const EmbeddingDatum = Schema.Struct({
   index: Schema.optional(Schema.Finite),
 });
 
-/** Decoded per-embedding entry. */
-export type EmbeddingDatum = typeof EmbeddingDatum.Type;
-
 /** The decoded body of a `/v1/embeddings` response. */
 export const EmbeddingResponse = Schema.Struct({
   object: Schema.optional(Schema.String),
@@ -105,9 +102,6 @@ const RerankDatum = Schema.Struct({
   relevance_score: Schema.Finite,
   document: Schema.optional(Schema.NullOr(Schema.String)),
 });
-
-/** Decoded per-document rerank entry. */
-export type RerankDatum = typeof RerankDatum.Type;
 
 /** The decoded body of a `/v1/rerank` response. */
 export const RerankResponse = Schema.Struct({

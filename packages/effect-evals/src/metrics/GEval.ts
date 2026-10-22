@@ -67,6 +67,20 @@ export class MissingEvaluationParamError extends Schema.TaggedError<MissingEvalu
   },
 ) {}
 
+/**
+ * A malformed `gEval` definition: a rubric with no bands, an inverted or
+ * overlapping band, or not exactly one of `criteria` / `evaluationSteps`.
+ * Thrown (a defect, never a typed failure) when the metric or rubric is
+ * built, because it is a static mistake in the definition rather than a
+ * per-case runtime condition.
+ */
+export class InvalidGEvalDefinitionError extends Schema.TaggedError<InvalidGEvalDefinitionError>()(
+  "InvalidGEvalDefinitionError",
+  {
+    message: Schema.String,
+  },
+) {}
+
 /** The failure modes of a `gEval` / `gEvalConversational` scorer. */
 export type GEvalError = MissingEvaluationParamError | AiError.AiError;
 
@@ -96,34 +110,44 @@ export interface Rubric {
 }
 
 /**
- * Builds a {@link Rubric} from its bands, sorted by `min`. Throws
- * immediately (a defect, not a typed error) when bands are missing, inverted
+ * Builds a {@link Rubric} from its bands, sorted by `min`. Throws an
+ * {@link InvalidGEvalDefinitionError} immediately (a defect, not a typed
+ * error) when bands are missing, inverted
  * (`min > max`), or overlap — a malformed rubric is a mistake in the metric
  * definition itself, not a per-case runtime condition.
  */
 export const makeRubric = (bands: ReadonlyArray<RubricBand>): Rubric => {
-  if (Arr.isReadonlyArrayEmpty(bands)) {
-    throw new Error("gEval rubric must have at least one band");
+  if (!Arr.isReadonlyArrayNonEmpty(bands)) {
+    throw new InvalidGEvalDefinitionError({
+      message: "gEval rubric must have at least one band",
+    });
   }
   const sorted = Arr.sort(
     bands,
     Order.mapInput(Order.Number, (band: RubricBand) => band.min),
   );
-  for (const band of sorted) {
-    if (band.min > band.max) {
-      throw new Error(`gEval rubric band has min (${band.min}) greater than max (${band.max})`);
-    }
+  const inverted = Arr.findFirst(sorted, (band) => band.min > band.max);
+  if (Option.isSome(inverted)) {
+    const band = inverted.value;
+    throw new InvalidGEvalDefinitionError({
+      message: `gEval rubric band has min (${band.min}) greater than max (${band.max})`,
+    });
   }
-  for (let i = 1; i < sorted.length; i++) {
-    const previous = sorted[i - 1]!;
-    const current = sorted[i]!;
-    if (current.min <= previous.max) {
-      throw new Error(
-        `gEval rubric bands overlap: [${previous.min}, ${previous.max}] and [${current.min}, ${current.max}]`,
-      );
-    }
+  const overlap = Arr.findFirst(
+    Arr.zip(sorted, Arr.drop(sorted, 1)),
+    ([previous, current]) => current.min <= previous.max,
+  );
+  if (Option.isSome(overlap)) {
+    const [previous, current] = overlap.value;
+    throw new InvalidGEvalDefinitionError({
+      message: `gEval rubric bands overlap: [${previous.min}, ${previous.max}] and [${current.min}, ${current.max}]`,
+    });
   }
-  return { scaleMin: sorted[0]!.min, scaleMax: sorted[sorted.length - 1]!.max, bands: sorted };
+  return {
+    scaleMin: Arr.headNonEmpty(sorted).min,
+    scaleMax: Arr.lastNonEmpty(sorted).max,
+    bands: sorted,
+  };
 };
 
 // ── Prompt template ──────────────────────────────────────────────────
@@ -297,20 +321,33 @@ const resolveCriteria = (
       ? rawEvaluationSteps
       : undefined;
   if ((criteria === undefined) === (evaluationSteps === undefined)) {
-    throw new Error(
-      `gEval "${name}": exactly one of "criteria" or "evaluationSteps" must be provided`,
-    );
+    throw new InvalidGEvalDefinitionError({
+      message: `gEval "${name}": exactly one of "criteria" or "evaluationSteps" must be provided`,
+    });
   }
   return { criteria, evaluationSteps };
 };
 
-/** Renders an arbitrary case field (which may not be a string) as text for a judge prompt. Exported for reuse by `metrics/rag/RagCase.ts`. */
+/** `JSON.stringify` as a codec: `None` where it would throw or return `undefined`. */
+const encodeJson = Schema.encodeOption(Schema.fromJsonString(Schema.Unknown));
+
+/**
+ * Renders an arbitrary case field (which may not be a string) as text for a
+ * judge prompt: strings as-is, arrays one item per line, anything else as
+ * JSON. A value JSON cannot represent renders as an empty line inside an
+ * array and through `String` on its own. Exported for reuse by
+ * `metrics/rag/RagCase.ts`.
+ */
 export const renderValue = (value: unknown): string => {
   if (Predicate.isString(value)) return value;
   if (Array.isArray(value)) {
-    return value.map((item) => (Predicate.isString(item) ? item : JSON.stringify(item))).join("\n");
+    return value
+      .map((item) =>
+        Predicate.isString(item) ? item : Option.getOrElse(encodeJson(item), () => ""),
+      )
+      .join("\n");
   }
-  return JSON.stringify(value);
+  return Option.getOrElse(encodeJson(value), () => String(value));
 };
 
 type Field = { readonly label: string; readonly value: string };

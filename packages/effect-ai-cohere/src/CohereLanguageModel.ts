@@ -40,9 +40,12 @@ import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
 import * as Base64 from "effect/encoding/Base64";
 import { dual } from "effect/Function";
+import * as HashSet from "effect/HashSet";
 import * as Layer from "effect/Layer";
+import * as MutableHashMap from "effect/MutableHashMap";
 import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
+import * as EffectRecord from "effect/Record";
 import * as Stream from "effect/Stream";
 import type * as AiError from "effect/ai/AiError";
 import * as AiErrorNs from "effect/ai/AiError";
@@ -209,7 +212,7 @@ export const make = Effect.fnUntraced(function* ({
             textStarted: false,
             textEnded: false,
             finished: false,
-            tools: new Map(),
+            tools: MutableHashMap.empty(),
             toolOrder: [],
           };
           return events.pipe(
@@ -263,7 +266,7 @@ const failure = (method: string, reason: AiError.AiErrorReason): AiError.AiError
 const compact = <T extends Record<string, unknown>>(record: T): T =>
   // SAFETY: only keys whose value is `undefined` are dropped; every other key
   // keeps the value, and so the type, it had in `record`.
-  Object.fromEntries(Object.entries(record).filter(([, value]) => value !== undefined)) as T;
+  EffectRecord.filter(record, Predicate.isNotUndefined) as T;
 
 const normalizeImageMediaType = (mediaType: string): string =>
   mediaType === "image/*" ? "image/jpeg" : mediaType;
@@ -328,19 +331,20 @@ const convertUserMessage = (
 const convertAssistantMessage = (
   message: Prompt.AssistantMessage,
 ): Wire.AssistantMessageRequest => {
-  let text = "";
-  const toolCalls: Array<Wire.RequestToolCall> = [];
-  for (const part of message.content) {
-    if (part.type === "text") {
-      text += part.text;
-    } else if (part.type === "tool-call" && !part.providerExecuted) {
-      toolCalls.push({
-        id: part.id,
-        type: "function",
-        function: { name: part.name, arguments: JSON.stringify(part.params) },
-      });
-    }
-  }
+  const text = Arr.flatMap(message.content, (part) =>
+    part.type === "text" ? [part.text] : [],
+  ).join("");
+  const toolCalls = Arr.flatMap(message.content, (part): Array<Wire.RequestToolCall> =>
+    part.type === "tool-call" && !part.providerExecuted
+      ? [
+          {
+            id: part.id,
+            type: "function",
+            function: { name: part.name, arguments: Wire.stringifyJson(part.params) },
+          },
+        ]
+      : [],
+  );
   return {
     role: "assistant",
     content: Str.isNonEmpty(text) ? text : null,
@@ -349,20 +353,20 @@ const convertAssistantMessage = (
 };
 
 /** Converts a `tool` message into one Cohere `tool` message per result. */
-const convertToolMessage = (message: Prompt.ToolMessage): Array<Wire.ToolMessageRequest> => {
-  const messages: Array<Wire.ToolMessageRequest> = [];
-  for (const part of message.content) {
-    if (part.type !== "tool-result") {
-      continue;
-    }
-    messages.push({
-      role: "tool",
-      tool_call_id: part.id,
-      content: Predicate.isString(part.result) ? part.result : JSON.stringify(part.result),
-    });
-  }
-  return messages;
-};
+const convertToolMessage = (message: Prompt.ToolMessage): Array<Wire.ToolMessageRequest> =>
+  Arr.flatMap(message.content, (part): Array<Wire.ToolMessageRequest> =>
+    part.type === "tool-result"
+      ? [
+          {
+            role: "tool",
+            tool_call_id: part.id,
+            content: Predicate.isString(part.result)
+              ? part.result
+              : Wire.stringifyJson(part.result),
+          },
+        ]
+      : [],
+  );
 
 /**
  * Converts an Effect AI prompt into the flat Cohere messages array. Each
@@ -410,7 +414,7 @@ const tryToolJsonSchema = (
       failure(
         method,
         new AiErrorNs.UnsupportedSchemaError({
-          description: error instanceof Error ? error.message : String(error),
+          description: Predicate.isError(error) ? error.message : String(error),
         }),
       ),
   });
@@ -472,9 +476,9 @@ const resolveToolChoice = (
       toolChoice: "REQUIRED",
     };
   }
-  const allowed = new Set(toolChoice.oneOf);
+  const allowed = HashSet.fromIterable(toolChoice.oneOf);
   return {
-    tools: tools.filter((tool) => allowed.has(tool.function.name)),
+    tools: tools.filter((tool) => HashSet.has(allowed, tool.function.name)),
     toolChoice: toolChoice.mode === "required" ? "REQUIRED" : undefined,
   };
 };
@@ -516,7 +520,7 @@ const prepareResponseFormat = (
         failure(
           "prepareResponseFormat",
           new AiErrorNs.UnsupportedSchemaError({
-            description: error instanceof Error ? error.message : String(error),
+            description: Predicate.isError(error) ? error.message : String(error),
           }),
         ),
     });
@@ -594,13 +598,11 @@ const collectText = (content: Wire.ChatResponse["message"]["content"]): string =
   if (Predicate.isNullish(content)) {
     return "";
   }
-  let text = "";
-  for (const part of content) {
-    if ((part.type === undefined || part.type === "text") && Predicate.isNotNullish(part.text)) {
-      text += part.text;
-    }
-  }
-  return text;
+  return Arr.flatMap(content, (part) =>
+    (part.type === undefined || part.type === "text") && Predicate.isNotNullish(part.text)
+      ? [part.text]
+      : [],
+  ).join("");
 };
 
 const makeResponse = (
@@ -686,7 +688,7 @@ interface StreamState {
   textStarted: boolean;
   textEnded: boolean;
   finished: boolean;
-  readonly tools: Map<number, ToolAccumulator>;
+  readonly tools: MutableHashMap.MutableHashMap<number, ToolAccumulator>;
   readonly toolOrder: Array<number>;
 }
 
@@ -740,13 +742,13 @@ const getOrCreateToolAccumulator = (
   state: StreamState,
   context: StreamContext,
 ): ToolAccumulator => {
-  const existing = state.tools.get(index);
-  if (Predicate.isNotUndefined(existing)) {
+  const existing = MutableHashMap.get(state.tools, index);
+  if (Option.isSome(existing)) {
     const name = toolCall.function?.name;
-    if (Str.isEmpty(existing.name) && Predicate.isNotUndefined(name) && name !== null) {
-      existing.name = name;
+    if (Str.isEmpty(existing.value.name) && Predicate.isNotUndefined(name) && name !== null) {
+      existing.value.name = name;
     }
-    return existing;
+    return existing.value;
   }
   const created: ToolAccumulator = {
     id: toolCall.id ?? `${context.textId}-tool-${index}`,
@@ -754,7 +756,7 @@ const getOrCreateToolAccumulator = (
     started: false,
     args: "",
   };
-  state.tools.set(index, created);
+  MutableHashMap.set(state.tools, index, created);
   state.toolOrder.push(index);
   return created;
 };
@@ -845,20 +847,25 @@ const finalize = (
     out.push({ type: "text-end", id: context.textId });
   }
 
-  for (const index of state.toolOrder) {
-    const accumulator = state.tools.get(index);
-    if (Predicate.isUndefined(accumulator)) {
-      continue;
-    }
-    out.push({ type: "tool-params-end", id: accumulator.id });
-    out.push({
-      type: "tool-call",
-      id: accumulator.id,
-      name: accumulator.name,
-      params: Wire.parseJsonLenient(Str.isNonEmpty(accumulator.args) ? accumulator.args : "{}"),
-      providerExecuted: false,
-    });
-  }
+  out.push(
+    ...Arr.flatMap(state.toolOrder, (index) =>
+      Option.match(MutableHashMap.get(state.tools, index), {
+        onNone: (): Array<Response.StreamPartEncoded> => [],
+        onSome: (accumulator): Array<Response.StreamPartEncoded> => [
+          { type: "tool-params-end", id: accumulator.id },
+          {
+            type: "tool-call",
+            id: accumulator.id,
+            name: accumulator.name,
+            params: Wire.parseJsonLenient(
+              Str.isNonEmpty(accumulator.args) ? accumulator.args : "{}",
+            ),
+            providerExecuted: false,
+          },
+        ],
+      }),
+    ),
+  );
 
   out.push({
     type: "finish",

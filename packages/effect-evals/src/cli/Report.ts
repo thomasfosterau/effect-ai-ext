@@ -14,6 +14,7 @@
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as Path from "effect/Path";
+import * as Schema from "effect/Schema";
 import type * as Result from "../Result.ts";
 
 /** The default `--out` path, gitignored alongside the filesystem cache (`.effect-evals/`). */
@@ -47,6 +48,17 @@ export interface CliReport {
 }
 
 /**
+ * `JSON.stringify` with two-space indentation, as a codec. The replacer writes
+ * an absent `summary` as `null` rather than dropping the key.
+ */
+const encodeReportJson = Schema.encodeEffect(
+  Schema.fromJsonString(Schema.Unknown, {
+    replacer: (key, value) => (key === "summary" && value === undefined ? null : value),
+    space: 2,
+  }),
+);
+
+/**
  * Writes `report` as JSON to `path_`, creating its parent directory if
  * needed. Never fails the run — mirrors `Reporter.json`'s own "a reporter
  * never fails the run" contract: a write failure logs a warning instead.
@@ -62,11 +74,7 @@ export const writeJsonReport = (
     // `recursive: true` is already a no-op when `dir` exists — no need to check first.
     if (dir !== "." && dir !== "") yield* fs.makeDirectory(dir, { recursive: true });
 
-    const content = JSON.stringify(
-      report,
-      (key, value) => (key === "summary" && value === undefined ? null : value),
-      2,
-    );
+    const content = yield* encodeReportJson(report);
     yield* fs.writeFileString(path_, content);
   }).pipe(
     Effect.catch((error) => Effect.logWarning(`effect-evals: failed to write ${path_}`, error)),

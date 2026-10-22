@@ -13,6 +13,8 @@
  */
 
 import { describe, expect, it } from "vite-plus/test";
+import * as Arr from "effect/Array";
+import * as EffectRecord from "effect/Record";
 
 const NAMESPACES = [
   "CohereClient",
@@ -26,9 +28,9 @@ describe("module load", () => {
   it("imports the package entry and exposes every namespace", async () => {
     const entry: Record<string, unknown> = await import("@thomasfosterau/effect-ai-cohere");
 
-    expect(Object.keys(entry)).toEqual(expect.arrayContaining([...NAMESPACES]));
-    for (const name of NAMESPACES) {
+    expect(EffectRecord.keys(entry)).toEqual(expect.arrayContaining([...NAMESPACES]));
+    Arr.forEach(NAMESPACES, (name) => {
       expect(entry[name], name).toBeTypeOf("object");
-    }
+    });
   });
 });

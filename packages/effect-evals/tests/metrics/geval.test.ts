@@ -50,7 +50,12 @@ const makeJudgeStub = (
               : "";
           const call = { system, user };
           calls.push(call);
-          return [{ type: "text" as const, text: JSON.stringify(respond(call)) }];
+          return [
+            {
+              type: "text" as const,
+              text: Schema.encodeSync(Schema.fromJsonString(Schema.Unknown))(respond(call)),
+            },
+          ];
         }),
       streamText: () => Stream.die("streamText is not used by gEval"),
     });

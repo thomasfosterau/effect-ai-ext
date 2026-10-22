@@ -13,7 +13,7 @@ import { describe, expect, it } from "vite-plus/test";
 import viteConfig from "../vite.config.ts";
 
 describe("eval/test glob separation", () => {
-  const include = viteConfig.test!.include!;
+  const include = viteConfig.test?.include;
 
   it("is exactly the narrow tests-only glob", () => {
     // The exact pin is the whole gate: any glob equal to this cannot match

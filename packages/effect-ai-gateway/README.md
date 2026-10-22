@@ -1,6 +1,6 @@
 # @thomasfosterau/effect-ai-gateway
 
-Route [Effect](https://effect.website) AI providers through a **Cloudflare AI Gateway** Worker binding, BYOK (bring-your-own-key). Provider keys are configured once on the gateway (Cloudflare dashboard) and never live in application code or env vars — this package never takes or reads an API key.
+Route [Effect](https://effect.website) AI providers through a **Cloudflare AI Gateway** Worker binding, BYOK (bring-your-own-key). Provider keys are configured once on the gateway (Cloudflare dashboard) and never live in application code or env vars: this package reads no provider API key (the one it accepts is `OpenAiModeration`'s optional `apiKey`, below). The gateway is a routing layer, not a provider: the Anthropic route repoints the upstream `@effect/ai-anthropic` client rather than reimplementing it.
 
 - **`Anthropic`** — repoints `@effect/ai-anthropic`'s client at the gateway's Anthropic route. Drop-in for `AnthropicLanguageModel.layer` + `AnthropicClient.layer`.
 - **`Cohere`** — `EmbeddingModel` (`embed-v4.0`) and `RerankerModel` (`rerank-v3.5`) built directly on the gateway's universal `run()` endpoint. The `RerankerModel` abstraction itself comes from `@thomasfosterau/effect-ai-ext/RerankerModel`; the gateway re-exports none of its names (its deprecated re-export was removed in 0.5.0), so import `RerankerModel`, `make`, `RerankResponse` and the rest from there.
@@ -24,7 +24,7 @@ Both transports share one request body and one lenient response decode per provi
 pnpm add @thomasfosterau/effect-ai-gateway effect @effect/ai-anthropic
 ```
 
-`effect` and `@effect/ai-anthropic` (both `>=4.0.0-rc.118`) are peer dependencies (`effect` must be a singleton).
+`effect` and `@effect/ai-anthropic` (both `>=4.0.0-rc.118`) are peer dependencies (`effect` must be a single copy across your app). `@thomasfosterau/effect-ai-ext` is a dependency; add it yourself to import the `RerankerModel` / `ModerationModel` tags.
 
 The gateway's published types need nothing from `@cloudflare/workers-types`: it types the Worker's `AI` binding with its own structural slice, `WorkersAiBinding` (`gateway(id)` → `{ getUrl, run }`), and provider slugs as `GatewayProvider`. So a project that type-checks with `skipLibCheck: false` and never installs `@cloudflare/workers-types` (a plain Node process using the `…FromUrl` variants, say) still type-checks the gateway. `@cloudflare/workers-types` stays an optional peer (`>=4.20250312.0`) for your own Worker's typing: a Worker's `env.AI`, typed `Ai` by that package, is assignable to `WorkersAiBinding`, so you pass it unchanged. The floor is the first release whose `AiGateway` declares `getUrl()`; an older release's `env.AI` is not assignable, so upgrade it.
 
@@ -59,9 +59,29 @@ const moderationLayer = Layer.effect(
 declare const documents: ReadonlyArray<string>;
 const rerank = Effect.gen(function* () {
   const reranker = yield* makeCohereRerankerFromUrl;
-  return yield* reranker.rerank({ query: "monstera", documents, topN: 20 });
+  return yield* reranker.rerank({ query: "fiber interruption", documents, topN: 20 });
 });
 ```
+
+## Lower-level exports
+
+The provider builders above are made from these, exported for routing a provider this package does not cover:
+
+| Export | What it is |
+| --- | --- |
+| `GatewayBinding` | `{ ai: WorkersAiBinding; gatewayId: string }`: the Worker's `env.AI` plus the gateway id to route through. |
+| `WorkersAiBinding`, `WorkersAiGateway`, `GatewayRunOptions` | The structural slice of the Workers `Ai` binding the gateway calls (`gateway(id)` → `getUrl(provider)`, `run(request, { signal })`). |
+| `GatewayProvider` | The provider slugs the gateway routes (`"anthropic"`, `"cohere"`, `"openai"`, …). |
+| `GatewayUniversalRequest` | One step of a universal-endpoint request: `provider`, `endpoint`, `headers`, `query`. |
+| `gatewayUrl(binding, provider)` | The provider's base URL on the gateway, resolved through the binding: pass it as an upstream client's `apiUrl`. |
+| `gatewayRun(binding, request)` | Calls the universal endpoint through the binding; interrupting the effect aborts the request. |
+| `gatewayUrlConfig` | A `Config<GatewayUrlConfig>` reading `CF_ACCOUNT_ID`, `CF_AIG_GATEWAY_ID` and `CF_AIG_TOKEN` (a `Redacted`). |
+| `gatewayBaseUrl(config, provider)` | `https://gateway.ai.cloudflare.com/v1/<account>/<gateway>/<provider>`. |
+| `cfAigAuthorizationHeader(config)` | The `{ "cf-aig-authorization": "Bearer …" }` header the public endpoint authenticates with. |
+| `CohereEmbeddingOptions`, `OpenAiModerationOptions` | The builders' options: `inputType` (`"search_document"` / `"search_query"`); `apiKey?`, `model?`. |
+| `COHERE_EMBEDDING_MODEL`, `COHERE_EMBEDDING_DIMENSIONS`, `COHERE_RERANK_MODEL`, `OPENAI_MODERATION_MODEL` | The pinned models: `embed-v4.0` at 1024 dimensions, `rerank-v3.5`, `omni-moderation-latest` (the moderation default; `model` overrides it). |
+
+To route a first-party provider client (`@thomasfosterau/effect-ai-mistral`, `-cohere`, `-voyage`, `-elevenlabs`) through the gateway instead, pass `gatewayUrl(...)` or `gatewayBaseUrl(...)` as its client's `apiUrl` and omit its `apiKey`; over the public endpoint, also set `cfAigAuthorizationHeader(...)` on each request through the client's `transformClient`, as `anthropicLanguageModelLayerFromUrl` does.
 
 ## License
 

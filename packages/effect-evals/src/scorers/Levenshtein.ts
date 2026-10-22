@@ -9,6 +9,7 @@
  * @copyright Thomas Foster
  */
 
+import * as Arr from "effect/Array";
 import * as Str from "effect/String";
 import * as Effect from "effect/Effect";
 import * as Scorer from "../Scorer.ts";
@@ -25,22 +26,26 @@ const levenshteinDistance = (a: string, b: string): number => {
   if (Str.isEmpty(b)) return a.length;
   if (a.length < b.length) [a, b] = [b, a];
 
-  let previousRow = Array.from({ length: b.length + 1 }, (_, index) => index);
+  const longer = a;
+  const shorter = b;
+  const firstRow = Arr.range(0, shorter.length);
+  const shorterChars = Str.split(shorter, "");
+  const lastRow = Arr.reduce(
+    Str.split(longer, ""),
+    firstRow,
+    (previousRow: Arr.NonEmptyReadonlyArray<number>, longerChar, i) =>
+      // Each cell is the minimum of the cell above (deletion), the cell to
+      // the left (insertion, the scan's accumulator) and the diagonal
+      // (substitution, free when the characters match).
+      Arr.scan(
+        Arr.zip(shorterChars, Arr.zip(previousRow, Arr.drop(previousRow, 1))),
+        i + 1,
+        (left, [shorterChar, [diagonal, above]]) =>
+          Math.min(above + 1, left + 1, diagonal + (longerChar === shorterChar ? 0 : 1)),
+      ),
+  );
 
-  for (let i = 1; i <= a.length; i++) {
-    const currentRow = [i];
-    for (let j = 1; j <= b.length; j++) {
-      const substitutionCost = a[i - 1] === b[j - 1] ? 0 : 1;
-      currentRow[j] = Math.min(
-        previousRow[j]! + 1,
-        currentRow[j - 1]! + 1,
-        previousRow[j - 1]! + substitutionCost,
-      );
-    }
-    previousRow = currentRow;
-  }
-
-  return previousRow[b.length]!;
+  return Arr.lastNonEmpty(lastRow);
 };
 
 /** Edit distance normalised to a `[0, 1]` similarity: `1` for identical strings, `0` for maximally different ones. */

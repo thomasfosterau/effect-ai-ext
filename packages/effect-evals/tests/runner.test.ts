@@ -10,6 +10,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import * as Arr from "effect/Array";
 import * as Order from "effect/Order";
+import * as Cause from "effect/Cause";
 import * as Config from "effect/Config";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
@@ -426,6 +427,49 @@ describe("Runner.runSuite — caching", () => {
     expect(second.passed).toBe(true);
   });
 
+  it("treats a failing cache store as a miss on read and a no-op on write, never failing the run", async () => {
+    let taskCalls = 0;
+    const storeFailure = (method: string) =>
+      Effect.fail(new Cache.KeyValueStore.KeyValueStoreError({ message: "store down", method }));
+    const failingStore: Layer.Layer<Cache.KeyValueStore.KeyValueStore> = Layer.succeed(
+      Cache.KeyValueStore.KeyValueStore,
+    )(
+      Cache.KeyValueStore.makeStringOnly({
+        get: () => storeFailure("get"),
+        set: () => storeFailure("set"),
+        remove: () => storeFailure("remove"),
+        clear: storeFailure("clear"),
+        size: storeFailure("size"),
+      }),
+    );
+    const countingTask = Runner.makeTask<string, string>({
+      id: "store-down@v1",
+      run: (golden) =>
+        Effect.sync(() => {
+          taskCalls++;
+          return golden;
+        }),
+    });
+    const suite = Runner.makeSuite({
+      name: "store-down",
+      dataset: Dataset.fromArray("store-down", ["Bonjour"]),
+      task: countingTask,
+      metrics: [exactMatchMetric],
+    });
+
+    const [first, second] = await runTest(
+      Effect.gen(function* () {
+        const firstRun = yield* Runner.runSuite(suite);
+        const secondRun = yield* Runner.runSuite(suite);
+        return [firstRun, secondRun] as const;
+      }).pipe(Effect.provide(failingStore)),
+    );
+
+    expect(taskCalls).toBe(2);
+    expect(first.passed).toBe(true);
+    expect(second.cases[0]?.metrics[0]?.trials[0]).toMatchObject({ cached: false });
+  });
+
   it("bypassCache: true skips the cache, making a fresh call on every run", async () => {
     let metricCalls = 0;
     const countingMetric = Metric.makeMetric({
@@ -566,7 +610,7 @@ describe("Runner.isConfigError", () => {
   });
 
   it("rejects errors that aren't a Config.ConfigError", () => {
-    expect(Runner.isConfigError(new Error("boom"))).toBe(false);
+    expect(Runner.isConfigError(new Cause.NoSuchElementError("boom"))).toBe(false);
     expect(Runner.isConfigError("boom")).toBe(false);
     expect(Runner.isConfigError(undefined)).toBe(false);
   });

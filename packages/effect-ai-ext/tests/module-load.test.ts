@@ -13,6 +13,7 @@
  */
 
 import { describe, expect, it } from "vite-plus/test";
+import * as EffectRecord from "effect/Record";
 
 /** This package's own abstractions — each also published as a subpath. */
 const NAMESPACES = [
@@ -29,17 +30,20 @@ describe("module load", () => {
   it("imports the package entry and exposes every abstraction plus the effect/ai re-export", async () => {
     const entry: Record<string, unknown> = await import("@thomasfosterau/effect-ai-ext");
 
-    expect(Object.keys(entry)).toEqual(
+    expect(EffectRecord.keys(entry)).toEqual(
       expect.arrayContaining([...NAMESPACES, "AiError", "EmbeddingModel", "LanguageModel"]),
     );
-    for (const name of NAMESPACES) {
-      expect(entry[name], name).toBeTypeOf("object");
-    }
+  });
+
+  it.each(NAMESPACES)("exposes the %s namespace from the package entry", async (name) => {
+    const entry = await import("@thomasfosterau/effect-ai-ext");
+
+    expect(entry[name], name).toBeTypeOf("object");
   });
 
   it.each(NAMESPACES)("imports the ./%s subpath", async (name) => {
     const subpath: Record<string, unknown> = await import(`@thomasfosterau/effect-ai-ext/${name}`);
 
-    expect(Object.keys(subpath).length).toBeGreaterThan(0);
+    expect(EffectRecord.keys(subpath).length).toBeGreaterThan(0);
   });
 });

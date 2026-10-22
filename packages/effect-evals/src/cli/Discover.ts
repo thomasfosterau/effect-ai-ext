@@ -51,11 +51,11 @@ export const findEvalFiles = (
     const exclude = excludedMatcher(path.sep);
     return yield* Effect.tryPromise({
       try: async () => {
-        const matches = new Set<string>();
-        for await (const match of glob([...patterns], { cwd, exclude })) {
-          matches.add(path.resolve(cwd, match));
-        }
-        return Arr.sort(matches, Order.String);
+        const matches = await Array.fromAsync(glob([...patterns], { cwd, exclude }));
+        return Arr.sort(
+          Arr.dedupe(Arr.map(matches, (match) => path.resolve(cwd, match))),
+          Order.String,
+        );
       },
       catch: (cause) => new GlobError({ patterns: [...patterns], cause }),
     });

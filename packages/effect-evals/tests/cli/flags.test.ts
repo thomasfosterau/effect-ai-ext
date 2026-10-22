@@ -9,7 +9,7 @@
  * @module tests/cli/flags
  */
 
-import { describe, expect, it } from "vite-plus/test";
+import { assert, describe, expect, it } from "vite-plus/test";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
 import { Command } from "effect/cli";
@@ -46,6 +46,12 @@ const probeCommand = Command.make(
     }),
 );
 
+/** The config the probe captured on the last {@link parse}; fails the test if the probe never ran. */
+const parsed = (): Captured => {
+  assert(captured !== undefined, "the probe command never ran");
+  return captured;
+};
+
 const parse = (args: ReadonlyArray<string>) =>
   runTest(
     Command.runWith(probeCommand, { version: "0.0.0" })(args).pipe(
@@ -58,11 +64,11 @@ describe("cli/Flags — run command parsing", () => {
     await parse([]);
 
     expect(captured?.globs).toEqual([]);
-    expect(Option.isNone(captured!.trials)).toBe(true);
-    expect(Option.isNone(captured!.concurrency)).toBe(true);
+    expect(Option.isNone(parsed().trials)).toBe(true);
+    expect(Option.isNone(parsed().concurrency)).toBe(true);
     expect(captured?.force).toBe(false);
     expect(captured?.reporter).toEqual([]);
-    expect(Option.isNone(captured!.filter)).toBe(true);
+    expect(Option.isNone(parsed().filter)).toBe(true);
     expect(captured?.out).toBe(".effect-evals/results.json");
   });
 
@@ -78,8 +84,8 @@ describe("cli/Flags — run command parsing", () => {
   it("parses --trials and --concurrency as integers", async () => {
     await parse(["--trials", "5", "--concurrency", "2"]);
 
-    expect(Option.getOrThrow(captured!.trials)).toBe(5);
-    expect(Option.getOrThrow(captured!.concurrency)).toBe(2);
+    expect(Option.getOrUndefined(parsed().trials)).toBe(5);
+    expect(Option.getOrUndefined(parsed().concurrency)).toBe(2);
   });
 
   it("parses --force", async () => {
@@ -94,7 +100,7 @@ describe("cli/Flags — run command parsing", () => {
 
   it("parses --filter", async () => {
     await parse(["--filter", "translation"]);
-    expect(Option.getOrThrow(captured!.filter)).toBe("translation");
+    expect(Option.getOrUndefined(parsed().filter)).toBe("translation");
   });
 
   it("parses --out, overriding the default", async () => {
@@ -105,7 +111,7 @@ describe("cli/Flags — run command parsing", () => {
   it("parses flags together with globs", async () => {
     await parse(["--trials", "3", "--force", "packages/jobs/evals/*.eval.ts"]);
 
-    expect(Option.getOrThrow(captured!.trials)).toBe(3);
+    expect(Option.getOrUndefined(parsed().trials)).toBe(3);
     expect(captured?.force).toBe(true);
     expect(captured?.globs).toEqual(["packages/jobs/evals/*.eval.ts"]);
   });

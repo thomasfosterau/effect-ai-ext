@@ -24,9 +24,9 @@ export interface GatewayUrlConfig {
   /** The Cloudflare account id the gateway belongs to. */
   readonly accountId: string;
   /**
-   * The AI Gateway id to route through — the same id passed to
-   * `Cloudflare.AI.Gateway("AI", { id })` in `@thomasfosterau/bindings`
-   * (`AI_GATEWAY_ID`). Required: read from `CF_AIG_GATEWAY_ID` with no
+   * The AI Gateway id to route through: the gateway's name in the
+   * Cloudflare dashboard, the same id a Worker passes to
+   * `env.AI.gateway(id)`. Required: read from `CF_AIG_GATEWAY_ID` with no
    * default, because a library must not bake in one application's gateway
    * (a forgotten variable would silently route to someone else's, or a
    * nonexistent, gateway).

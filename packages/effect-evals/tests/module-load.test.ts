@@ -15,6 +15,7 @@
  */
 
 import { describe, expect, it } from "vite-plus/test";
+import * as Record from "effect/Record";
 
 const NAMESPACES = [
   "AnswerRelevancy",
@@ -51,9 +52,9 @@ describe("module load", () => {
   it("imports the package entry and exposes every namespace", async () => {
     const entry: Record<string, unknown> = await import("@thomasfosterau/effect-evals");
 
-    expect(Object.keys(entry)).toEqual(expect.arrayContaining([...NAMESPACES]));
-    for (const name of NAMESPACES) {
+    expect(Record.keys(entry)).toEqual(expect.arrayContaining([...NAMESPACES]));
+    NAMESPACES.forEach((name) => {
       expect(entry[name], name).toBeTypeOf("object");
-    }
+    });
   });
 });

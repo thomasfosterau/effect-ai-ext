@@ -12,6 +12,7 @@
 import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import * as Redacted from "effect/Redacted";
 import * as Stream from "effect/Stream";
 import { LanguageModel } from "effect/ai";
 import { Dataset, EvalFile, Runner } from "../../src/index.ts";
@@ -28,9 +29,9 @@ const configGatedSuite = Runner.makeSuite({
 const missingLayer = Layer.effect(
   LanguageModel.LanguageModel,
   Effect.gen(function* () {
-    const apiKey = yield* Config.String("EFFECT_EVALS_FIXTURE_NEVER_SET_TOKEN");
+    const apiKey = yield* Config.Redacted("EFFECT_EVALS_FIXTURE_NEVER_SET_TOKEN");
     return yield* LanguageModel.make({
-      generateText: () => Effect.succeed([{ type: "text" as const, text: apiKey }]),
+      generateText: () => Effect.succeed([{ type: "text" as const, text: Redacted.value(apiKey) }]),
       streamText: () => Stream.die("fixture: streamText is not used"),
     });
   }),

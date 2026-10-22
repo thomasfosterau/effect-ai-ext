@@ -45,9 +45,11 @@
  * @copyright Thomas Foster
  */
 
+import * as Arr from "effect/Array";
 import * as Console from "effect/Console";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
+import * as Schema from "effect/Schema";
 import * as Result from "./Result.ts";
 
 /** A named sink that consumes a completed suite's result; never fails. */
@@ -63,23 +65,21 @@ const passFail = (passed: boolean): string => (passed ? "PASS" : "FAIL");
 
 /** Renders a {@link Result.SuiteResult} as a plain-text table: metric, score, pass/fail, reason, spread. */
 export const formatTerminalTable = (result: Result.SuiteResult): string => {
-  const lines: Array<string> = [
-    `Suite: ${result.suite} — ${passFail(result.passed)} (${result.durationMillis}ms, ${result.cases.length} case${result.cases.length === 1 ? "" : "s"})`,
-  ];
-  for (const [index, caseResult] of result.cases.entries()) {
-    lines.push(
-      `  [${index}] ${passFail(caseResult.passed)} (${caseResult.trials} trial${caseResult.trials === 1 ? "" : "s"})`,
-    );
-    for (const taskFailure of caseResult.taskFailures) {
-      lines.push(`      task failed (trial ${taskFailure.trial}): ${String(taskFailure.error)}`);
-    }
-    for (const metric of caseResult.metrics) {
-      lines.push(
+  const header = `Suite: ${result.suite} — ${passFail(result.passed)} (${result.durationMillis}ms, ${result.cases.length} case${result.cases.length === 1 ? "" : "s"})`;
+  const caseLines = Arr.flatMap(result.cases, (caseResult, index) => [
+    `  [${index}] ${passFail(caseResult.passed)} (${caseResult.trials} trial${caseResult.trials === 1 ? "" : "s"})`,
+    ...Arr.map(
+      caseResult.taskFailures,
+      (taskFailure) =>
+        `      task failed (trial ${taskFailure.trial}): ${String(taskFailure.error)}`,
+    ),
+    ...Arr.map(
+      caseResult.metrics,
+      (metric) =>
         `      ${metric.metric.padEnd(24)} ${passFail(metric.passed).padEnd(4)} ${Result.formatSpread(metric.summary).padEnd(40)} ${Result.lastReason(metric)}`,
-      );
-    }
-  }
-  return lines.join("\n");
+    ),
+  ]);
+  return Arr.prepend(caseLines, header).join("\n");
 };
 
 /** Writes {@link formatTerminalTable}'s output to stdout. */
@@ -88,6 +88,17 @@ export const terminal: Reporter = makeReporter({
   report: (result) => Console.log(formatTerminalTable(result)),
 });
 
+/**
+ * `JSON.stringify` with two-space indentation, as a codec. The replacer writes
+ * an absent `summary` as `null` rather than dropping the key.
+ */
+const encodeSuiteResultJson = Schema.encodeEffect(
+  Schema.fromJsonString(Schema.Unknown, {
+    replacer: (key, value) => (key === "summary" && value === undefined ? null : value),
+    space: 2,
+  }),
+);
+
 /** Writes the full {@link Result.SuiteResult} as JSON to `path` — see this module's doc comment for the schema. */
 export const json = (path: string): Reporter<FileSystem.FileSystem> =>
   makeReporter({
@@ -95,11 +106,7 @@ export const json = (path: string): Reporter<FileSystem.FileSystem> =>
     report: (result) =>
       Effect.gen(function* () {
         const fs = yield* FileSystem.FileSystem;
-        const content = JSON.stringify(
-          result,
-          (key, value) => (key === "summary" && value === undefined ? null : value),
-          2,
-        );
+        const content = yield* encodeSuiteResultJson(result);
         yield* fs.writeFileString(path, content);
       }).pipe(
         Effect.catch((error) => Effect.logWarning(`json reporter failed to write ${path}`, error)),

@@ -26,6 +26,7 @@ import * as Order from "effect/Order";
 import * as Arr from "effect/Array";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
+import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
 import { AiError } from "effect/ai";
 
@@ -179,21 +180,17 @@ const mapProviderResponse = (
       ),
     );
   }
-  const seen = new Set<number>();
-  for (const result of response.results) {
-    if (!Number.isInteger(result.index) || result.index < 0 || result.index >= documentCount) {
-      return Effect.fail(
-        invalidProviderResponse(
+  const invalid = Arr.findFirst(response.results, (result, i) =>
+    !Number.isInteger(result.index) || result.index < 0 || result.index >= documentCount
+      ? Option.some(
           `Provider returned document index ${result.index}, expected an integer between 0 and ${documentCount - 1}`,
-        ),
-      );
-    }
-    if (seen.has(result.index)) {
-      return Effect.fail(
-        invalidProviderResponse(`Provider returned duplicate document index ${result.index}`),
-      );
-    }
-    seen.add(result.index);
+        )
+      : Arr.some(Arr.take(response.results, i), (earlier) => earlier.index === result.index)
+        ? Option.some(`Provider returned duplicate document index ${result.index}`)
+        : Option.none(),
+  );
+  if (Option.isSome(invalid)) {
+    return Effect.fail(invalidProviderResponse(invalid.value));
   }
   const results = Arr.sort(
     response.results.map(

@@ -10,8 +10,11 @@ import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as PlatformError from "effect/PlatformError";
+import * as Schema from "effect/Schema";
 import { Reporter, Result } from "../src/index.ts";
 import { runTest } from "./helpers/effect.ts";
+
+const parseJson = Schema.decodeUnknownSync(Schema.fromJsonString(Schema.Unknown));
 
 const passingResult: Result.SuiteResult = {
   suite: "greetings",
@@ -105,7 +108,7 @@ describe("Reporter.json", () => {
     );
 
     expect(written?.path).toBe("./results.json");
-    expect(JSON.parse(written?.content ?? "{}")).toEqual(passingResult);
+    expect(parseJson(written?.content ?? "{}")).toEqual(passingResult);
   });
 
   it("writes an all-errored metric's summary as null, not an omitted key", async () => {
@@ -144,7 +147,7 @@ describe("Reporter.json", () => {
       Reporter.json("./results.json").report(erroredResult).pipe(Effect.provide(testFs)),
     );
 
-    const parsed = JSON.parse(written) as {
+    const parsed = parseJson(written) as {
       cases: Array<{ metrics: Array<Record<string, unknown>> }>;
     };
     expect(parsed.cases[0]?.metrics[0]).toHaveProperty("summary", null);

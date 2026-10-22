@@ -26,6 +26,7 @@
 import * as Order from "effect/Order";
 import * as Arr from "effect/Array";
 import * as Effect from "effect/Effect";
+import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
 import * as Equal from "effect/Equal";
 import type { ToolCall } from "../EvalCase.ts";
@@ -94,33 +95,34 @@ interface MatchResult {
 const processingOrder = (
   expected: ReadonlyArray<ExpectedToolCall>,
   options: { readonly ordered: boolean; readonly matchParams: boolean },
-): ReadonlyArray<number> => {
+): ReadonlyArray<readonly [index: number, call: ExpectedToolCall]> => {
+  const entries = Arr.map(expected, (call, index) => [index, call] as const);
   if (options.ordered || !options.matchParams) {
-    return expected.map((_, index) => index);
+    return entries;
   }
   // Calls that pin params first (a stable sort keeps each group's order).
   return Arr.sort(
-    expected.keys(),
+    entries,
     Order.mapInput(
       Order.flip(Order.Boolean),
-      (index: number) => expected[index]!.params !== undefined,
+      ([, call]: readonly [number, ExpectedToolCall]) => call.params !== undefined,
     ),
   );
 };
 
-/** The first unconsumed `actual` index (from `searchFrom` onward) matching `expectedCall`, or `-1`. */
+/** The first unconsumed `actual` index (from `searchFrom` onward) matching `expectedCall`. */
 const findMatch = (
   expectedCall: ExpectedToolCall,
   actual: ReadonlyArray<ToolCall>,
   consumed: ReadonlyArray<boolean>,
   searchFrom: number,
   matchParams: boolean,
-): number => {
-  for (let i = searchFrom; i < actual.length; i++) {
-    if (!consumed[i] && callMatches(expectedCall, actual[i]!, matchParams)) return i;
-  }
-  return -1;
-};
+): Option.Option<number> =>
+  Arr.findFirstIndex(
+    actual,
+    (call, index) =>
+      index >= searchFrom && !consumed[index] && callMatches(expectedCall, call, matchParams),
+  );
 
 /**
  * Greedily consumes `actual` entries against `expected`, in
@@ -139,23 +141,18 @@ const matchToolCalls = (
 ): MatchResult => {
   const consumed = Array.from<boolean>({ length: actual.length }).fill(false);
   const matched = Array.from<boolean>({ length: expected.length }).fill(false);
-  let cursor = 0;
 
-  for (const index of processingOrder(expected, options)) {
+  Arr.reduce(processingOrder(expected, options), 0, (cursor, [index, call]) => {
     const searchFrom = options.ordered ? cursor : 0;
-    const foundIndex = findMatch(
-      expected[index]!,
-      actual,
-      consumed,
-      searchFrom,
-      options.matchParams,
-    );
-    if (foundIndex === -1) continue;
-
-    consumed[foundIndex] = true;
-    matched[index] = true;
-    if (options.ordered) cursor = foundIndex + 1;
-  }
+    return Option.match(findMatch(call, actual, consumed, searchFrom, options.matchParams), {
+      onNone: () => cursor,
+      onSome: (foundIndex) => {
+        consumed[foundIndex] = true;
+        matched[index] = true;
+        return options.ordered ? foundIndex + 1 : cursor;
+      },
+    });
+  });
 
   const unmatchedExpected = expected.filter((_, index) => !matched[index]);
   const extraActual = actual.filter((_, index) => !consumed[index]);

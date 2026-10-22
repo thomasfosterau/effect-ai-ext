@@ -14,6 +14,7 @@
 
 import { describe, expect, it } from "vite-plus/test";
 import * as Config from "effect/Config";
+import * as EffectRecord from "effect/Record";
 import * as RerankerModelExt from "@thomasfosterau/effect-ai-ext/RerankerModel";
 
 const EXPORTS = [
@@ -36,19 +37,23 @@ describe("module load", () => {
   it("imports the package entry and exposes every provider constructor", async () => {
     const entry: Record<string, unknown> = await import("@thomasfosterau/effect-ai-gateway");
 
-    expect(Object.keys(entry)).toEqual(expect.arrayContaining([...EXPORTS]));
-    for (const name of EXPORTS) {
-      expect(entry[name], name).toBeDefined();
-    }
+    expect(EffectRecord.keys(entry)).toEqual(expect.arrayContaining([...EXPORTS]));
   });
 
-  it("re-exports no RerankerModel value (removed in 0.5.0, #97)", async () => {
-    const entry: Record<string, unknown> = await import("@thomasfosterau/effect-ai-gateway");
+  it.each(EXPORTS)("exposes %s from the package entry", async (name) => {
+    const entry = await import("@thomasfosterau/effect-ai-gateway");
 
-    for (const name of Object.keys(RerankerModelExt)) {
+    expect(entry[name], name).toBeDefined();
+  });
+
+  it.each(EffectRecord.keys(RerankerModelExt))(
+    "re-exports no RerankerModel value %s (removed in 0.5.0, #97)",
+    async (name) => {
+      const entry: Record<string, unknown> = await import("@thomasfosterau/effect-ai-gateway");
+
       expect(entry, name).not.toHaveProperty(name);
-    }
-  });
+    },
+  );
 
   it("builds gatewayUrlConfig at module scope (the Config.string crash site)", async () => {
     const { gatewayUrlConfig } = await import("@thomasfosterau/effect-ai-gateway");

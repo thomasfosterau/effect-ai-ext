@@ -13,11 +13,12 @@
  * @module tests/unit/anthropic-url
  */
 
-import { describe, expect, it } from "vite-plus/test";
+import { assert, describe, expect, it } from "vite-plus/test";
 import * as Cause from "effect/Cause";
 import * as Config from "effect/Config";
 import * as ConfigProvider from "effect/ConfigProvider";
 import * as Effect from "effect/Effect";
+import * as Exit from "effect/Exit";
 import * as Layer from "effect/Layer";
 import { LanguageModel } from "effect/ai";
 import { FetchHttpClient } from "effect/http";
@@ -42,10 +43,7 @@ const stubFetch = (response: { status: number; body: unknown }) => {
       cfAigAuthorizationHeader: request.headers.get("cf-aig-authorization"),
       body: await request.json(),
     });
-    return new Response(JSON.stringify(response.body), {
-      status: response.status,
-      headers: { "content-type": "application/json" },
-    });
+    return Response.json(response.body, { status: response.status });
   };
   const layer = FetchHttpClient.layer.pipe(
     Layer.provide(Layer.succeed(FetchHttpClient.Fetch, fetch)),
@@ -127,8 +125,7 @@ describe("anthropicLanguageModelLayerFromUrl", () => {
       ),
     );
 
-    expect(exit._tag).toBe("Failure");
-    if (exit._tag !== "Failure") return;
+    assert(Exit.isFailure(exit), "expected a failure exit");
     const error = Cause.squash(exit.cause);
     expect(error).toBeInstanceOf(Config.ConfigError);
     expect(String(error)).toContain("CF_AIG_GATEWAY_ID");
@@ -151,8 +148,7 @@ describe("anthropicLanguageModelLayerFromUrl", () => {
       ),
     );
 
-    expect(exit._tag).toBe("Failure");
-    if (exit._tag !== "Failure") return;
+    assert(Exit.isFailure(exit), "expected a failure exit");
     const error = Cause.squash(exit.cause);
     expect(error).toBeInstanceOf(Config.ConfigError);
     expect(String(error)).toContain("CF_ACCOUNT_ID");

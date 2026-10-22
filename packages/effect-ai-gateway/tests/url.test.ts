@@ -5,11 +5,12 @@
  * @module tests/unit/url
  */
 
-import { describe, expect, it } from "vite-plus/test";
+import { assert, describe, expect, it } from "vite-plus/test";
 import * as Cause from "effect/Cause";
 import * as Config from "effect/Config";
 import * as ConfigProvider from "effect/ConfigProvider";
 import * as Effect from "effect/Effect";
+import * as Exit from "effect/Exit";
 import * as Redacted from "effect/Redacted";
 import {
   cfAigAuthorizationHeader,
@@ -31,8 +32,7 @@ describe("gatewayUrlConfig", () => {
       }),
     );
 
-    expect(exit._tag).toBe("Success");
-    if (exit._tag !== "Success") return;
+    assert(Exit.isSuccess(exit), "expected a success exit");
     expect(exit.value.accountId).toBe("acct");
     expect(exit.value.gatewayId).toBe("custom-gateway");
     expect(Redacted.value(exit.value.token)).toBe("secret");
@@ -41,8 +41,7 @@ describe("gatewayUrlConfig", () => {
   it("fails with a typed ConfigError when CF_AIG_GATEWAY_ID is missing", async () => {
     const exit = await runTestExit(withConfig({ CF_ACCOUNT_ID: "acct", CF_AIG_TOKEN: "secret" }));
 
-    expect(exit._tag).toBe("Failure");
-    if (exit._tag !== "Failure") return;
+    assert(Exit.isFailure(exit), "expected a failure exit");
     const error = Cause.squash(exit.cause);
     expect(error).toBeInstanceOf(Config.ConfigError);
     expect(String(error)).toContain("CF_AIG_GATEWAY_ID");
@@ -55,8 +54,7 @@ describe("gatewayUrlConfig", () => {
       withConfig({ CF_ACCOUNT_ID: "acct", CF_AIG_GATEWAY_ID: "", CF_AIG_TOKEN: "secret" }),
     );
 
-    expect(exit._tag).toBe("Failure");
-    if (exit._tag !== "Failure") return;
+    assert(Exit.isFailure(exit), "expected a failure exit");
     const error = Cause.squash(exit.cause);
     expect(error).toBeInstanceOf(Config.ConfigError);
     expect(String(error)).toContain("CF_AIG_GATEWAY_ID");

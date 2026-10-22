@@ -16,6 +16,7 @@ import { describe, expect, it } from "vite-plus/test";
 import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import * as EffectRecord from "effect/Record";
 import * as Redacted from "effect/Redacted";
 import { AiError, EmbeddingModel } from "effect/ai";
 import { FetchHttpClient, HttpClient, HttpClientRequest } from "effect/http";
@@ -47,7 +48,7 @@ const makeFetch = (respond: (captured: CapturedRequest) => Response) => {
     const captured: CapturedRequest = {
       url: request.url,
       authorization: request.headers.get("authorization"),
-      headers: Object.fromEntries(request.headers),
+      headers: EffectRecord.fromEntries(request.headers),
       body,
     };
     calls.push(captured);
@@ -59,11 +60,7 @@ const makeFetch = (respond: (captured: CapturedRequest) => Response) => {
 const httpLayer = (fetch: typeof globalThis.fetch) =>
   FetchHttpClient.layer.pipe(Layer.provide(Layer.succeed(FetchHttpClient.Fetch, fetch)));
 
-const jsonResponse = (body: unknown, status = 200): Response =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json" },
-  });
+const jsonResponse = (body: unknown, status = 200): Response => Response.json(body, { status });
 
 const embeddingBody = (
   vectors: ReadonlyArray<ReadonlyArray<number>>,
@@ -440,26 +437,26 @@ describe("VoyageClient", () => {
 // ── Model / dimension matrix ──────────────────────────────────────────
 
 describe("VoyageEmbeddingModel.EMBEDDING_MODELS", () => {
-  it("documents Matryoshka models with four selectable dimensions and a 1024 default", async () => {
-    for (const id of [
-      "voyage-3-large",
-      "voyage-3.5",
-      "voyage-3.5-lite",
-      "voyage-code-3",
-    ] as const) {
+  it.each(["voyage-3-large", "voyage-3.5", "voyage-3.5-lite", "voyage-code-3"] as const)(
+    "documents the Matryoshka model %s with four selectable dimensions and a 1024 default",
+    (id) => {
       const info = VoyageEmbeddingModel.EMBEDDING_MODELS[id];
       expect(info.defaultDimension).toBe(1024);
       expect(info.dimensions).toEqual([256, 512, 1024, 2048]);
-    }
-  });
+    },
+  );
 
   it("documents fixed-dimension models with a single dimension entry", async () => {
     expect(VoyageEmbeddingModel.EMBEDDING_MODELS["voyage-code-2"].defaultDimension).toBe(1536);
     expect(VoyageEmbeddingModel.EMBEDDING_MODELS["voyage-3-lite"].defaultDimension).toBe(512);
-    for (const info of Object.values(VoyageEmbeddingModel.EMBEDDING_MODELS)) {
-      expect(info.dimensions).toContain(info.defaultDimension);
-    }
   });
+
+  it.each(EffectRecord.toEntries(VoyageEmbeddingModel.EMBEDDING_MODELS))(
+    "lists the %s model's default dimension among its dimensions",
+    (_id, info) => {
+      expect(info.dimensions).toContain(info.defaultDimension);
+    },
+  );
 
   it("resolves a known model's default dimension and undefined for an unknown id", async () => {
     expect(VoyageEmbeddingModel.defaultDimension("voyage-3-large")).toBe(1024);

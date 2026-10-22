@@ -15,7 +15,7 @@
  */
 
 import * as Effect from "effect/Effect";
-import type * as Schema from "effect/Schema";
+import * as Schema from "effect/Schema";
 import * as Layer from "effect/Layer";
 import * as Stream from "effect/Stream";
 import { LanguageModel } from "effect/ai";
@@ -54,12 +54,15 @@ export const makeJudgeStub = (
           calls.push(call);
           if (!respond) {
             return Effect.die(
-              new Error(
-                `makeJudgeStub: unexpected call ${calls.length} (only ${responses.length} configured)`,
-              ),
+              `makeJudgeStub: unexpected call ${calls.length} (only ${responses.length} configured)`,
             );
           }
-          return Effect.succeed([{ type: "text" as const, text: JSON.stringify(respond(call)) }]);
+          return Effect.succeed([
+            {
+              type: "text" as const,
+              text: Schema.encodeSync(Schema.fromJsonString(Schema.Unknown))(respond(call)),
+            },
+          ]);
         }),
       streamText: () => Stream.die("streamText is not used by the RAG metrics"),
     });

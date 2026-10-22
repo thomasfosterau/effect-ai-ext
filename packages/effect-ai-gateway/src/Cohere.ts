@@ -1,9 +1,8 @@
 /**
  * Cohere `EmbeddingModel` and `RerankerModel` providers routed through the
- * Cloudflare AI Gateway Worker binding (website#847), replacing the dormant
- * Voyage client, which the gateway can't front (website#472). The provider
- * key is BYOK, configured once on the `website` gateway (Cloudflare
- * dashboard, provider keys) — never an env var, so this module never takes
+ * Cloudflare AI Gateway Worker binding (website#847); the gateway can't
+ * front Voyage (website#472). The provider key is BYOK, configured once on
+ * the caller's gateway (Cloudflare dashboard, provider keys) — never an env var, so this module never takes
  * or reads an API key.
  *
  * Unlike `Anthropic.ts` (which repoints `@effect/ai-anthropic`'s existing

@@ -13,13 +13,23 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test"
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as Layer from "effect/Layer";
+import * as Schema from "effect/Schema";
 import { Command } from "effect/cli";
 import { NodeServices } from "@effect/platform-node";
 import { Cache } from "../../src/index.ts";
 import { runCommand } from "../../src/cli/RunCommand.ts";
+import { runTest } from "../helpers/effect.ts";
 
 const FIXTURES = new URL("../fixtures/", import.meta.url);
 const fixture = (name: string): string => new URL(name, FIXTURES).pathname;
+
+/** The slice of the JSON report these tests read; other fields pass through undecoded. */
+const RunReport = Schema.Struct({
+  isPassed: Schema.Boolean,
+  ran: Schema.Array(
+    Schema.Struct({ suites: Schema.Array(Schema.Struct({ suite: Schema.String })) }),
+  ),
+}).pipe(Schema.encodeKeys({ isPassed: "passed" }));
 
 let originalExitCode: typeof process.exitCode;
 
@@ -46,7 +56,7 @@ const runCli = (
     makeDirectory: () => Effect.void,
   });
 
-  return Effect.runPromise(
+  return runTest(
     Command.runWith(runCommand, { version: "0.0.0" })(args).pipe(
       // Order matters: `provideService` must apply before `provide(NodeServices.layer)`
       // — Effect resolves a requirement against the nearest (innermost) provider in the
@@ -112,8 +122,10 @@ describe("cli/RunCommand — run", () => {
 
     expect(writes).toHaveLength(1);
     expect(writes[0]?.path).toBe("out.json");
-    const parsed = JSON.parse(writes[0]?.content ?? "{}");
-    expect(parsed.passed).toBe(true);
+    const parsed = Schema.decodeUnknownSync(Schema.fromJsonString(RunReport))(
+      writes[0]?.content ?? "{}",
+    );
+    expect(parsed.isPassed).toBe(true);
     expect(parsed.ran[0]?.suites[0]?.suite).toBe("fixture-greetings");
 
     const output = logSpy.mock.calls.map((call) => String(call[0])).join("\n");

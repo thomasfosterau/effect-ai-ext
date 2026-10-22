@@ -12,8 +12,10 @@
  * non-decreasing segment timestamps) before being returned.
  */
 
+import * as Arr from "effect/Array";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
+import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
 import type * as Stream from "effect/Stream";
 import { AiError } from "effect/ai";
@@ -148,30 +150,32 @@ const invalidProviderResponse = (description: string): AiError.AiError =>
 const mapProviderResponse = (
   response: ProviderResponse,
 ): Effect.Effect<TranscriptionResponse, AiError.AiError> => {
-  let segments: ReadonlyArray<TranscriptionSegment> | undefined;
-  if (response.segments !== undefined) {
-    const mapped: Array<TranscriptionSegment> = [];
-    for (const segment of response.segments) {
-      if (!Number.isFinite(segment.start) || !Number.isFinite(segment.end)) {
-        return Effect.fail(
-          invalidProviderResponse(
-            `Provider returned a segment with non-finite timestamps (${segment.start}, ${segment.end})`,
-          ),
-        );
-      }
-      if (segment.end < segment.start) {
-        return Effect.fail(
-          invalidProviderResponse(
+  const invalid = Arr.findFirst(response.segments ?? [], (segment) =>
+    !Number.isFinite(segment.start) || !Number.isFinite(segment.end)
+      ? Option.some(
+          `Provider returned a segment with non-finite timestamps (${segment.start}, ${segment.end})`,
+        )
+      : segment.end < segment.start
+        ? Option.some(
             `Provider returned a segment ending (${segment.end}) before it starts (${segment.start})`,
-          ),
-        );
-      }
-      mapped.push(
-        new TranscriptionSegment({ text: segment.text, start: segment.start, end: segment.end }),
-      );
-    }
-    segments = mapped;
+          )
+        : Option.none(),
+  );
+  if (Option.isSome(invalid)) {
+    return Effect.fail(invalidProviderResponse(invalid.value));
   }
+  const segments =
+    response.segments === undefined
+      ? undefined
+      : Arr.map(
+          response.segments,
+          (segment) =>
+            new TranscriptionSegment({
+              text: segment.text,
+              start: segment.start,
+              end: segment.end,
+            }),
+        );
   return Effect.succeed(
     new TranscriptionResponse({
       text: response.text,

@@ -14,6 +14,7 @@
  */
 
 import * as Effect from "effect/Effect";
+import * as Option from "effect/Option";
 import { AiError } from "effect/ai";
 import { isMissing, MissingEvaluationParamError, renderValue } from "../GEval.ts";
 import type { VerdictCountMismatchError } from "./ExtractThenClassify.ts";
@@ -73,9 +74,11 @@ export const requireRetrievedContext = (
   metricName: string,
   evalCase: RagCase,
 ): Effect.Effect<ReadonlyArray<string>, MissingEvaluationParamError> =>
-  isMissing(evalCase.retrievedContext)
-    ? new MissingEvaluationParamError({ metric: metricName, param: "retrievedContext" })
-    : Effect.succeed(evalCase.retrievedContext!);
+  Option.match(Option.fromNullishOr(evalCase.retrievedContext), {
+    onNone: () =>
+      new MissingEvaluationParamError({ metric: metricName, param: "retrievedContext" }),
+    onSome: Effect.succeed,
+  });
 
 /** Renders an ordered `retrievedContext` array as numbered chunks, preserving rank order. */
 export const renderContext = (chunks: ReadonlyArray<string>): string =>

@@ -50,8 +50,7 @@ const stubFetch = (respond: () => Response) => {
   return { calls, layer };
 };
 
-const jsonResponse = (status: number, body: unknown) => () =>
-  new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+const jsonResponse = (status: number, body: unknown) => () => Response.json(body, { status });
 
 const stubConfig = (values: Record<string, string>) =>
   ConfigProvider.layer(ConfigProvider.fromUnknown(values));
@@ -202,7 +201,7 @@ describe("makeOpenAiModerationModelFromUrl", () => {
 
   it("fails with AiError (not a defect) when the transport call rejects", async () => {
     const { layer: fetchLayer } = stubFetch(() => {
-      throw new Error("network unreachable");
+      throw new TypeError("network unreachable");
     });
 
     const failure = await expectFailureInstanceOf(

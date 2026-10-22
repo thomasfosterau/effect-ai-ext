@@ -53,14 +53,17 @@ export const weightedCumulativePrecision = (relevance: ReadonlyArray<boolean>): 
   const relevantCount = relevance.filter(Boolean).length;
   if (relevantCount === 0) return 0;
 
-  let sum = 0;
-  let runningRelevant = 0;
-  for (let position = 0; position < relevance.length; position++) {
-    if (relevance[position]) {
-      runningRelevant++;
-      sum += runningRelevant / (position + 1);
-    }
-  }
+  const { sum } = Arr.reduce(
+    relevance,
+    { sum: 0, runningRelevant: 0 },
+    (state, isRelevant, position) =>
+      isRelevant
+        ? {
+            sum: state.sum + (state.runningRelevant + 1) / (position + 1),
+            runningRelevant: state.runningRelevant + 1,
+          }
+        : state,
+  );
   return sum / relevantCount;
 };
 

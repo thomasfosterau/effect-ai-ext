@@ -22,6 +22,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
+import * as Schema from "effect/Schema";
 
 const source = (relative: string): string => fileURLToPath(new URL(relative, import.meta.url));
 
@@ -29,13 +30,16 @@ let scratch: string;
 
 beforeAll(() => {
   scratch = mkdtempSync(path.join(tmpdir(), "effect-evals-bin-"));
-  for (const dir of ["bin", "src/cli", "dist/cli"]) {
+  ["bin", "src/cli", "dist/cli"].forEach((dir) => {
     mkdirSync(path.join(scratch, dir), { recursive: true });
-  }
+  });
   copyFileSync(source("../../bin/effect-evals.js"), path.join(scratch, "bin", "effect-evals.js"));
   copyFileSync(source("../../src/cli/loader.mjs"), path.join(scratch, "src", "cli", "loader.mjs"));
   const main = new URL("../../src/cli/main.ts", import.meta.url).href;
-  writeFileSync(path.join(scratch, "dist", "cli", "main.js"), `import ${JSON.stringify(main)};\n`);
+  writeFileSync(
+    path.join(scratch, "dist", "cli", "main.js"),
+    `import ${Schema.encodeSync(Schema.fromJsonString(Schema.Unknown))(main)};\n`,
+  );
 });
 
 afterAll(() => {

@@ -13,6 +13,7 @@
  */
 
 import { describe, expect, it } from "vite-plus/test";
+import * as EffectRecord from "effect/Record";
 
 const NAMESPACES = ["VoyageClient", "VoyageEmbeddingModel", "VoyageRerankerModel"] as const;
 
@@ -20,9 +21,12 @@ describe("module load", () => {
   it("imports the package entry and exposes every namespace", async () => {
     const entry: Record<string, unknown> = await import("@thomasfosterau/effect-ai-voyage");
 
-    expect(Object.keys(entry)).toEqual(expect.arrayContaining([...NAMESPACES]));
-    for (const name of NAMESPACES) {
-      expect(entry[name], name).toBeTypeOf("object");
-    }
+    expect(EffectRecord.keys(entry)).toEqual(expect.arrayContaining([...NAMESPACES]));
+  });
+
+  it.each(NAMESPACES)("exposes the %s namespace from the package entry", async (name) => {
+    const entry = await import("@thomasfosterau/effect-ai-voyage");
+
+    expect(entry[name], name).toBeTypeOf("object");
   });
 });

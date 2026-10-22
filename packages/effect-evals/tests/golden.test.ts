@@ -43,7 +43,8 @@ describe("Golden", () => {
     expect(decoded.expected).toBeUndefined();
 
     const encoded = await runTest(Schema.encodeEffect(TranslationGolden)(decoded));
-    expect(Object.keys(encoded)).toEqual(["input"]);
+    // Strict: an `expected: undefined` key left behind by the encoder fails it.
+    expect(encoded).toStrictEqual({ input: "Bonjour" });
   });
 
   it("fails to decode a golden missing its required input", async () => {

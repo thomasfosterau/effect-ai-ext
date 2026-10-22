@@ -1,9 +1,8 @@
 /**
  * Shared Cloudflare AI Gateway binding plumbing.
  *
- * The Worker's `AI` binding (`env.AI`, from `Cloudflare.AI.Gateway("AI", {
- * id: "website" })` in `@thomasfosterau/bindings`) is, at runtime, a plain
- * Workers AI binding — the gateway association is not a distinct binding
+ * The Worker's `AI` binding (`env.AI`, declared under `[ai]` in its
+ * Wrangler config) is, at runtime, a plain Workers AI binding — the gateway association is not a distinct binding
  * type, only a runtime call: `ai.gateway(gatewayId)` returns the AI Gateway
  * runtime object. Every provider module in this package starts from that
  * same `{ ai, gatewayId }` pair rather than re-deriving it, so adding a
@@ -116,10 +115,9 @@ export interface GatewayBinding {
   /** The Worker's raw Workers AI binding (`env.AI`). */
   readonly ai: WorkersAiBinding;
   /**
-   * The AI Gateway id to route through — the same id passed to
-   * `Cloudflare.AI.Gateway("AI", { id })` in `@thomasfosterau/bindings`
-   * (exported there as `AI_GATEWAY_ID`; import it rather than
-   * re-declaring the literal at each call site).
+   * The AI Gateway id to route through: the gateway's name in the
+   * Cloudflare dashboard. Declare it once in the application and import it,
+   * rather than re-declaring the literal at each call site.
    */
   readonly gatewayId: string;
 }
