@@ -392,6 +392,26 @@ describe("MistralLanguageModel configuration", () => {
     expect(calls[0]?.url).toBe("https://proxy.example/v1/chat/completions");
     expect(calls[0]?.authorization).toBe("Bearer cfg-key");
   });
+
+  it("builds an AiModel descriptor that provides the model and its config", async () => {
+    const { calls, fetch } = makeFetch(() => jsonResponse(completion()));
+    const descriptor = MistralLanguageModel.model("mistral-small-latest", { temperature: 0.3 });
+
+    expect(descriptor.provider).toBe("mistral");
+    await runTest(
+      LanguageModel.generateText({ prompt: "hi" }).pipe(
+        Effect.provide(
+          descriptor.pipe(
+            Layer.provide(MistralClient.layer({ apiKey: Redacted.make("test-key") })),
+            Layer.provide(httpLayer(fetch)),
+          ),
+        ),
+      ),
+    );
+
+    expect(calls[0]?.body.model).toBe("mistral-small-latest");
+    expect(calls[0]?.body.temperature).toBe(0.3);
+  });
 });
 
 // ── Structured output ─────────────────────────────────────────────────

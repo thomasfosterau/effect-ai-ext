@@ -19,6 +19,7 @@ describe("Levenshtein.levenshteinSimilarity", () => {
 
   it("is 0 for a maximally different pair (fully consumed by the longer length)", () => {
     expect(Levenshtein.levenshteinSimilarity("", "abc")).toBe(0);
+    expect(Levenshtein.levenshteinSimilarity("abc", "")).toBe(0);
   });
 
   it("computes the classic kitten/sitting distance of 3", () => {

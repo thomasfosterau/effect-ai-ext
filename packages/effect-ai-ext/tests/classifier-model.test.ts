@@ -211,6 +211,30 @@ describe("ClassifierModel", () => {
       expect(String(captured?.prompt)).toContain("positive, negative");
     });
 
+    it("quotes each few-shot example in the prompt as JSON", async () => {
+      let captured: { readonly prompt: unknown; readonly objectName: unknown } | undefined;
+      await runTest(
+        Effect.gen(function* () {
+          const model = yield* fromLanguageModel;
+          return yield* model.classify({
+            inputs: ["fine"],
+            examples: [{ text: 'said "great"', label: "positive" }],
+          });
+        }).pipe(
+          Effect.provide(
+            stubLanguageModel(
+              { classifications: [{ classes: [{ label: "neutral", score: 0.6 }] }] },
+              (request) => {
+                captured = request;
+              },
+            ),
+          ),
+        ),
+      );
+
+      expect(String(captured?.prompt)).toContain('Examples:\n- "said \\"great\\"" => positive');
+    });
+
     it("surfaces a language-model failure as AiError", async () => {
       const message = await expectAiError(
         Effect.gen(function* () {

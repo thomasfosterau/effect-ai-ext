@@ -23,6 +23,11 @@ describe("RagCase.renderValue", () => {
     );
   });
 
+  it("renders a value JSON cannot represent through String, and an array item as an empty line", () => {
+    expect(RagCase.renderValue(undefined)).toBe("undefined");
+    expect(RagCase.renderValue(["a fact", undefined, "another"])).toBe("a fact\n\nanother");
+  });
+
   it("JSON-stringifies a non-string, non-array item within an array", () => {
     expect(RagCase.renderValue(["a fact", { note: "structured" }])).toBe(
       'a fact\n{"note":"structured"}',
