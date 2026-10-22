@@ -14,7 +14,7 @@
 #    `prepare` script runs on every install — so after this hook `tsc` reports
 #    `+effect-tsgo.<version>` and `vp run check` emits Effect's own diagnostics
 #    exactly as CI does.
-# 2. Puts `vp` and `fallow` on PATH for non-interactive shells. Both live only
+# 2. Puts `vp`, `fallow` and `tsx` on PATH for non-interactive shells. They live only
 #    in `node_modules/.bin`, which is on nobody's PATH, yet the documented
 #    workflows invoke `vp …` directly and the PreToolUse fallow gate
 #    (`.claude/hooks/fallow-gate.sh`) runs `fallow` before every agent
@@ -137,6 +137,7 @@ fi
 
 # node_modules/.bin only exists after the install, so link what it provides now.
 link_tool "$PROJECT_DIR/node_modules/.bin/fallow"
+link_tool "$PROJECT_DIR/node_modules/.bin/tsx"
 write_vp_shim
 
 exit 0

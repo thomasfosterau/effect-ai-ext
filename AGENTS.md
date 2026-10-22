@@ -93,7 +93,7 @@ Never guess at an Effect API: read the installed package. Each package's `node_m
 
 ## Agent sessions
 
-- The SessionStart hook (`.claude/hooks/session-start.sh`, registered in `.claude/settings.json`) runs `pnpm install --frozen-lockfile` (through Corepack when available), which also applies the tsgo patch, and puts `vp` (a re-exec shim that prefers the nearest checkout's `node_modules`) and `fallow` on PATH for non-interactive shells, so the gates run without manual setup. It hydrates no secrets, and nothing here needs one.
+- The SessionStart hook (`.claude/hooks/session-start.sh`, registered in `.claude/settings.json`) runs `pnpm install --frozen-lockfile` (through Corepack when available), which also applies the tsgo patch, and puts `vp` (a re-exec shim that prefers the nearest checkout's `node_modules`), `fallow` and `tsx` on PATH for non-interactive shells, so the gates run without manual setup. It hydrates no secrets, and nothing here needs one.
 - A PreToolUse hook (`.claude/hooks/fallow-gate.sh`) blocks `git commit` / `git push` when `fallow audit --base origin/trunk` fails; it reads the coverage map on disk, so run `vp run test:coverage` first. A PostToolUse hook runs `vp fmt` on every source, JSON, CSS or Markdown file you write or edit.
 - Every gate in [Verification](#verification) runs in an agent session; `pnpm audit` needs network.
 
