@@ -179,6 +179,23 @@ export default defineConfig({
           // `...(process.env.X ? { x } : {})` is how a vitest option is left
           // unset under `exactOptionalPropertyTypes`.
           "effect/no-conditional-empty-object-spread": "off",
+          // No Schema or tagged-error runtime is loaded here: the dist guard
+          // reports through a thrown `Error` and reads `package.json` and
+          // `tsc`'s output with `JSON.parse`, as plain Node does.
+          "effect/avoid-untagged-errors": "off",
+          "effect/avoid-direct-json": "off",
+        },
+      },
+      // Each package's `tests/helpers/effect.ts` IS the test harness boundary
+      // `effect-run-in-body` names as the place to run an Effect (`runTest`
+      // wraps `Effect.runPromise`), and its recording tracer must hand Effect
+      // a mutable native `Map`: `Tracer.Span.attributes` is a `ReadonlyMap`
+      // the span's own `attribute(key, value)` writes through.
+      {
+        files: ["packages/*/tests/helpers/effect.ts"],
+        rules: {
+          "effect/effect-run-in-body": "off",
+          "effect/avoid-native-object-helpers": "off",
         },
       },
       // The bin and loader tests spawn the real plain-Node launcher and

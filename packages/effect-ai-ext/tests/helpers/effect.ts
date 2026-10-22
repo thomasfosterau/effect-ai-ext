@@ -42,8 +42,10 @@ export const expectFailureInstanceOf = async <A, E, T>(
   const exit = await runTestExit(program);
 
   expect(Exit.isFailure(exit)).toBe(true);
-  if (!Exit.isFailure(exit)) throw new Error("Expected a failure exit");
-  const failure = Option.getOrThrow(Cause.findErrorOption(exit.cause));
+  assert(Exit.isFailure(exit), "Expected a failure exit");
+  const found = Cause.findErrorOption(exit.cause);
+  assert(Option.isSome(found), "Expected a typed failure in the cause");
+  const failure = found.value;
   expect(failure).toBeInstanceOf(errorClass);
   assert(failure instanceof errorClass);
   return failure;
