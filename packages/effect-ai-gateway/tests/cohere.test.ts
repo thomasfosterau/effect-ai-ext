@@ -40,10 +40,7 @@ const stubAi = (response: { status: number; body: unknown }) => {
   const ai = stubAiBinding(() => ({
     run: async (data) => {
       calls.push(data);
-      return new Response(JSON.stringify(response.body), {
-        status: response.status,
-        headers: { "content-type": "application/json" },
-      });
+      return Response.json(response.body, { status: response.status });
     },
   }));
   return { ai, calls };
@@ -53,7 +50,7 @@ const stubAi = (response: { status: number; body: unknown }) => {
 const stubAiReject = (): WorkersAiBinding =>
   stubAiBinding(() => ({
     run: async () => {
-      throw new Error("gateway unreachable");
+      throw new TypeError("gateway unreachable");
     },
   }));
 

@@ -16,6 +16,7 @@
 import { VoiceConversionModel } from "@thomasfosterau/effect-ai-ext";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import * as Schema from "effect/Schema";
 import { ElevenLabsClient } from "./ElevenLabsClient";
 import {
   collectBytes,
@@ -24,6 +25,9 @@ import {
   toBlob,
 } from "./internal/audio";
 import type * as Wire from "./internal/wire";
+
+/** Serialises the voice settings form field exactly as `JSON.stringify` would. */
+const encodeJson = Schema.encodeSync(Schema.fromJsonString(Schema.Unknown));
 
 /**
  * A selection of well-known ElevenLabs speech-to-speech model ids, offered for
@@ -75,7 +79,7 @@ export const make = (
             audio: toBlob(bytes, config.inputMediaType),
             model_id: config.modelId,
             voice_settings:
-              config.voiceSettings !== undefined ? JSON.stringify(config.voiceSettings) : undefined,
+              config.voiceSettings !== undefined ? encodeJson(config.voiceSettings) : undefined,
             remove_background_noise: config.removeBackgroundNoise,
             seed: config.seed,
           };

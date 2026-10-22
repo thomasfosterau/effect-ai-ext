@@ -19,7 +19,7 @@
  * @module tests/elevenlabs
  */
 
-import { describe, expect, it } from "vite-plus/test";
+import { assert, describe, expect, it } from "vite-plus/test";
 import {
   SpeechModel,
   TranscriptionModel,
@@ -31,6 +31,7 @@ import * as Effect from "effect/Effect";
 import * as Fiber from "effect/Fiber";
 import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
+import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
 import { AiError } from "effect/ai";
 import { FetchHttpClient, HttpClient, HttpClientRequest } from "effect/http";
@@ -74,6 +75,15 @@ const makeFetch = (respond: (captured: Captured) => Response) => {
   return { calls, fetch };
 };
 
+/** The request the stub captured first, failing the test when none was sent. */
+const firstRequest = (calls: ReadonlyArray<Captured>): Request => {
+  const call = calls[0];
+  assert(call !== undefined, "expected a captured request");
+  return call.request;
+};
+
+const encodeJson = Schema.encodeSync(Schema.fromJsonString(Schema.Unknown));
+
 const httpLayer = (fetch: typeof globalThis.fetch) =>
   FetchHttpClient.layer.pipe(Layer.provide(Layer.succeed(FetchHttpClient.Fetch, fetch)));
 
@@ -84,11 +94,7 @@ const audioResponse = (bytes: Uint8Array, contentType: string | null = "audio/mp
     headers: contentType === null ? {} : { "content-type": contentType },
   });
 
-const jsonResponse = (body: unknown, status = 200): Response =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json" },
-  });
+const jsonResponse = (body: unknown, status = 200): Response => Response.json(body, { status });
 
 const bytes = (...values: ReadonlyArray<number>): Uint8Array => Uint8Array.from(values);
 
@@ -140,7 +146,7 @@ describe("ElevenLabsSpeechModel.generate", () => {
     expect(calls[0]?.method).toBe("POST");
     expect(calls[0]?.apiKey).toBe("test-key");
 
-    const body = (await calls[0]!.request.json()) as Record<string, unknown>;
+    const body = (await firstRequest(calls).json()) as Record<string, unknown>;
     expect(body.text).toBe("hello world");
     expect(body.model_id).toBe("eleven_multilingual_v2");
 
@@ -159,7 +165,7 @@ describe("ElevenLabsSpeechModel.generate", () => {
     );
 
     expect(calls[0]?.url).toBe("https://api.elevenlabs.io/v1/text-to-speech/override_voice");
-    const body = (await calls[0]!.request.json()) as { voice_settings?: Record<string, number> };
+    const body = (await firstRequest(calls).json()) as { voice_settings?: Record<string, number> };
     expect(body.voice_settings).toEqual({ stability: 0.4, similarity_boost: 0.8 });
   });
 
@@ -246,8 +252,9 @@ const makeChunkedStream = (chunks: ReadonlyArray<Uint8Array>) => {
   const body = new ReadableStream<Uint8Array>({
     pull(controller) {
       state.pulled += 1;
-      if (index < chunks.length) {
-        controller.enqueue(chunks[index]!);
+      const chunk = chunks[index];
+      if (chunk !== undefined) {
+        controller.enqueue(chunk);
         index += 1;
       } else {
         controller.close();
@@ -373,7 +380,7 @@ describe("ElevenLabsTranscriptionModel.transcribe", () => {
     expect(calls[0]?.apiKey).toBe("test-key");
     expect(calls[0]?.contentType).toMatch(/^multipart\/form-data/);
 
-    const form = await calls[0]!.request.formData();
+    const form = await firstRequest(calls).formData();
     expect(form.get("model_id")).toBe("scribe_v1");
     expect(form.get("file")).toBeInstanceOf(Blob);
     // Options left undefined are omitted, never sent as the string "undefined".
@@ -423,7 +430,7 @@ describe("ElevenLabsTranscriptionModel.transcribe", () => {
       ).pipe(Effect.provide(transcriptionLayer(fetch))),
     );
 
-    const form = await calls[0]!.request.formData();
+    const form = await firstRequest(calls).formData();
     const file = form.get("file") as File;
     expect(file).toBeInstanceOf(Blob);
     expect(await file.arrayBuffer().then((b) => Array.from(new Uint8Array(b)))).toEqual([
@@ -490,7 +497,7 @@ describe("ElevenLabsVoiceConversionModel.convert", () => {
     expect(calls[0]?.apiKey).toBe("test-key");
     expect(calls[0]?.contentType).toMatch(/^multipart\/form-data/);
 
-    const form = await calls[0]!.request.formData();
+    const form = await firstRequest(calls).formData();
     expect(form.get("model_id")).toBe("eleven_multilingual_sts_v2");
     expect(form.get("audio")).toBeInstanceOf(Blob);
     // Options left undefined are omitted, never sent as the string "undefined".
@@ -512,8 +519,8 @@ describe("ElevenLabsVoiceConversionModel.convert", () => {
     );
 
     expect(calls[0]?.outputFormat).toBe("mp3_44100_128");
-    const form = await calls[0]!.request.formData();
-    expect(form.get("voice_settings")).toBe(JSON.stringify({ stability: 0.3 }));
+    const form = await firstRequest(calls).formData();
+    expect(form.get("voice_settings")).toBe(encodeJson({ stability: 0.3 }));
   });
 
   it.each([

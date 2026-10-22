@@ -31,10 +31,7 @@ const stubAi = (response: { status: number; body: unknown }) => {
   const ai = stubAiBinding(() => ({
     run: async (data) => {
       calls.push(data);
-      return new Response(JSON.stringify(response.body), {
-        status: response.status,
-        headers: { "content-type": "application/json" },
-      });
+      return Response.json(response.body, { status: response.status });
     },
   }));
   return { ai, calls };
@@ -218,7 +215,7 @@ describe("makeOpenAiModerationModel", () => {
   it("fails with AiError (not a defect) when the gateway call itself rejects", async () => {
     const ai = stubAiBinding(() => ({
       run: async () => {
-        throw new Error("socket hang up");
+        throw new TypeError("socket hang up");
       },
     }));
 

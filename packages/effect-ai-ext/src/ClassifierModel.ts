@@ -27,6 +27,7 @@ import * as Order from "effect/Order";
 import * as Arr from "effect/Array";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
+import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
 import { AiError, LanguageModel } from "effect/ai";
 
@@ -206,31 +207,32 @@ const mapProviderResponse = (
       ),
     );
   }
-  const allowed = labels === undefined ? undefined : new Set(labels);
-  const classifications: Array<Classification> = [];
-  for (const classification of response.classifications) {
-    for (const cls of classification.classes) {
-      if (!Number.isFinite(cls.score)) {
-        return Effect.fail(
-          invalidProviderResponse(
-            `Provider returned a non-finite score ${cls.score} for label '${cls.label}'`,
-          ),
-        );
-      }
-      if (allowed !== undefined && !allowed.has(cls.label)) {
-        return Effect.fail(
-          invalidProviderResponse(
-            `Provider returned label '${cls.label}' which is not in the requested label set`,
-          ),
-        );
-      }
-    }
-    const classes = Arr.sort(
-      classification.classes.map((cls) => new ClassScore({ label: cls.label, score: cls.score })),
-      byScoreDescending,
-    );
-    classifications.push(new Classification({ classes }));
+  const invalid = Arr.findFirst(response.classifications, (classification) =>
+    Arr.findFirst(classification.classes, (cls) =>
+      !Number.isFinite(cls.score)
+        ? Option.some(`Provider returned a non-finite score ${cls.score} for label '${cls.label}'`)
+        : labels !== undefined && !Arr.contains(labels, cls.label)
+          ? Option.some(
+              `Provider returned label '${cls.label}' which is not in the requested label set`,
+            )
+          : Option.none(),
+    ),
+  );
+  if (Option.isSome(invalid)) {
+    return Effect.fail(invalidProviderResponse(invalid.value));
   }
+  const classifications = Arr.map(
+    response.classifications,
+    (classification) =>
+      new Classification({
+        classes: Arr.sort(
+          classification.classes.map(
+            (cls) => new ClassScore({ label: cls.label, score: cls.score }),
+          ),
+          byScoreDescending,
+        ),
+      }),
+  );
   return Effect.succeed(
     new ClassifyResponse({
       classifications,
@@ -294,6 +296,9 @@ const StructuredClassifyResult = Schema.Struct({
   classifications: Schema.Array(StructuredClassification),
 });
 
+/** Quotes a text for the prompt exactly as `JSON.stringify` would. */
+const encodeJsonString = Schema.encodeSync(Schema.fromJsonString(Schema.String));
+
 const buildClassifyPrompt = (options: ProviderOptions): string => {
   const lines: Array<string> = [
     "You are a precise text classifier. Classify each input text.",
@@ -307,17 +312,20 @@ const buildClassifyPrompt = (options: ProviderOptions): string => {
     lines.push("Choose concise, descriptive labels.");
   }
   if (options.examples !== undefined && Arr.isReadonlyArrayNonEmpty(options.examples)) {
-    lines.push("Examples:");
-    for (const example of options.examples) {
-      lines.push(`- ${JSON.stringify(example.text)} => ${example.label}`);
-    }
+    lines.push(
+      "Examples:",
+      ...Arr.map(
+        options.examples,
+        (example) => `- ${encodeJsonString(example.text)} => ${example.label}`,
+      ),
+    );
   }
   lines.push(
     "Return one classification per input, in the same order. Each classification lists candidate labels with a confidence score between 0 and 1.",
   );
   lines.push("Inputs:");
   options.inputs.forEach((input, index) => {
-    lines.push(`${index + 1}. ${JSON.stringify(input)}`);
+    lines.push(`${index + 1}. ${encodeJsonString(input)}`);
   });
   return lines.join("\n");
 };

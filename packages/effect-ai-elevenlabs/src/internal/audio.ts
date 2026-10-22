@@ -14,21 +14,17 @@
  * @copyright Thomas Foster
  */
 
+import * as Arr from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Stream from "effect/Stream";
 
 /** Concatenates byte chunks into one contiguous `Uint8Array`. */
 const concatBytes = (chunks: ReadonlyArray<Uint8Array>): Uint8Array => {
-  let total = 0;
-  for (const chunk of chunks) {
-    total += chunk.length;
-  }
-  const out = new Uint8Array(total);
-  let offset = 0;
-  for (const chunk of chunks) {
+  const out = new Uint8Array(Arr.reduce(chunks, 0, (total, chunk) => total + chunk.length));
+  Arr.reduce(chunks, 0, (offset, chunk) => {
     out.set(chunk, offset);
-    offset += chunk.length;
-  }
+    return offset + chunk.length;
+  });
   return out;
 };
 

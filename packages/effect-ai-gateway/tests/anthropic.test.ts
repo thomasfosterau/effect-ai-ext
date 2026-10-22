@@ -51,10 +51,7 @@ const stubFetch = (response: { status: number; body: unknown }) => {
       versionHeader: request.headers.get("anthropic-version"),
       body: await request.json(),
     });
-    return new Response(JSON.stringify(response.body), {
-      status: response.status,
-      headers: { "content-type": "application/json" },
-    });
+    return Response.json(response.body, { status: response.status });
   };
   const layer = FetchHttpClient.layer.pipe(
     Layer.provide(Layer.succeed(FetchHttpClient.Fetch, fetch)),

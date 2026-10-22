@@ -41,10 +41,7 @@ const stubFetch = (response: { status: number; body: unknown }) => {
       cfAigAuthorizationHeader: request.headers.get("cf-aig-authorization"),
       body: await request.json(),
     });
-    return new Response(JSON.stringify(response.body), {
-      status: response.status,
-      headers: { "content-type": "application/json" },
-    });
+    return Response.json(response.body, { status: response.status });
   };
   const layer = FetchHttpClient.layer.pipe(
     Layer.provide(Layer.succeed(FetchHttpClient.Fetch, fetch)),
@@ -68,7 +65,7 @@ const stubFetchMalformedBody = () => {
 /** A fetch stub that rejects, simulating a transport-level failure. */
 const stubFetchReject = () => {
   const fetch: typeof globalThis.fetch = async () => {
-    throw new Error("network unreachable");
+    throw new TypeError("network unreachable");
   };
   const layer = FetchHttpClient.layer.pipe(
     Layer.provide(Layer.succeed(FetchHttpClient.Fetch, fetch)),

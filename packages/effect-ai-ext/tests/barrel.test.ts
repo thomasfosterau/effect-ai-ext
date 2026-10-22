@@ -8,28 +8,28 @@
  */
 
 import { describe, expect, it } from "vite-plus/test";
+import * as EffectRecord from "effect/Record";
 import * as UpstreamAi from "effect/ai";
 import * as Ext from "@thomasfosterau/effect-ai-ext";
 
+/** The extension abstractions this package adds on top of `effect/ai`. */
+const EXTENSION_ONLY = [
+  "RerankerModel",
+  "ClassifierModel",
+  "SpeechModel",
+  "TranscriptionModel",
+  "ImageModel",
+  "ModerationModel",
+  "VoiceConversionModel",
+] as const;
+
 describe("effect-ai-ext barrel", () => {
-  it("re-exports the extension abstractions", () => {
-    for (const name of [
-      "RerankerModel",
-      "ClassifierModel",
-      "SpeechModel",
-      "TranscriptionModel",
-      "ImageModel",
-      "ModerationModel",
-      "VoiceConversionModel",
-    ] as const) {
-      expect(Ext[name], name).toBeDefined();
-    }
+  it.each(EXTENSION_ONLY)("re-exports the %s extension abstraction", (name) => {
+    expect(Ext[name], name).toBeDefined();
   });
 
-  it("re-exports every upstream effect/ai module", () => {
-    for (const name of Object.keys(UpstreamAi)) {
-      expect(Ext, name).toHaveProperty(name);
-    }
+  it.each(EffectRecord.keys(UpstreamAi))("re-exports the upstream effect/ai %s module", (name) => {
+    expect(Ext, name).toHaveProperty(name);
   });
 
   it("re-exports upstream modules as the same identities (one singleton effect)", () => {
@@ -41,19 +41,7 @@ describe("effect-ai-ext barrel", () => {
     expect((Ext as Record<string, unknown>).AiError).toBe(UpstreamAi.AiError);
   });
 
-  it("does not collide upstream and extension names", () => {
-    const upstream = new Set(Object.keys(UpstreamAi));
-    const extensionOnly = [
-      "RerankerModel",
-      "ClassifierModel",
-      "SpeechModel",
-      "TranscriptionModel",
-      "ImageModel",
-      "ModerationModel",
-      "VoiceConversionModel",
-    ];
-    for (const name of extensionOnly) {
-      expect(upstream.has(name), `${name} must not exist upstream`).toBe(false);
-    }
+  it.each(EXTENSION_ONLY)("does not collide the %s extension with an upstream name", (name) => {
+    expect(UpstreamAi, `${name} must not exist upstream`).not.toHaveProperty(name);
   });
 });

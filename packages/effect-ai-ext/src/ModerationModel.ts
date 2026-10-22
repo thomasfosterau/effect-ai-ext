@@ -21,6 +21,8 @@
 import * as Arr from "effect/Array";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
+import * as Option from "effect/Option";
+import * as EffectRecord from "effect/Record";
 import * as Schema from "effect/Schema";
 import { AiError, LanguageModel } from "effect/ai";
 
@@ -163,21 +165,23 @@ const mapProviderResponse = (
       ),
     );
   }
-  const results: Array<ModerationResult> = [];
-  for (const result of response.results) {
-    for (const [category, score] of Object.entries(result.categories)) {
-      if (!Number.isFinite(score) || score < 0 || score > 1) {
-        return Effect.fail(
-          invalidProviderResponse(
+  const outOfRange = Arr.findFirst(response.results, (result) =>
+    Arr.findFirst(EffectRecord.toEntries(result.categories), ([category, score]) =>
+      !Number.isFinite(score) || score < 0 || score > 1
+        ? Option.some(
             `Provider returned score ${score} for category '${category}', expected a value between 0 and 1`,
-          ),
-        );
-      }
-    }
-    results.push(
-      new ModerationResult({ isFlagged: result.isFlagged, categories: result.categories }),
-    );
+          )
+        : Option.none(),
+    ),
+  );
+  if (Option.isSome(outOfRange)) {
+    return Effect.fail(invalidProviderResponse(outOfRange.value));
   }
+  const results = Arr.map(
+    response.results,
+    (result) =>
+      new ModerationResult({ isFlagged: result.isFlagged, categories: result.categories }),
+  );
   return Effect.succeed(
     new ModerationResponse({
       results,
@@ -234,6 +238,9 @@ const StructuredModerationOutput = Schema.Struct({
   results: Schema.Array(StructuredModerationResult),
 });
 
+/** Quotes an input for the prompt exactly as `JSON.stringify` would. */
+const encodeJsonString = Schema.encodeSync(Schema.fromJsonString(Schema.String));
+
 const buildModeratePrompt = (options: ProviderOptions): string => {
   const lines: Array<string> = [
     "You are a strict content moderation system. Screen each input against common policy categories such as hate, harassment, self-harm, sexual, and violence.",
@@ -242,7 +249,7 @@ const buildModeratePrompt = (options: ProviderOptions): string => {
     "Inputs:",
   ];
   options.inputs.forEach((input, index) => {
-    lines.push(`${index + 1}. ${JSON.stringify(input)}`);
+    lines.push(`${index + 1}. ${encodeJsonString(input)}`);
   });
   return lines.join("\n");
 };

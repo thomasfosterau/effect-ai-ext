@@ -11,8 +11,14 @@
 
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import type * as Schema from "effect/Schema";
+import * as Schema from "effect/Schema";
+import * as Stream from "effect/Stream";
 import { AiError, LanguageModel } from "effect/ai";
+
+/** The defect a stub raises when a test reaches a method it did not stub. */
+class NotStubbed extends Schema.TaggedError<NotStubbed>()("NotStubbed", {
+  method: Schema.String,
+}) {}
 
 /**
  * A `LanguageModel` layer whose `generateObject` resolves to the given value,
@@ -44,10 +50,8 @@ export const stubLanguageModel = (
         });
         return Effect.succeed(new LanguageModel.GenerateObjectResponse(value, []));
       }) as never,
-      generateText: (() => Effect.die(new Error("generateText not stubbed"))) as never,
-      streamText: (() => {
-        throw new Error("streamText not stubbed");
-      }) as never,
+      generateText: (() => Effect.die(new NotStubbed({ method: "generateText" }))) as never,
+      streamText: (() => Stream.die(new NotStubbed({ method: "streamText" }))) as never,
     }),
   );
 
@@ -64,9 +68,7 @@ export const failingLanguageModel = (): Layer.Layer<LanguageModel.LanguageModel>
             reason: new AiError.UnknownError({ description: "stubbed failure" }),
           }),
         )) as never,
-      generateText: (() => Effect.die(new Error("generateText not stubbed"))) as never,
-      streamText: (() => {
-        throw new Error("streamText not stubbed");
-      }) as never,
+      generateText: (() => Effect.die(new NotStubbed({ method: "generateText" }))) as never,
+      streamText: (() => Stream.die(new NotStubbed({ method: "streamText" }))) as never,
     }),
   );

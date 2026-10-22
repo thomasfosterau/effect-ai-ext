@@ -18,7 +18,7 @@ const stubAi = (behaviour: { readonly url: string } | { readonly reject: true })
   const ai = stubAiBinding((gatewayId) => ({
     getUrl: async (provider?: string) => {
       calls.push({ gatewayId, provider });
-      if ("reject" in behaviour) throw new Error("gateway unreachable");
+      if ("reject" in behaviour) throw new TypeError("gateway unreachable");
       return behaviour.url;
     },
   }));
@@ -53,7 +53,7 @@ describe("gatewayRun", () => {
     const ai = stubAiBinding(() => ({
       run: async (data) => {
         calls.push(data);
-        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+        return Response.json({ ok: true }, { status: 200 });
       },
     }));
 
@@ -77,7 +77,7 @@ describe("gatewayRun", () => {
     // not crash as a defect.
     const ai = stubAiBinding(() => ({
       run: async () => {
-        throw new Error("gateway unreachable");
+        throw new TypeError("gateway unreachable");
       },
     }));
 
@@ -107,7 +107,7 @@ describe("gatewayRun", () => {
           receivedSignal = options?.signal;
           options?.signal?.addEventListener("abort", () => {
             aborted = true;
-            reject(new Error("aborted"));
+            reject(new DOMException("aborted", "AbortError"));
           });
         }),
     }));
