@@ -14,6 +14,24 @@
     "scripts/check-dist.mjs"
   ],
   "ignorePatterns": ["**/dist/**", "**/docs/**", "**/coverage/**"],
+  // Each package's tests/helpers/effect.ts is the one shared harness shape
+  // (AGENTS.md → Conventions → Tests), copied whole into every package so a
+  // suite can reach for any helper; a package whose suite does not use one yet
+  // still carries it.
+  "ignoreExports": [
+    {
+      "file": "packages/*/tests/helpers/effect.ts",
+      "exports": ["runTestExit", "recordingTracer", "RecordedSpan", "RecordingTracer"]
+    },
+    // Modules export the same short names (`make`, `layer`, `Options`,
+    // `contramap`); the barrels re-export each module as a namespace
+    // (`MistralClient.layer`), so the shared names are the API shape, not a
+    // duplicate.
+    {
+      "file": "packages/*/src/*.ts",
+      "exports": ["make", "layer", "Options", "contramap"]
+    }
+  ],
   "ignoreDependencies": [
     "@types/node",
     "@effect/docgen",

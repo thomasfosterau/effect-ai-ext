@@ -39,7 +39,7 @@ export interface Origin {
 }
 
 /** Builds the `AiError` this pipeline reports for one reason. */
-export const failure = (origin: Origin, reason: AiError.AiErrorReason): AiError.AiError =>
+const failure = (origin: Origin, reason: AiError.AiErrorReason): AiError.AiError =>
   AiError.make({ module: origin.module, method: origin.method, reason });
 
 /**
@@ -49,7 +49,7 @@ export const failure = (origin: Origin, reason: AiError.AiErrorReason): AiError.
  * description, and `json` already carries the `AiError` reported for a
  * body-read failure.
  */
-export interface NormalizedResponse {
+interface NormalizedResponse {
   readonly status: number;
   readonly text: Effect.Effect<string>;
   readonly json: Effect.Effect<unknown, AiError.AiError>;
@@ -79,7 +79,7 @@ const transportFailure = (origin: Origin, cause: unknown): AiError.AiError =>
  * description), then the JSON body is decoded and a mismatch becomes
  * `InvalidOutputError`.
  */
-export const decodeResponse = <S extends Schema.Top>(
+const decodeResponse = <S extends Schema.Top>(
   origin: Origin,
   response: Effect.Effect<NormalizedResponse, AiError.AiError>,
   schema: S,
