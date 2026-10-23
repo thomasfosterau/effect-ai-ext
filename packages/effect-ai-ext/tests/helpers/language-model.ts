@@ -20,7 +20,7 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
-import { AiError, LanguageModel } from "effect/ai";
+import { AiError, LanguageModel, type Response } from "effect/ai";
 
 /** The defect a stub raises when a test reaches a method it did not stub. */
 class NotStubbed extends Schema.TaggedError<NotStubbed>()("NotStubbed", {
@@ -29,7 +29,8 @@ class NotStubbed extends Schema.TaggedError<NotStubbed>()("NotStubbed", {
 
 /**
  * A `LanguageModel` layer whose `generateObject` resolves to the given value,
- * wrapped in a `GenerateObjectResponse`. `onCall` captures each request's
+ * wrapped in a `GenerateObjectResponse` carrying `content` (response parts
+ * such as metadata). `onCall` captures each request's
  * `prompt`, `objectName` and `schema` for pass-through assertions (the
  * schema lets a test decode a raw wire payload the way a real
  * `LanguageModel` would).
@@ -41,6 +42,7 @@ export const stubLanguageModel = (
     readonly objectName: unknown;
     readonly schema: Schema.Codec<unknown, unknown>;
   }) => void,
+  content: ReadonlyArray<Response.AnyPart> = [],
 ): Layer.Layer<LanguageModel.LanguageModel> =>
   Layer.succeed(
     LanguageModel.LanguageModel,
@@ -56,7 +58,9 @@ export const stubLanguageModel = (
           objectName: options.objectName,
           schema: options.schema,
         });
-        return Effect.succeed(new LanguageModel.GenerateObjectResponse(value, []));
+        return Effect.succeed(
+          new LanguageModel.GenerateObjectResponse(value, [...content] as never),
+        );
       }) as never,
       generateText: (() => Effect.die(new NotStubbed({ method: "generateText" }))) as never,
       streamText: (() => Stream.die(new NotStubbed({ method: "streamText" }))) as never,
