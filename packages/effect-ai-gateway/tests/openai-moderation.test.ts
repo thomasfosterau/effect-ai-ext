@@ -16,9 +16,11 @@ import { describe, expect, it } from "vite-plus/test";
 import * as Effect from "effect/Effect";
 import * as Redacted from "effect/Redacted";
 import { AiError } from "effect/ai";
+import type { ModerationModel } from "@thomasfosterau/effect-ai-ext";
 import {
   OPENAI_MODERATION_MODEL,
   makeOpenAiModerationModel,
+  type OpenAiModerationCall,
   type OpenAiModerationOptions,
   type WorkersAiBinding,
 } from "@thomasfosterau/effect-ai-gateway";
@@ -56,7 +58,7 @@ const omniBody = (results: ReadonlyArray<unknown>, extra: Record<string, unknown
 /** Moderates `inputs`; with no `options`, through the constructor's own default. */
 const moderate = (
   ai: WorkersAiBinding,
-  inputs: ReadonlyArray<string>,
+  inputs: ReadonlyArray<ModerationModel.ModerationInput>,
   options?: OpenAiModerationOptions,
 ) =>
   Effect.gen(function* () {
@@ -232,5 +234,131 @@ describe("makeOpenAiModerationModel", () => {
     const failure = await expectFailureInstanceOf(moderate(ai, ["..."]), AiError.AiError);
 
     expect(String(failure.message)).toContain("response body");
+  });
+
+  it("carries the provider's per-category verdicts and the dated model that served the call", async () => {
+    const { ai } = stubAi({
+      status: 200,
+      body: omniBody(
+        [omniResult(true, { hate: true, violence: false, sexual: null }, { hate: 0.9 })],
+        { model: "omni-moderation-2024-09-26" },
+      ),
+    });
+
+    const response = await runTest(moderate(ai, ["..."]));
+
+    expect(response.results[0]?.flags).toEqual({ hate: true, violence: false });
+    expect(response.modelId).toBe("omni-moderation-2024-09-26");
+  });
+
+  it("leaves flags undefined when the provider sends no categories map", async () => {
+    const { ai } = stubAi({ status: 200, body: omniBody([{ flagged: false }]) });
+
+    const response = await runTest(moderate(ai, ["..."]));
+
+    expect(response.results[0]?.flags).toBeUndefined();
+  });
+
+  it("sends an image input as an image_url part, one request per input", async () => {
+    const { ai, calls } = stubAi({
+      status: 200,
+      body: omniBody([omniResult(false, { sexual: false }, { sexual: 0.02 })]),
+    });
+
+    const response = await runTest(
+      moderate(ai, [
+        "a caption",
+        [
+          { type: "text", text: "what is this" },
+          { type: "file", mediaType: "image/png", data: new Uint8Array([1, 2, 3]) },
+        ],
+      ]),
+    );
+
+    expect(calls.map((call) => (call as { query: unknown }).query)).toEqual([
+      { model: OPENAI_MODERATION_MODEL, input: ["a caption"] },
+      {
+        model: OPENAI_MODERATION_MODEL,
+        input: [
+          { type: "text", text: "what is this" },
+          { type: "image_url", image_url: { url: "data:image/png;base64,AQID" } },
+        ],
+      },
+    ]);
+    expect(response.results).toHaveLength(2);
+    expect(response.results[1]?.categories).toEqual({ sexual: 0.02 });
+  });
+
+  it("sends a data: URI, a URL or a base64 string as the image URL", async () => {
+    const { ai, calls } = stubAi({
+      status: 200,
+      body: omniBody([omniResult(false, {}, {})]),
+    });
+
+    await runTest(
+      moderate(ai, [
+        [{ type: "file", mediaType: "image/jpeg", data: "data:image/jpeg;base64,/9j/" }],
+        [{ type: "file", mediaType: "image/jpeg", data: new URL("https://example.com/a.jpg") }],
+        [{ type: "file", mediaType: "image/webp", data: "UklGRg==" }],
+      ]),
+    );
+
+    expect(calls.map((call) => (call as { query: { input: unknown } }).query.input)).toEqual([
+      [{ type: "image_url", image_url: { url: "data:image/jpeg;base64,/9j/" } }],
+      [{ type: "image_url", image_url: { url: "https://example.com/a.jpg" } }],
+      [{ type: "image_url", image_url: { url: "data:image/webp;base64,UklGRg==" } }],
+    ]);
+  });
+
+  it("fails with InvalidUserInputError on a non-image file part, before any request", async () => {
+    const { ai, calls } = stubAi({ status: 200, body: omniBody([]) });
+
+    const failure = await expectFailureInstanceOf(
+      moderate(ai, [
+        "fine",
+        [{ type: "file", mediaType: "application/pdf", data: new Uint8Array([1]) }],
+      ]),
+      AiError.AiError,
+    );
+
+    expect(failure.reason._tag).toBe("InvalidUserInputError");
+    expect(calls).toHaveLength(0);
+  });
+
+  it("reports each settled call to onCall, on success and on failure", async () => {
+    const seen: Array<OpenAiModerationCall> = [];
+    const onCall = (call: OpenAiModerationCall) => Effect.sync(() => seen.push(call));
+    const ok = stubAi({ status: 200, body: omniBody([omniResult(false, {}, {})]) });
+    const limited = stubAi({ status: 429, body: { error: { message: "slow down" } } });
+
+    await runTest(moderate(ok.ai, ["hello"], { onCall }));
+    const failure = await expectFailureInstanceOf(
+      moderate(limited.ai, ["hello"], { onCall }),
+      AiError.AiError,
+    );
+
+    expect(seen).toHaveLength(2);
+    expect(seen[0]).toMatchObject({ status: 200, error: undefined });
+    expect(seen[0]?.durationMillis).toBeGreaterThanOrEqual(0);
+    expect(seen[1]?.status).toBe(429);
+    expect(seen[1]?.error).toBe(failure);
+  });
+
+  it("reports a transport failure to onCall with no status", async () => {
+    const seen: Array<OpenAiModerationCall> = [];
+    const ai = stubAiBinding(() => ({
+      run: async () => {
+        throw new TypeError("socket hang up");
+      },
+    }));
+
+    await expectFailureInstanceOf(
+      moderate(ai, ["..."], { onCall: (call) => Effect.sync(() => seen.push(call)) }),
+      AiError.AiError,
+    );
+
+    expect(seen).toHaveLength(1);
+    expect(seen[0]?.status).toBeUndefined();
+    expect(seen[0]?.error?.reason._tag).toBe("UnknownError");
   });
 });

@@ -20,8 +20,9 @@
  * ## What this module does NOT decide
  *
  * `ModerationModel` reports the provider's reading — `isFlagged` (the
- * provider's `flagged`), and every
- * category's score in `[0, 1]`. Turning scores into a hold / reject
+ * provider's `flagged`), every category's score in `[0, 1]`, the provider's
+ * own per-category verdicts (`flags`, from its `categories` booleans) and the
+ * dated model snapshot that served the call (`modelId`, from its `model`). Turning scores into a hold / reject
  * decision, a priority band, or a review-queue item is threshold policy and
  * stays with the caller; this module reports, it does not sentence.
  *
@@ -37,26 +38,45 @@
  * result per input, every score finite and within `[0, 1]` — and reports a
  * violation as `AiError.InvalidOutputError`.
  *
- * `ModerationModel` screens **text**. OpenAI's endpoint also accepts image
- * inputs, but the abstraction's contract is `inputs: ReadonlyArray<string>`,
- * so image moderation is outside this provider until the abstraction grows
- * a multimodal input.
+ * ## Inputs
+ *
+ * A batch of strings is one request (`input: string[]`), one result per
+ * string. A multimodal input — an array of `effect/ai` text and file parts —
+ * is screened by OpenAI as one combined input, so a batch that holds one is
+ * sent as one request per input, in order: a text part becomes
+ * `{ type: "text", text }` and an image file part becomes
+ * `{ type: "image_url", image_url: { url } }`, its `data` sent as is when it
+ * is already a URL or `data:` URI and as a base64 `data:` URI otherwise (a
+ * private image never needs a public URL). A non-image file part fails with
+ * `AiError.InvalidUserInputError` before any request is sent.
+ *
+ * ## The call ledger
+ *
+ * `onCall` observes every HTTP call once it settles — its status (`undefined`
+ * when the transport failed before a response), its duration, and the
+ * `AiError` it failed with, if it did — for a caller that records the cost and
+ * latency of each call. The hook runs on failure too, before the `AiError`
+ * reaches the caller.
  *
  * @module OpenAiModeration
  *
  * @copyright Thomas Foster
  */
 
+import * as Arr from "effect/Array";
 import type * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
+import * as Base64 from "effect/encoding/Base64";
+import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
 import * as EffectRecord from "effect/Record";
 import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
+import { AiError, type Prompt } from "effect/ai";
 import { FetchHttpClient, HttpClient } from "effect/http";
 import { ModerationModel } from "@thomasfosterau/effect-ai-ext";
 import type { GatewayBinding, GatewayProvider } from "./Binding";
-import { requestViaBinding, requestViaUrl } from "./internal/transport";
+import { requestViaBinding, requestViaUrl, type GatewayCall } from "./internal/transport";
 import * as Url from "./Url";
 
 /** The AI Gateway provider slug for OpenAI (a {@link GatewayProvider}). */
@@ -83,7 +103,20 @@ export interface OpenAiModerationOptions {
   readonly apiKey?: Redacted.Redacted<string> | undefined;
   /** The moderation model to request. Defaults to {@link OPENAI_MODERATION_MODEL}. */
   readonly model?: string | undefined;
+  /**
+   * Observes each HTTP call once it settles, success or failure, for a cost /
+   * latency ledger. See {@link OpenAiModerationCall}.
+   */
+  readonly onCall?: ((call: OpenAiModerationCall) => Effect.Effect<void>) | undefined;
 }
+
+/**
+ * One settled moderations call, as `onCall` sees it: the HTTP `status`
+ * (`undefined` when the transport failed before a response), the
+ * `durationMillis` from sending the request to decoding its response, and the
+ * `error` it failed with (`undefined` on success).
+ */
+export type OpenAiModerationCall = GatewayCall;
 
 /**
  * The provider's response, decoded leniently rather than trusted: a
@@ -110,13 +143,83 @@ const OmniModerationResponse = Schema.Struct({
  */
 const definedScores = (
   scores: Readonly<Record<string, number | null>> | undefined,
-): ModerationModel.ProviderResponse["results"][number]["categories"] =>
+): Record<string, number> =>
   scores === undefined ? {} : EffectRecord.filter(scores, Predicate.isNotNull);
 
+/** The provider's per-category verdicts, `null` ("not assessed") dropped. */
+const definedFlags = (
+  flags: Readonly<Record<string, boolean | null>> | undefined,
+): Record<string, boolean> | undefined =>
+  flags === undefined ? undefined : EffectRecord.filter(flags, Predicate.isNotNull);
+
+/** One part of a multimodal moderations input, as OpenAI's wire carries it. */
+type WireContentPart =
+  | { readonly type: "text"; readonly text: string }
+  | { readonly type: "image_url"; readonly image_url: { readonly url: string } };
+
+/** The `input` field: a batch of strings, or one input's content parts. */
+type WireInput = ReadonlyArray<string> | ReadonlyArray<WireContentPart>;
+
+const invalidInput = (description: string): AiError.AiError =>
+  AiError.make({
+    module: ORIGIN.module,
+    method: ORIGIN.method,
+    reason: new AiError.InvalidUserInputError({ description }),
+  });
+
+/** An image file part's `data` as a URL OpenAI fetches or decodes itself. */
+const imageUrl = (part: Prompt.FilePartEncoded): string => {
+  const data = part.data;
+  if (data instanceof URL) {
+    return data.href;
+  }
+  if (Predicate.isString(data)) {
+    return data.startsWith("data:") || data.startsWith("http")
+      ? data
+      : `data:${part.mediaType};base64,${data}`;
+  }
+  return `data:${part.mediaType};base64,${Base64.encode(data)}`;
+};
+
+const toWirePart = (
+  part: Prompt.UserMessagePartEncoded,
+): Effect.Effect<WireContentPart, AiError.AiError> => {
+  if (part.type === "text") {
+    return Effect.succeed({ type: "text", text: part.text });
+  }
+  return part.mediaType.startsWith("image/")
+    ? Effect.succeed({ type: "image_url", image_url: { url: imageUrl(part) } })
+    : Effect.fail(
+        invalidInput(
+          `OpenAI moderation screens text and images only; received a '${part.mediaType}' file part`,
+        ),
+      );
+};
+
+/**
+ * The `input` of each request a batch needs: one batched request when every
+ * input is a string, otherwise one request per input (OpenAI screens a
+ * multimodal `input` as a single combined input). Every part is converted
+ * before any request is sent, so an unsupported one fails the whole batch.
+ */
+const wireInputs = (
+  inputs: ReadonlyArray<ModerationModel.ModerationInput>,
+): Effect.Effect<ReadonlyArray<WireInput>, AiError.AiError> =>
+  Arr.every(inputs, Predicate.isString)
+    ? Effect.succeed([inputs])
+    : Effect.forEach(
+        inputs,
+        (input) =>
+          Predicate.isString(input)
+            ? Effect.succeed<WireInput>([input])
+            : Effect.forEach(input, toWirePart, { concurrency: 1 }),
+        { concurrency: 1 },
+      );
+
 /** The moderations request body, identical on both transports. */
-const moderationQuery = (options: OpenAiModerationOptions, inputs: ReadonlyArray<string>) => ({
+const moderationQuery = (options: OpenAiModerationOptions, input: WireInput) => ({
   model: options.model ?? OPENAI_MODERATION_MODEL,
-  input: inputs,
+  input,
 });
 
 /** The provider-facing headers: JSON, plus the caller's own key when it holds one. */
@@ -133,14 +236,39 @@ const moderationHeaders = (options: OpenAiModerationOptions) =>
  * contract. OpenAI's moderation endpoint reports no token usage.
  */
 const mapModerationResponse = (
-  response: typeof OmniModerationResponse.Type,
+  responses: ReadonlyArray<typeof OmniModerationResponse.Type>,
 ): ModerationModel.ProviderResponse => ({
-  results: response.results.map((result) => ({
-    isFlagged: result.isFlagged,
-    categories: definedScores(result.category_scores),
-  })),
+  results: Arr.flatMap(responses, (response) =>
+    Arr.map(response.results, (result) => ({
+      isFlagged: result.isFlagged,
+      categories: definedScores(result.category_scores),
+      flags: definedFlags(result.categories),
+    })),
+  ),
   usage: { inputTokens: undefined },
+  modelId: Option.getOrUndefined(
+    Arr.findFirst(responses, (response) => Option.fromUndefinedOr(response.model)),
+  ),
 });
+
+/**
+ * Sends each request a batch needs, in order, through one transport and maps
+ * the responses onto `ModerationModel`'s provider contract.
+ */
+const moderateVia =
+  (
+    send: (input: WireInput) => Effect.Effect<typeof OmniModerationResponse.Type, AiError.AiError>,
+  ) =>
+  ({
+    inputs,
+  }: ModerationModel.ProviderOptions): Effect.Effect<
+    ModerationModel.ProviderResponse,
+    AiError.AiError
+  > =>
+    wireInputs(inputs).pipe(
+      Effect.flatMap((requests) => Effect.forEach(requests, send, { concurrency: 1 })),
+      Effect.map(mapModerationResponse),
+    );
 
 /**
  * Builds a `ModerationModel.Service` backed by OpenAI `omni-moderation-latest`
@@ -151,7 +279,7 @@ export const makeOpenAiModerationModel = (
   options: OpenAiModerationOptions = {},
 ): Effect.Effect<ModerationModel.Service> =>
   ModerationModel.make({
-    moderate: ({ inputs }) =>
+    moderate: moderateVia((input) =>
       requestViaBinding(
         ORIGIN,
         binding,
@@ -159,10 +287,12 @@ export const makeOpenAiModerationModel = (
           provider: OPENAI_PROVIDER,
           endpoint: MODERATIONS_ENDPOINT,
           headers: moderationHeaders(options),
-          query: moderationQuery(options, inputs),
+          query: moderationQuery(options, input),
         },
         OmniModerationResponse,
-      ).pipe(Effect.map(mapModerationResponse)),
+        options.onCall,
+      ),
+    ),
   });
 
 /**
@@ -190,14 +320,16 @@ export const makeOpenAiModerationModelFromUrl = (
     };
 
     return yield* ModerationModel.make({
-      moderate: ({ inputs }) =>
+      moderate: moderateVia((input) =>
         requestViaUrl(
           ORIGIN,
           httpClient,
           url,
           headers,
-          moderationQuery(options, inputs),
+          moderationQuery(options, input),
           OmniModerationResponse,
-        ).pipe(Effect.map(mapModerationResponse)),
+          options.onCall,
+        ),
+      ),
     });
   }).pipe(Effect.provide(FetchHttpClient.layer));

@@ -19,9 +19,12 @@ import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
 import { AiError } from "effect/ai";
 import { FetchHttpClient } from "effect/http";
+import type { ModerationModel } from "@thomasfosterau/effect-ai-ext";
 import {
   OPENAI_MODERATION_MODEL,
   makeOpenAiModerationModelFromUrl,
+  type OpenAiModerationCall,
+  type OpenAiModerationOptions,
 } from "@thomasfosterau/effect-ai-gateway";
 import { expectFailureInstanceOf, runTest, runTestExit } from "./helpers/effect";
 
@@ -70,7 +73,10 @@ const omniBody = (results: ReadonlyArray<unknown>, extra: Record<string, unknown
 
 const okResult = { flagged: false, categories: { hate: false }, category_scores: { hate: 0.01 } };
 
-const moderate = (inputs: ReadonlyArray<string>, options = {}) =>
+const moderate = (
+  inputs: ReadonlyArray<ModerationModel.ModerationInput>,
+  options: OpenAiModerationOptions = {},
+) =>
   Effect.gen(function* () {
     const model = yield* makeOpenAiModerationModelFromUrl(options);
     return yield* model.moderate({ inputs });
@@ -227,5 +233,54 @@ describe("makeOpenAiModerationModelFromUrl", () => {
 
     expect(exit._tag).toBe("Failure");
     expect(calls).toHaveLength(0);
+  });
+
+  it("posts an image input as an image_url part and carries flags and the served model", async () => {
+    const { calls, layer: fetchLayer } = stubFetch(
+      jsonResponse(
+        200,
+        omniBody(
+          [{ flagged: true, categories: { violence: true }, category_scores: { violence: 0.8 } }],
+          {
+            model: "omni-moderation-2024-09-26",
+          },
+        ),
+      ),
+    );
+
+    const response = await runTest(
+      moderate([
+        [{ type: "file", mediaType: "image/jpeg", data: "data:image/jpeg;base64,/9j/" }],
+      ]).pipe(Effect.provide(fetchLayer), Effect.provide(stubConfig(GATEWAY_CONFIG))),
+    );
+
+    expect(calls[0]?.body).toEqual({
+      model: OPENAI_MODERATION_MODEL,
+      input: [{ type: "image_url", image_url: { url: "data:image/jpeg;base64,/9j/" } }],
+    });
+    expect(response.results[0]).toMatchObject({
+      isFlagged: true,
+      categories: { violence: 0.8 },
+      flags: { violence: true },
+    });
+    expect(response.modelId).toBe("omni-moderation-2024-09-26");
+  });
+
+  it("reports each HTTP call's status and timing to onCall", async () => {
+    const seen: Array<OpenAiModerationCall> = [];
+    const { layer: fetchLayer } = stubFetch(jsonResponse(503, { error: { message: "down" } }));
+
+    const failure = await expectFailureInstanceOf(
+      moderate(["..."], { onCall: (call) => Effect.sync(() => seen.push(call)) }).pipe(
+        Effect.provide(fetchLayer),
+        Effect.provide(stubConfig(GATEWAY_CONFIG)),
+      ),
+      AiError.AiError,
+    );
+
+    expect(seen).toHaveLength(1);
+    expect(seen[0]?.status).toBe(503);
+    expect(seen[0]?.durationMillis).toBeGreaterThanOrEqual(0);
+    expect(seen[0]?.error).toBe(failure);
   });
 });

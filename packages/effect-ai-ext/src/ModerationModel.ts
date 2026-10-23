@@ -1,8 +1,8 @@
 /**
  * Defines the provider-neutral service for content moderation.
  *
- * A `ModerationModel` scores text against a set of policy categories and
- * reports whether each input is flagged — the sibling of `LanguageModel` and
+ * A `ModerationModel` scores content — text, or text and images — against a
+ * set of policy categories and reports whether each input is flagged — the sibling of `LanguageModel` and
  * `EmbeddingModel` from `effect/ai` (which has no moderation module
  * yet). Provider failures stay represented as `AiError` values.
  *
@@ -16,15 +16,22 @@
  *
  * - `moderate` with an empty `inputs` array returns an empty response without
  *   invoking the provider.
+ * - An input is either a string or an array of `effect/ai` user-message parts
+ *   (`Prompt.UserMessagePartEncoded`: `{ type: "text", text }` and
+ *   `{ type: "file", mediaType, data }`), the same content a `LanguageModel`
+ *   user message carries; a multimodal input yields one result, not one per
+ *   part. A provider that cannot screen a part fails with
+ *   `AiError.InvalidUserInputError`.
  */
 
 import * as Arr from "effect/Array";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
+import * as Predicate from "effect/Predicate";
 import * as EffectRecord from "effect/Record";
 import * as Schema from "effect/Schema";
-import { AiError, LanguageModel } from "effect/ai";
+import { AiError, LanguageModel, type Prompt } from "effect/ai";
 
 /**
  * Service tag for moderation model operations.
@@ -61,13 +68,17 @@ export class ModerationUsage extends Schema.Class<ModerationUsage>(
 }) {}
 
 /**
- * Moderation result for a single input: whether it is flagged and its
- * per-category scores.
+ * Moderation result for a single input: whether it is flagged, its
+ * per-category scores and, when the provider reports them, which categories
+ * fired.
  *
  * **Details**
  *
  * `categories` maps a policy category name to a score in `[0, 1]`; higher means
- * more likely to violate that category.
+ * more likely to violate that category. `flags` maps a category name to the
+ * provider's own verdict for it; it is `undefined` when the provider publishes
+ * scores only, since "fired" cannot be derived from a score without the
+ * provider's threshold.
  *
  * @category models
  */
@@ -76,6 +87,7 @@ export class ModerationResult extends Schema.Class<ModerationResult>(
 )({
   isFlagged: Schema.Boolean,
   categories: Schema.Record(Schema.String, Schema.Finite),
+  flags: Schema.optional(Schema.Record(Schema.String, Schema.Boolean)),
 }) {}
 
 /**
@@ -84,7 +96,11 @@ export class ModerationResult extends Schema.Class<ModerationResult>(
  * **Details**
  *
  * `results` preserves input order, and `usage` carries token metadata for the
- * operation.
+ * operation. `modelId` is the model that served the call as the provider
+ * reports it (for example a dated snapshot behind an alias), the name
+ * `effect/ai`'s `Response.ResponseMetadataPart` uses; it is `undefined` when
+ * the provider does not report one or the empty-input short-circuit bypassed
+ * the provider.
  *
  * @see {@link ModerationResult} for individual results
  * @see {@link ModerationUsage} for usage metadata
@@ -96,7 +112,24 @@ export class ModerationResponse extends Schema.Class<ModerationResponse>(
 )({
   results: Schema.Array(ModerationResult),
   usage: ModerationUsage,
+  modelId: Schema.optional(Schema.String),
 }) {}
+
+/**
+ * One piece of content to screen: a string, or an array of `effect/ai`
+ * user-message parts (text and files) screened together as one input.
+ *
+ * **Details**
+ *
+ * The parts are `Prompt.UserMessagePartEncoded` values — the plain-object form
+ * of a `LanguageModel` user message's content — so content already built for a
+ * prompt can be screened as is. A file part's `data` is a URL, a `data:` URI, a
+ * base64 string or raw bytes, with its `mediaType`. A multimodal input yields
+ * one {@link ModerationResult}.
+ *
+ * @category models
+ */
+export type ModerationInput = string | ReadonlyArray<Prompt.UserMessagePartEncoded>;
 
 /**
  * Caller-facing input options for a moderation request.
@@ -104,8 +137,8 @@ export class ModerationResponse extends Schema.Class<ModerationResponse>(
  * @category options
  */
 export interface ModerationOptions {
-  /** The texts to screen. */
-  readonly inputs: ReadonlyArray<string>;
+  /** The content to screen, one result per input. */
+  readonly inputs: ReadonlyArray<ModerationInput>;
 }
 
 /**
@@ -114,7 +147,8 @@ export interface ModerationOptions {
  * @category options
  */
 export interface ProviderOptions {
-  readonly inputs: ReadonlyArray<string>;
+  /** The content to screen; never empty, and no input is an empty part list. */
+  readonly inputs: ReadonlyArray<ModerationInput>;
 }
 
 /**
@@ -126,8 +160,10 @@ export interface ProviderResponse {
   readonly results: ReadonlyArray<{
     readonly isFlagged: boolean;
     readonly categories: Record<string, number>;
+    readonly flags?: Record<string, boolean> | undefined;
   }>;
   readonly usage: { readonly inputTokens: number | undefined };
+  readonly modelId?: string | undefined;
 }
 
 /**
@@ -148,11 +184,21 @@ const invalidProviderResponse = (description: string): AiError.AiError =>
     reason: new AiError.InvalidOutputError({ description }),
   });
 
+const invalidUserInput = (description: string): AiError.AiError =>
+  AiError.make({
+    module: "ModerationModel",
+    method: "moderate",
+    reason: new AiError.InvalidUserInputError({ description }),
+  });
+
 const emptyResponse = (): ModerationResponse =>
   new ModerationResponse({
     results: [],
     usage: new ModerationUsage({ inputTokens: undefined }),
   });
+
+const isEmptyPartList = (input: ModerationInput): boolean =>
+  !Predicate.isString(input) && Arr.isReadonlyArrayEmpty(input);
 
 const mapProviderResponse = (
   inputCount: number,
@@ -180,12 +226,17 @@ const mapProviderResponse = (
   const results = Arr.map(
     response.results,
     (result) =>
-      new ModerationResult({ isFlagged: result.isFlagged, categories: result.categories }),
+      new ModerationResult({
+        isFlagged: result.isFlagged,
+        categories: result.categories,
+        flags: result.flags,
+      }),
   );
   return Effect.succeed(
     new ModerationResponse({
       results,
       usage: new ModerationUsage({ inputTokens: response.usage.inputTokens }),
+      modelId: response.modelId,
     }),
   );
 };
@@ -199,7 +250,10 @@ const mapProviderResponse = (
  * Provider responses are interpreted positionally and must contain exactly one
  * result for each requested input; every category score must be finite and
  * within `[0, 1]`. Violations fail with `AiError.InvalidOutputError`. `moderate`
- * with no inputs returns an empty response without calling the provider.
+ * with no inputs returns an empty response without calling the provider; an
+ * input that is an empty part list fails with `AiError.InvalidUserInputError`
+ * before the provider is called. The provider's `flags` and `modelId` pass
+ * through unchanged.
  *
  * @see {@link Service} for the service shape returned by this constructor
  * @see {@link ProviderOptions} for the input passed to the provider implementation
@@ -215,11 +269,15 @@ export const make = (params: {
       moderate: (options) =>
         (Arr.isReadonlyArrayEmpty(options.inputs)
           ? Effect.succeed(emptyResponse())
-          : params
-              .moderate({ inputs: options.inputs })
-              .pipe(
-                Effect.flatMap((response) => mapProviderResponse(options.inputs.length, response)),
-              )
+          : Arr.some(options.inputs, isEmptyPartList)
+            ? Effect.fail(invalidUserInput("A moderation input must not be an empty part list"))
+            : params
+                .moderate({ inputs: options.inputs })
+                .pipe(
+                  Effect.flatMap((response) =>
+                    mapProviderResponse(options.inputs.length, response),
+                  ),
+                )
         ).pipe(Effect.withSpan("ModerationModel.moderate")),
     }),
   );
@@ -241,18 +299,47 @@ const StructuredModerationOutput = Schema.Struct({
 /** Quotes an input for the prompt exactly as `JSON.stringify` would. */
 const encodeJsonString = Schema.encodeSync(Schema.fromJsonString(Schema.String));
 
-const buildModeratePrompt = (options: ProviderOptions): string => {
-  const lines: Array<string> = [
-    "You are a strict content moderation system. Screen each input against common policy categories such as hate, harassment, self-harm, sexual, and violence.",
-    "For each input return a `flagged` boolean and a `categories` map from category name to a score between 0 and 1 (higher means more likely to violate).",
-    "Return one result per input, in the same order.",
-    "Inputs:",
+const PROMPT_HEADER: ReadonlyArray<string> = [
+  "You are a strict content moderation system. Screen each input against common policy categories such as hate, harassment, self-harm, sexual, and violence.",
+  "For each input return a `flagged` boolean and a `categories` map from category name to a score between 0 and 1 (higher means more likely to violate).",
+  "Return one result per input, in the same order.",
+  "Inputs:",
+];
+
+const isTextInput = (input: ModerationInput): input is string => Predicate.isString(input);
+
+/**
+ * The prompt for a batch. A text-only batch is one string; a batch with a
+ * multimodal input is one user message whose parts number each input and then
+ * carry its content, so an image reaches the model as a file part.
+ */
+const buildModeratePrompt = (options: ProviderOptions): Prompt.RawInput => {
+  if (Arr.every(options.inputs, isTextInput)) {
+    return [
+      ...PROMPT_HEADER,
+      ...Arr.map(options.inputs, (input, index) => `${index + 1}. ${encodeJsonString(input)}`),
+    ].join("\n");
+  }
+  const content: Array<Prompt.UserMessagePartEncoded> = [
+    { type: "text", text: PROMPT_HEADER.join("\n") },
+    ...Arr.flatMap(options.inputs, (input, index): Array<Prompt.UserMessagePartEncoded> =>
+      isTextInput(input)
+        ? [{ type: "text", text: `${index + 1}. ${encodeJsonString(input)}` }]
+        : [{ type: "text", text: `${index + 1}.` }, ...input],
+    ),
   ];
-  options.inputs.forEach((input, index) => {
-    lines.push(`${index + 1}. ${encodeJsonString(input)}`);
-  });
-  return lines.join("\n");
+  return [{ role: "user", content }];
 };
+
+/** The model id a `LanguageModel` reported in its response metadata, if any. */
+const responseModelId = (
+  content: ReadonlyArray<{ readonly type: string; readonly modelId?: string | undefined }>,
+): string | undefined =>
+  Option.getOrUndefined(
+    Arr.findFirst(content, (part) =>
+      part.type === "response-metadata" ? Option.fromUndefinedOr(part.modelId) : Option.none(),
+    ),
+  );
 
 /**
  * Backs a {@link ModerationModel} with any `LanguageModel` through
@@ -270,7 +357,10 @@ const buildModeratePrompt = (options: ProviderOptions): string => {
  * The `LanguageModel` is drawn from context at construction time. Each
  * `moderate` call issues one `LanguageModel.generateObject` request whose schema
  * is the moderation contract; the decoded value is validated identically to a
- * native moderation provider.
+ * native moderation provider. A multimodal input is sent as a user message's
+ * parts, so the `LanguageModel` must accept the file types it carries. The
+ * model's own verdicts are not asked for, so `flags` is `undefined`;
+ * `modelId` is the one the `LanguageModel` reports in its response metadata.
  *
  * @see {@link make} for the validation path this adapter reuses
  *
@@ -291,6 +381,7 @@ export const fromLanguageModel: Effect.Effect<Service, never, LanguageModel.Lang
               Effect.map((response): ProviderResponse => ({
                 results: response.value.results,
                 usage: { inputTokens: undefined },
+                modelId: responseModelId(response.content),
               })),
             ),
       }),

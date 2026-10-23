@@ -24,7 +24,11 @@
  * @copyright Thomas Foster
  */
 
+import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
+import * as Exit from "effect/Exit";
+import * as Option from "effect/Option";
+import * as Ref from "effect/Ref";
 import * as Schema from "effect/Schema";
 import { AiError } from "effect/ai";
 import { HttpBody, HttpClient, HttpClientRequest } from "effect/http";
@@ -37,6 +41,21 @@ export interface Origin {
   /** The service method (`AiError.method`), e.g. `"rerank"`. */
   readonly method: string;
 }
+
+/**
+ * What one gateway call came to, for a caller keeping a cost / latency ledger:
+ * the HTTP status (`undefined` when the transport failed before a response),
+ * the wall-clock time from sending the request to decoding (or failing to
+ * decode) the response, and the `AiError` the call failed with, if it did.
+ */
+export interface GatewayCall {
+  readonly status: number | undefined;
+  readonly durationMillis: number;
+  readonly error: AiError.AiError | undefined;
+}
+
+/** Observes each gateway call once it settles; see {@link GatewayCall}. */
+export type OnGatewayCall = (call: GatewayCall) => Effect.Effect<void>;
 
 /** Builds the `AiError` this pipeline reports for one reason. */
 const failure = (origin: Origin, reason: AiError.AiErrorReason): AiError.AiError =>
@@ -83,6 +102,41 @@ const decodeResponse = <S extends Schema.Top>(
   origin: Origin,
   response: Effect.Effect<NormalizedResponse, AiError.AiError>,
   schema: S,
+  onCall: OnGatewayCall | undefined,
+): Effect.Effect<S["Type"], AiError.AiError, S["DecodingServices"]> =>
+  onCall === undefined
+    ? decodeNormalized(origin, response, schema)
+    : observed(origin, response, schema, onCall);
+
+/**
+ * {@link decodeNormalized}, timed, with the status it saw and its outcome
+ * reported to `onCall` before the result is returned.
+ */
+const observed = <S extends Schema.Top>(
+  origin: Origin,
+  response: Effect.Effect<NormalizedResponse, AiError.AiError>,
+  schema: S,
+  onCall: OnGatewayCall,
+): Effect.Effect<S["Type"], AiError.AiError, S["DecodingServices"]> =>
+  Effect.gen(function* () {
+    const status = yield* Ref.make<number | undefined>(undefined);
+    const [duration, exit] = yield* decodeNormalized(
+      origin,
+      response.pipe(Effect.tap((res) => Ref.set(status, res.status))),
+      schema,
+    ).pipe(Effect.exit, Effect.timed);
+    yield* onCall({
+      status: yield* Ref.get(status),
+      durationMillis: Duration.toMillis(duration),
+      error: Option.getOrUndefined(Exit.findErrorOption(exit)),
+    });
+    return yield* exit;
+  });
+
+const decodeNormalized = <S extends Schema.Top>(
+  origin: Origin,
+  response: Effect.Effect<NormalizedResponse, AiError.AiError>,
+  schema: S,
 ): Effect.Effect<S["Type"], AiError.AiError, S["DecodingServices"]> =>
   response.pipe(
     Effect.flatMap((res) =>
@@ -116,13 +170,15 @@ const decodeResponse = <S extends Schema.Top>(
 
 /**
  * Runs one request through the gateway's Worker-binding universal `run()`
- * endpoint and decodes the JSON response against a schema.
+ * endpoint and decodes the JSON response against a schema. `onCall`, when
+ * given, observes the call once it settles.
  */
 export const requestViaBinding = <S extends Schema.Top>(
   origin: Origin,
   binding: GatewayBinding,
   data: GatewayUniversalRequest,
   schema: S,
+  onCall?: OnGatewayCall | undefined,
 ): Effect.Effect<S["Type"], AiError.AiError, S["DecodingServices"]> =>
   decodeResponse(
     origin,
@@ -138,13 +194,14 @@ export const requestViaBinding = <S extends Schema.Top>(
       })),
     ),
     schema,
+    onCall,
   );
 
 /**
  * POSTs one JSON request to a gateway HTTPS URL through an already-resolved
  * `HttpClient.HttpClient` and decodes the JSON response against a schema.
  * Callers precompute the URL and headers once at construction time, not on
- * every request.
+ * every request. `onCall`, when given, observes the call once it settles.
  *
  * Goes through Effect's `HttpClient`/`FetchHttpClient`, which is already
  * interruption-safe (the lesson `Binding.ts`'s `gatewayRun` applies manually
@@ -157,6 +214,7 @@ export const requestViaUrl = <S extends Schema.Top>(
   headers: Record<string, string>,
   body: unknown,
   schema: S,
+  onCall?: OnGatewayCall | undefined,
 ): Effect.Effect<S["Type"], AiError.AiError, S["DecodingServices"]> => {
   const request = HttpClientRequest.post(url, { body: HttpBody.jsonUnsafe(body) }).pipe(
     HttpClientRequest.setHeaders(headers),
@@ -172,5 +230,6 @@ export const requestViaUrl = <S extends Schema.Top>(
       })),
     ),
     schema,
+    onCall,
   );
 };
