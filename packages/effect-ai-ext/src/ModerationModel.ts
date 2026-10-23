@@ -309,9 +309,12 @@ const PROMPT_HEADER: ReadonlyArray<string> = [
 const isTextInput = (input: ModerationInput): input is string => Predicate.isString(input);
 
 /**
- * The prompt for a batch. A text-only batch is one string; a batch with a
- * multimodal input is one user message whose parts number each input and then
- * carry its content, so an image reaches the model as a file part.
+ * The prompt for a batch. A text-only batch is one string. A batch with a
+ * multimodal input puts the instructions in a system message and the content
+ * in one user message whose parts number each input and then carry it, so an
+ * image reaches the model as a file part. Every piece of caller text — a
+ * string input or a text part — is JSON-quoted exactly as in the text-only
+ * prompt, so content under screening cannot pose as instructions.
  */
 const buildModeratePrompt = (options: ProviderOptions): Prompt.RawInput => {
   if (Arr.every(options.inputs, isTextInput)) {
@@ -320,15 +323,22 @@ const buildModeratePrompt = (options: ProviderOptions): Prompt.RawInput => {
       ...Arr.map(options.inputs, (input, index) => `${index + 1}. ${encodeJsonString(input)}`),
     ].join("\n");
   }
-  const content: Array<Prompt.UserMessagePartEncoded> = [
-    { type: "text", text: PROMPT_HEADER.join("\n") },
-    ...Arr.flatMap(options.inputs, (input, index): Array<Prompt.UserMessagePartEncoded> =>
+  const content: Array<Prompt.UserMessagePartEncoded> = Arr.flatMap(
+    options.inputs,
+    (input, index): Array<Prompt.UserMessagePartEncoded> =>
       isTextInput(input)
         ? [{ type: "text", text: `${index + 1}. ${encodeJsonString(input)}` }]
-        : [{ type: "text", text: `${index + 1}.` }, ...input],
-    ),
+        : [
+            { type: "text", text: `${index + 1}.` },
+            ...Arr.map(input, (part): Prompt.UserMessagePartEncoded =>
+              part.type === "text" ? { type: "text", text: encodeJsonString(part.text) } : part,
+            ),
+          ],
+  );
+  return [
+    { role: "system", content: PROMPT_HEADER.join("\n") },
+    { role: "user", content },
   ];
-  return [{ role: "user", content }];
 };
 
 /** The model id a `LanguageModel` reported in its response metadata, if any. */
