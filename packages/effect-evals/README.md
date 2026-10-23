@@ -99,6 +99,9 @@ const program = Runner.runSuite(suite, {
       "golden": "<the golden, as-is>",
       "trials": 3,
       "passed": true,
+      "taskOutputs": [
+        { "trial": 1, "output": "<the task's output>", "durationMillis": 412, "cached": false }
+      ],
       "taskFailures": [{ "trial": 2, "error": "<the task's typed error>" }],
       "metrics": [
         {
@@ -127,7 +130,7 @@ const program = Runner.runSuite(suite, {
 }
 ```
 
-`summary` is `null` when every trial for that metric errored (no scores to summarize). `taskFailures` is empty unless the task itself failed for some trial, in which case that trial contributes to no metric's `trials` array at all (there was no output to score).
+`summary` is `null` when every trial for that metric errored (no scores to summarize). `taskOutputs` holds, per trial whose task produced an output, that output and the task's wall-clock duration (retries included); a trial served from the cache is `cached: true` with a `durationMillis` of `0`, so leave it out of a latency figure. `taskFailures` is empty unless the task itself failed for some trial, in which case that trial contributes to no metric's `trials` array at all (there was no output to score).
 
 ## Retrieval ranking metrics
 
@@ -147,7 +150,7 @@ Ranking.metricsAtK(10, { thresholds: { ndcg: Threshold.minScore(0.8) } }); // al
 
 ### `Runner.runRetrievalSuite`
 
-The retrieval counterpart of `runSuite`: a dataset of `RetrievalGolden`s (`{ query, relevant, name? }`), a one-method `RetrievalPort` the consumer supplies, and a cutoff `k`. The port is the seam — the thing being measured (a search operation, a reranker chain) lives in the consumer, the suite hands it each query and the page size, and reads back handles best-first. That is also what makes an offline mode the same code path as a credentialed one: a unit suite hands in an in-memory port over fixed orderings, an operator hands in one closing over a live search, and the runner cannot tell.
+The retrieval counterpart of `runSuite`: a dataset of `RetrievalGolden`s (`{ query, relevant, name? }`, or a richer golden extending it), a one-method `RetrievalPort` the consumer supplies, and a cutoff `k`. The port is the seam — the thing being measured (a search operation, a reranker chain) lives in the consumer, the suite hands it each query, the page size and the case's golden, and reads back handles best-first. That is also what makes an offline mode the same code path as a credentialed one: a unit suite hands in an in-memory port over fixed orderings, an operator hands in one closing over a live search, and the runner cannot tell.
 
 ```ts
 import * as Effect from "effect/Effect";
@@ -157,18 +160,26 @@ import { Cache, Dataset, Reporter, Runner, Threshold } from "@thomasfosterau/eff
 declare const search: (options: {
   readonly query: string;
   readonly limit: number;
+  readonly locale: string | undefined;
 }) => Effect.Effect<ReadonlyArray<{ readonly id: string }>, Error>;
 
-const port: Runner.RetrievalPort<Error> = {
+// A golden may carry per-case narrowing; the port receives the whole golden.
+interface SearchGolden extends Runner.RetrievalGolden {
+  readonly locale?: string | undefined;
+}
+
+const port: Runner.RetrievalPort<Error, never, SearchGolden> = {
   id: "search@rerank-v3.5", // the configuration under test; part of the cache key
-  retrieve: (query, { limit }) =>
-    search({ query, limit }).pipe(Effect.map((rows) => rows.map((row) => row.id))),
+  retrieve: (query, { limit, golden }) =>
+    search({ query, limit, locale: golden.locale }).pipe(
+      Effect.map((rows) => rows.map((row) => row.id)),
+    ),
 };
 
 const program = Runner.runRetrievalSuite(
   {
     name: "search-ranking-smoke",
-    dataset: Dataset.fromArray("search-ranking-smoke", [
+    dataset: Dataset.fromArray<SearchGolden>("search-ranking-smoke", [
       {
         name: "interruption",
         query: "how do I interrupt a fiber",
@@ -184,13 +195,16 @@ const program = Runner.runRetrievalSuite(
 
 // result.aggregate.metrics["ndcg@20"] — { mean, cases } across the queries that scored
 // result.cases[0]?.metrics — the ordinary per-case, per-metric result model
+// result.cases[0]?.taskOutputs[0] — { output: the ranked page, durationMillis, cached }
 ```
 
 - **Built on `runSuite`**, so trials, retry on retryable `AiError`s, caching (keyed on the port's `id` and `k` — bump `id` when the port's behaviour changes) and reporters all apply, and the result is the ordinary `Result.SuiteResult` plus `aggregate: Result.aggregate(result)` — per-metric means across the queries that scored, with `totalCases` / `successfulCases` / `failedCases`.
 - **A failed query is not a zero.** A retrieval failure lands in that case's `taskFailures`, is excluded from every mean, and is counted in `aggregate.failedCases`; a suite in which every query failed has an empty `aggregate.metrics` and `passed: false`, never a page of noughts.
 - **Sequential by default** (`caseConcurrency: 1`): a retrieval suite usually runs against a live search plane, and measuring it under a load pattern no user produces makes any latency the port records meaningless. Pass `caseConcurrency` to change it.
 - **Over-returning ports are truncated** to `k` before scoring, and every metric re-applies `k` — a retrieval that returns more than it was asked for cannot inflate recall.
-- **What stays with the consumer:** dataset validation and content digests (which runs are comparable), per-query latency, persistence, and the run-to-run diff. `Result.aggregate` and `Result.SuiteResult` are plain values a consumer can persist or diff as it likes.
+- **Per-case narrowing reaches the port.** `retrieve` receives the case's golden beside its query, so a type filter or locale on the golden needs no lookup keyed on the query string; the cache key hashes the whole golden, so two cases that share a query but differ in narrowing never share a cached page.
+- **Each case keeps its ranked page and latency.** `taskOutputs` holds, per trial, the page the port returned (truncated to `k`), how long the retrieval took, and whether it came from the cache.
+- **What stays with the consumer:** dataset validation and content digests (which runs are comparable), persistence, and the run-to-run diff. `Result.aggregate` and `Result.SuiteResult` are plain values a consumer can persist or diff as it likes.
 
 ## G-Eval judge metric
 

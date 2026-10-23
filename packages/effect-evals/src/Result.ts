@@ -111,19 +111,39 @@ export interface TaskTrialFailure {
   readonly error: unknown;
 }
 
-/** One golden's aggregated result: its metrics, any task failures, and the overall verdict. */
-export interface CaseResult<Golden = unknown> {
+/**
+ * A task (system-under-test) trial that produced an output: the output the
+ * metrics scored and how long the task took to produce it.
+ *
+ * `durationMillis` is the task's wall-clock time, retries included. A trial
+ * served from the result cache did not run the task, so it is `cached: true`
+ * with a `durationMillis` of `0`; leave cached trials out of a latency figure.
+ */
+export interface TaskTrialOutput<Output = unknown> {
+  readonly trial: number;
+  readonly output: Output;
+  readonly durationMillis: number;
+  readonly cached: boolean;
+}
+
+/**
+ * One golden's aggregated result: its metrics, each trial's task output or
+ * task failure, and the overall verdict.
+ */
+export interface CaseResult<Golden = unknown, Output = unknown> {
   readonly golden: Golden;
   readonly trials: number;
+  /** The trials whose task produced an output, in trial order. */
+  readonly taskOutputs: ReadonlyArray<TaskTrialOutput<Output>>;
   readonly taskFailures: ReadonlyArray<TaskTrialFailure>;
   readonly metrics: ReadonlyArray<MetricAggregate>;
   readonly passed: boolean;
 }
 
 /** A suite's full result: every case, the overall verdict, and wall-clock duration. */
-export interface SuiteResult<Golden = unknown> {
+export interface SuiteResult<Golden = unknown, Output = unknown> {
   readonly suite: string;
-  readonly cases: ReadonlyArray<CaseResult<Golden>>;
+  readonly cases: ReadonlyArray<CaseResult<Golden, Output>>;
   readonly passed: boolean;
   readonly durationMillis: number;
 }

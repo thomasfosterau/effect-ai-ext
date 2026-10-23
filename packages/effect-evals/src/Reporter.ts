@@ -20,6 +20,7 @@
  *       "golden": "<the golden, as-is>",
  *       "trials": 3,
  *       "passed": true,
+ *       "taskOutputs": [{ "trial": 1, "output": "<the task's output>", "durationMillis": 412, "cached": false }],
  *       "taskFailures": [{ "trial": 2, "error": "<the task's typed error>" }],
  *       "metrics": [
  *         {
