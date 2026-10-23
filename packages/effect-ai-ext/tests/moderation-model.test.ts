@@ -266,6 +266,7 @@ describe("ModerationModel", () => {
         }).pipe(
           Effect.provide(
             stubLanguageModel({ results: [{ isFlagged: false, categories: {} }] }, undefined, [
+              Response.makePart("text", { text: "{}" }),
               Response.makePart("response-metadata", {
                 id: undefined,
                 modelId: "lm-2026-01-01",
