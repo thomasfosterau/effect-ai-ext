@@ -9,6 +9,14 @@
  * request construction, prompt / tool / structured-output conversion, and
  * response decoding without reaching the network.
  *
+ * Two streaming behaviours AGENTS.md requires of every streaming provider are
+ * proven directly against a pull-based SSE body that releases one frame per
+ * pull:
+ *   - **backpressure** — `streamText` pulls frames incrementally, so a partial
+ *     consumer neither drains nor buffers the whole HTTP body;
+ *   - **interruption** — interrupting the consuming Effect aborts the in-flight
+ *     request (its `AbortSignal` fires) and cancels the response body stream.
+ *
  * @module tests/mistral
  */
 
@@ -16,7 +24,10 @@ import { describe, expect, it } from "vite-plus/test";
 import * as Arr from "effect/Array";
 import * as Config from "effect/Config";
 import * as Predicate from "effect/Predicate";
+import * as Deferred from "effect/Deferred";
 import * as Effect from "effect/Effect";
+import * as Fiber from "effect/Fiber";
+import * as Option from "effect/Option";
 import * as Layer from "effect/Layer";
 import * as EffectRecord from "effect/Record";
 import * as Redacted from "effect/Redacted";
@@ -769,6 +780,104 @@ describe("MistralLanguageModel.streamText", () => {
     );
 
     expect(parts.some((part) => part.type === "finish")).toBe(true);
+  });
+});
+
+// ── Streaming backpressure and interruption ───────────────────────────
+
+/**
+ * A pull-based SSE body that releases one `data:` frame per consumer pull,
+ * recording how many pulls happened and whether the body was cancelled, plus
+ * the `AbortSignal` the client handed to `fetch` — the instrument for the
+ * backpressure and interruption assertions. With `hang`, every pull after the
+ * frames run out stays pending forever instead of closing the body, so the
+ * consumer blocks mid-stream until it is interrupted.
+ */
+const makeChunkedSseFetch = (frames: ReadonlyArray<unknown>, hang = false) => {
+  const encoder = new TextEncoder();
+  const state = { pulled: 0, cancelled: false, signal: Option.none<AbortSignal>() };
+  let index = 0;
+  const body = new ReadableStream<Uint8Array>({
+    pull(controller) {
+      state.pulled += 1;
+      const frame = frames[index];
+      if (frame !== undefined) {
+        index += 1;
+        controller.enqueue(encoder.encode(`data: ${toJson(frame)}\n\n`));
+        return;
+      }
+      if (hang) {
+        return new Promise<void>(() => {});
+      }
+      controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+      controller.close();
+    },
+    cancel() {
+      state.cancelled = true;
+    },
+  });
+  const fetch: typeof globalThis.fetch = async (_input, init) => {
+    state.signal = Option.fromNullishOr(init?.signal);
+    return new Response(body, { status: 200, headers: { "content-type": "text/event-stream" } });
+  };
+  return { fetch, state };
+};
+
+const textDeltaFrame = (text: string) => ({
+  id: "s4",
+  model: "mistral-large-latest",
+  choices: [{ index: 0, delta: { content: text } }],
+});
+
+describe("MistralLanguageModel.streamText backpressure and interruption", () => {
+  it("pulls SSE frames incrementally — a partial consumer does not drain the body", async () => {
+    const frames = Array.from({ length: 50 }, (_, i) => textDeltaFrame(`t${i}`));
+    const { fetch, state } = makeChunkedSseFetch(frames);
+    // The pull count at the moment each text delta reached the consumer.
+    const pulledAtDelta: Array<number> = [];
+
+    const deltas = await runTest(
+      LanguageModel.streamText({ prompt: "count" }).pipe(
+        Stream.filter((part) => part.type === "text-delta"),
+        Stream.tap(() => Effect.sync(() => pulledAtDelta.push(state.pulled))),
+        Stream.take(3),
+        Stream.runCollect,
+        Effect.provide(modelLayer(fetch)),
+      ),
+    );
+
+    expect(deltas.map((part) => part.delta)).toEqual(["t0", "t1", "t2"]);
+    // Each delta arrived after only a handful of frames had been pulled…
+    expect(pulledAtDelta.every((pulled) => pulled < 10)).toBe(true);
+    // …and the body was never drained: backpressure held, no unbounded buffering.
+    expect(state.pulled).toBeLessThan(frames.length);
+    // Ending consumption early cancelled the underlying HTTP body stream.
+    expect(state.cancelled).toBe(true);
+  });
+
+  it("aborts the in-flight HTTP stream when the consuming Effect is interrupted", async () => {
+    const { fetch, state } = makeChunkedSseFetch([textDeltaFrame("Hello")], true);
+
+    await runTest(
+      Effect.gen(function* () {
+        const latch = yield* Deferred.make<void>();
+        const fiber = yield* Effect.forkChild(
+          LanguageModel.streamText({ prompt: "greet" }).pipe(
+            Stream.tap((part) =>
+              part.type === "text-delta" ? Deferred.succeed(latch, undefined) : Effect.void,
+            ),
+            Stream.runDrain,
+          ),
+        );
+        yield* Deferred.await(latch);
+        yield* Fiber.interrupt(fiber);
+      }).pipe(Effect.provide(modelLayer(fetch))),
+    );
+
+    // Interrupting the Effect aborted the in-flight HTTP request…
+    expect(Option.isSome(state.signal) && state.signal.value.aborted).toBe(true);
+    // …and cancelled the response body stream.
+    expect(state.cancelled).toBe(true);
   });
 });
 
