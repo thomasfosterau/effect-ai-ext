@@ -1,5 +1,13 @@
 # @thomasfosterau/effect-ai-gateway
 
+## 0.5.1
+
+### Patch Changes
+
+- 83e7751: Doc comments on `GatewayBinding.gatewayId`, `GatewayUrlConfig.gatewayId` and the `Binding`, `Anthropic` and `Cohere` module headers no longer name an application's own bindings package or gateway.
+- Updated dependencies [8380ae3]
+  - @thomasfosterau/effect-ai-ext@0.5.1
+
 ## 0.5.0
 
 ### Minor Changes

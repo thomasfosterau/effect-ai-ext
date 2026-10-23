@@ -1,5 +1,13 @@
 # @thomasfosterau/effect-ai-elevenlabs
 
+## 0.3.4
+
+### Patch Changes
+
+- 8380ae3: Internal refactor to the Effect lint plugin 0.6.0 rules: native loops, `JSON`, `Map` / `Set` and `Object.*` helpers replaced with `effect/Array`, `effect/Record`, `HashSet` / `MutableHashMap` and Schema JSON codecs. Request bodies, decoded results and error messages are unchanged.
+- Updated dependencies [8380ae3]
+  - @thomasfosterau/effect-ai-ext@0.5.1
+
 ## 0.3.3
 
 ### Patch Changes
