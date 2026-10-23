@@ -6,6 +6,13 @@
  * layer whose `generateObject` returns a canned structured value (or fails),
  * so the adapter tests exercise the real prompt/validation path with no network.
  *
+ * The services are hand-built rather than made with `LanguageModel.make`: `make`
+ * routes `generateObject` through a `generateText` hook that sees only the
+ * normalised `ProviderOptions` (a `Prompt`, not the caller's prompt string) and
+ * must return the encoded wire payload. The stubs need the caller's raw
+ * `prompt` / `objectName` / `schema` and return an already-decoded value, so
+ * they implement the `LanguageModel` interface directly, brand included.
+ *
  * @module tests/unit/helpers/language-model
  */
 
@@ -38,6 +45,7 @@ export const stubLanguageModel = (
   Layer.succeed(
     LanguageModel.LanguageModel,
     LanguageModel.LanguageModel.of({
+      [LanguageModel.TypeId]: LanguageModel.TypeId,
       generateObject: ((options: {
         prompt: unknown;
         objectName: unknown;
@@ -60,6 +68,7 @@ export const failingLanguageModel = (): Layer.Layer<LanguageModel.LanguageModel>
   Layer.succeed(
     LanguageModel.LanguageModel,
     LanguageModel.LanguageModel.of({
+      [LanguageModel.TypeId]: LanguageModel.TypeId,
       generateObject: (() =>
         Effect.fail(
           AiError.make({
