@@ -21,4 +21,4 @@ Peers: `effect`, and `@effect/platform-node` (optional, the CLI only). Imports n
 - **Golden** — the static, hand-authored case: input, optional expected output, context. **Eval case** — a golden plus the actuals a run produced (`output`, `retrievedContext`, `toolCalls`, `usage`); scorers read eval cases, never bare goldens.
 - **Metric** — `{ name, scorer, threshold }`, the unit the runner executes; a **trial** is one end-to-end run of the task and every metric for a case.
 - **Eval file** — a `*.eval.ts` default-exporting `{ suites, layer, options? }` (`EvalFile.EvalFile`).
-- **Retrieval port** — the consumer-supplied `{ id, retrieve(query, { limit }) }` a retrieval suite measures; its `id` is part of the cache key.
+- **Retrieval port** — the consumer-supplied `{ id, retrieve(query, { limit, golden }) }` a retrieval suite measures; its `id` is part of the cache key, and `golden` is the case (a `RetrievalGolden` or a richer golden extending it) for per-case narrowing.

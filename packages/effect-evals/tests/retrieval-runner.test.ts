@@ -97,10 +97,10 @@ describe("Runner.runRetrievalSuite", () => {
     const limits: number[] = [];
     const overReturning: Runner.RetrievalPort<string> = {
       id: "over@none",
-      retrieve: (query, { limit }) => {
-        limits.push(limit);
+      retrieve: (query, options) => {
+        limits.push(options.limit);
         return ideal
-          .retrieve(query, { limit })
+          .retrieve(query, options)
           .pipe(Effect.map((ranked) => [...ranked, "x", "y", "z"]));
       },
     };
@@ -110,6 +110,84 @@ describe("Runner.runRetrievalSuite", () => {
     expect(result.aggregate.metrics["precision@1"]).toEqual({ mean: 1, cases: 2 });
     // The second case's page holds only "taxon:monstera" — recall 0.5.
     expect(result.cases[1]?.metrics.find((m) => m.metric === "recall@1")?.summary?.mean).toBe(0.5);
+  });
+
+  it("hands the port the whole golden, so per-case narrowing reaches it", async () => {
+    interface NarrowedGolden extends Runner.RetrievalGolden {
+      readonly locale?: string | undefined;
+    }
+    // Two cases share a query and differ only in locale: keying off the
+    // query string could not tell them apart.
+    const narrowed: ReadonlyArray<NarrowedGolden> = [
+      { name: "en", query: "monstera", relevant: { "taxon:monstera": 3 } },
+      { name: "es", query: "monstera", relevant: { "taxon:costilla-de-adan": 3 }, locale: "es" },
+    ];
+    const seen: Array<string | undefined> = [];
+    const port: Runner.RetrievalPort<never, never, NarrowedGolden> = {
+      id: "locale@none",
+      retrieve: (_query, { golden }) => {
+        seen.push(golden.locale);
+        return Effect.succeed(
+          golden.locale === "es" ? ["taxon:costilla-de-adan"] : ["taxon:monstera"],
+        );
+      },
+    };
+    const result = await runTest(
+      Runner.runRetrievalSuite({
+        name: "narrowed",
+        dataset: Dataset.fromArray("narrowed", narrowed),
+        port,
+        k: 3,
+      }).pipe(Effect.provide(Cache.layerMemory)),
+    );
+    expect(seen).toEqual([undefined, "es"]);
+    expect(result.cases.map((caseResult) => caseResult.golden.locale)).toEqual([undefined, "es"]);
+    // Cached on the whole golden, so the "es" case did not reuse the "en" page.
+    expect(result.cases.map((caseResult) => caseResult.taskOutputs[0]?.output)).toEqual([
+      ["taxon:monstera"],
+      ["taxon:costilla-de-adan"],
+    ]);
+    expect(result.aggregate.metrics["ndcg@3"]).toEqual({ mean: 1, cases: 2 });
+  });
+
+  it("keeps each case's ranked page, truncated to k, and its retrieval duration", async () => {
+    const result = await run({
+      port: stubPort({
+        "monstera deliciosa": ["taxon:monstera-deliciosa", "a", "b", "c"],
+        monstera: ["taxon:monstera"],
+      }),
+      k: 2,
+    });
+    expect(result.cases.map((caseResult) => caseResult.taskOutputs)).toEqual([
+      [
+        {
+          trial: 1,
+          output: ["taxon:monstera-deliciosa", "a"],
+          durationMillis: expect.any(Number),
+          cached: false,
+        },
+      ],
+      [{ trial: 1, output: ["taxon:monstera"], durationMillis: expect.any(Number), cached: false }],
+    ]);
+  });
+
+  it("marks a page served from the cache as cached, with no duration", async () => {
+    const result = await runTest(
+      Effect.gen(function* () {
+        const suite = { name: "fixture", dataset, port: ideal, k: 3 };
+        yield* Runner.runRetrievalSuite(suite);
+        return yield* Runner.runRetrievalSuite(suite);
+      }).pipe(Effect.provide(Cache.layerMemory)),
+    );
+    expect(result.cases[0]?.taskOutputs).toEqual([
+      { trial: 1, output: ["taxon:monstera-deliciosa"], durationMillis: 0, cached: true },
+    ]);
+  });
+
+  it("keeps no page for a failed query", async () => {
+    const result = await run({ port: stubPort({ monstera: ["taxon:monstera"] }) });
+    expect(result.cases[0]?.taskOutputs).toEqual([]);
+    expect(result.cases[1]?.taskOutputs).toHaveLength(1);
   });
 
   it("records a failed query, keeps going, and excludes it from the means", async () => {
@@ -225,7 +303,14 @@ describe("Result.aggregate", () => {
   const caseResult = (
     metrics: ReadonlyArray<Result.MetricAggregate>,
     taskFailures: ReadonlyArray<Result.TaskTrialFailure> = [],
-  ): Result.CaseResult => ({ golden: {}, trials: 1, taskFailures, metrics, passed: true });
+  ): Result.CaseResult => ({
+    golden: {},
+    trials: 1,
+    taskOutputs: [],
+    taskFailures,
+    metrics,
+    passed: true,
+  });
   const suite = (cases: ReadonlyArray<Result.CaseResult>): Result.SuiteResult => ({
     suite: "s",
     cases,

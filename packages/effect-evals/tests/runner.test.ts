@@ -133,6 +133,26 @@ describe("Runner.runSuite — trials", () => {
     expect(metric?.passed).toBe(true);
   });
 
+  it("keeps every trial's task output and duration beside its scores", async () => {
+    const suite = Runner.makeSuite({
+      name: "outputs",
+      dataset: Dataset.fromArray("outputs", ["Bonjour"]),
+      task: echoTask,
+      metrics: [exactMatchMetric],
+    });
+
+    const result = await runTest(
+      Runner.runSuite(suite, { trials: 2, bypassCache: true }).pipe(
+        Effect.provide(Cache.layerMemory),
+      ),
+    );
+
+    const outputs = result.cases[0]?.taskOutputs ?? [];
+    expect(outputs.map((output) => output.trial)).toEqual([1, 2]);
+    expect(outputs.every((output) => output.output === result.cases[0]?.golden)).toBe(true);
+    expect(outputs.every((output) => output.durationMillis >= 0 && !output.cached)).toBe(true);
+  });
+
   it("clamps a non-positive trials option to 1 instead of running zero trials", async () => {
     let taskCalls = 0;
     const suite = Runner.makeSuite({
@@ -262,6 +282,7 @@ describe("Runner.runSuite — retry", () => {
 
     expect(attempts).toBe(1);
     expect(result.cases[0]?.taskFailures).toHaveLength(1);
+    expect(result.cases[0]?.taskOutputs).toEqual([]);
     expect(result.cases[0]?.metrics[0]?.trials).toHaveLength(0);
     expect(result.cases[0]?.passed).toBe(false);
   });

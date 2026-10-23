@@ -25,6 +25,7 @@ const passingResult: Result.SuiteResult = {
       golden: { input: "Bonjour" },
       trials: 2,
       passed: true,
+      taskOutputs: [],
       taskFailures: [],
       metrics: [
         {
@@ -61,6 +62,7 @@ describe("Reporter.formatTerminalTable", () => {
           golden: { input: "Bonjour" },
           trials: 1,
           passed: false,
+          taskOutputs: [],
           taskFailures: [{ trial: 1, error: "boom" }],
           metrics: [
             {
@@ -121,6 +123,7 @@ describe("Reporter.json", () => {
           golden: { input: "Bonjour" },
           trials: 1,
           passed: false,
+          taskOutputs: [],
           taskFailures: [],
           metrics: [
             {

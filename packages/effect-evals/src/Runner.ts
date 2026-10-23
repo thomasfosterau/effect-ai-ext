@@ -250,7 +250,12 @@ const cacheSetJson = <A>(
   );
 
 type TaskRunOutcome<Output> =
-  | { readonly _tag: "Succeeded"; readonly output: Output; readonly durationMillis: number }
+  | {
+      readonly _tag: "Succeeded";
+      readonly output: Output;
+      readonly durationMillis: number;
+      readonly cached: boolean;
+    }
   | { readonly _tag: "Failed"; readonly error: unknown };
 
 const runTaskTrial = <Golden, Output, TaskE, TaskR>(
@@ -265,7 +270,7 @@ const runTaskTrial = <Golden, Output, TaskE, TaskR>(
     if (cacheKey !== undefined) {
       const cached = yield* cacheGetJson<Output>(cacheKey);
       if (cached !== undefined) {
-        return { _tag: "Succeeded" as const, output: cached, durationMillis: 0 };
+        return { _tag: "Succeeded" as const, output: cached, durationMillis: 0, cached: true };
       }
     }
 
@@ -282,7 +287,12 @@ const runTaskTrial = <Golden, Output, TaskE, TaskR>(
       yield* cacheSetJson(cacheKey, output);
     }
 
-    return { _tag: "Succeeded" as const, output, durationMillis: Duration.toMillis(duration) };
+    return {
+      _tag: "Succeeded" as const,
+      output,
+      durationMillis: Duration.toMillis(duration),
+      cached: false,
+    };
   });
 
 interface MetricTrialResult {
@@ -337,15 +347,16 @@ const runMetricTrial = <Golden, Output, MetricE, MetricR>(
     };
   });
 
-type TrialRun =
+type TrialRun<Output> =
   | {
       readonly _tag: "TaskSucceeded";
       readonly trial: number;
+      readonly taskOutput: Result.TaskTrialOutput<Output>;
       readonly metricOutcomes: ReadonlyArray<MetricTrialResult>;
     }
   | { readonly _tag: "TaskFailed"; readonly trial: number; readonly error: unknown };
 
-type TaskSucceededRun = Extract<TrialRun, { readonly _tag: "TaskSucceeded" }>;
+type TaskSucceededRun<Output> = Extract<TrialRun<Output>, { readonly _tag: "TaskSucceeded" }>;
 
 const runTrial = <Golden, Output, TaskE, TaskR, MetricE, MetricR>(
   task: TaskDefinition<Golden, Output, TaskE, TaskR>,
@@ -353,7 +364,7 @@ const runTrial = <Golden, Output, TaskE, TaskR, MetricE, MetricR>(
   golden: Golden,
   trial: number,
   config: ResolvedConfig,
-): Effect.Effect<TrialRun, never, TaskR | MetricR | Cache.KeyValueStore.KeyValueStore> =>
+): Effect.Effect<TrialRun<Output>, never, TaskR | MetricR | Cache.KeyValueStore.KeyValueStore> =>
   Effect.gen(function* () {
     const taskOutcome = yield* runTaskTrial(task, golden, trial, config);
 
@@ -373,7 +384,17 @@ const runTrial = <Golden, Output, TaskE, TaskR, MetricE, MetricR>(
       { concurrency: config.metricConcurrency },
     );
 
-    return { _tag: "TaskSucceeded" as const, trial, metricOutcomes };
+    return {
+      _tag: "TaskSucceeded" as const,
+      trial,
+      taskOutput: {
+        trial,
+        output: taskOutcome.output,
+        durationMillis: taskOutcome.durationMillis,
+        cached: taskOutcome.cached,
+      },
+      metricOutcomes,
+    };
   });
 
 const runCase = <Golden, Output, TaskE, TaskR, MetricE, MetricR>(
@@ -382,7 +403,7 @@ const runCase = <Golden, Output, TaskE, TaskR, MetricE, MetricR>(
   golden: Golden,
   config: ResolvedConfig,
 ): Effect.Effect<
-  Result.CaseResult<Golden>,
+  Result.CaseResult<Golden, Output>,
   never,
   TaskR | MetricR | Cache.KeyValueStore.KeyValueStore
 > =>
@@ -395,7 +416,7 @@ const runCase = <Golden, Output, TaskE, TaskR, MetricE, MetricR>(
 
     const [successes, taskFailures] = Arr.partition(
       trialRuns,
-      (run): EffectResult.Result<TaskSucceededRun, Result.TaskTrialFailure> =>
+      (run): EffectResult.Result<TaskSucceededRun<Output>, Result.TaskTrialFailure> =>
         Predicate.isTagged(run, "TaskFailed")
           ? EffectResult.fail({ trial: run.trial, error: run.error })
           : EffectResult.succeed(run),
@@ -432,14 +453,23 @@ const runCase = <Golden, Output, TaskE, TaskR, MetricE, MetricR>(
       (config.ignoreErrors || Arr.isReadonlyArrayEmpty(taskFailures)) &&
       metricAggregates.every((aggregate) => aggregate.passed);
 
-    return { golden, trials: config.trials, taskFailures, metrics: metricAggregates, passed };
+    return {
+      golden,
+      trials: config.trials,
+      taskOutputs: successes.map((run) => run.taskOutput),
+      taskFailures,
+      metrics: metricAggregates,
+      passed,
+    };
   });
 
 /**
  * Runs a suite end to end: loads its goldens, runs the task and every metric
  * for each (bounded concurrency, `trials` repetitions, retry on retryable
  * `AiError`s, content-hash caching), aggregates the result, and invokes
- * every reporter. Returns the typed {@link Result.SuiteResult} — never
+ * every reporter. Returns the typed {@link Result.SuiteResult}, which keeps
+ * each trial's task output and duration (`taskOutputs`) beside its metric
+ * scores — never
  * throws for a task or metric failure, only for the dataset itself failing
  * to load.
  */
@@ -457,7 +487,7 @@ export const runSuite = <
   suite: Suite<Golden, Output, GoldenE, GoldenR, TaskE, TaskR, MetricE, MetricR>,
   options: RunnerOptions<ReporterR> = {},
 ): Effect.Effect<
-  Result.SuiteResult<Golden>,
+  Result.SuiteResult<Golden, Output>,
   GoldenE,
   GoldenR | TaskR | MetricR | ReporterR | Cache.KeyValueStore.KeyValueStore
 > =>
@@ -481,7 +511,7 @@ export const runSuite = <
       }),
     );
 
-    const result: Result.SuiteResult<Golden> = {
+    const result: Result.SuiteResult<Golden, Output> = {
       suite: suite.name,
       cases,
       passed: cases.every((caseResult) => caseResult.passed),
@@ -503,6 +533,10 @@ export const runSuite = <
  * Handles are whatever the {@link RetrievalPort} returns — a checked-in
  * dataset has to name documents in a way a reviewer can read and a rebuilt
  * environment still resolves (`type:slug`, say), never an opaque row id.
+ *
+ * A dataset may extend it with per-case context the port needs (a type
+ * filter, a locale): {@link RetrievalSuite} is generic over the golden, and
+ * the port receives the whole golden alongside the query.
  */
 export interface RetrievalGolden {
   /** The query as a user would type it. */
@@ -528,41 +562,66 @@ export interface RetrievalGolden {
  * the task id in the result cache key — bump it when the port's behaviour
  * changes, as with any {@link TaskDefinition}.
  */
-export interface RetrievalPort<E = never, R = never> {
+export interface RetrievalPort<
+  E = never,
+  R = never,
+  Golden extends RetrievalGolden = RetrievalGolden,
+> {
   readonly id: string;
-  /** Handles for one query, best first, at most `limit` of them. */
+  /**
+   * Handles for one query, best first, at most `limit` of them. `golden` is
+   * the case the query came from, for per-case narrowing a query string
+   * cannot carry (two cases may share a query and differ in filter).
+   */
   readonly retrieve: (
     query: string,
-    options: { readonly limit: number },
+    options: { readonly limit: number; readonly golden: Golden },
   ) => Effect.Effect<ReadonlyArray<string>, E, R>;
 }
 
-/** A retrieval suite: a dataset of {@link RetrievalGolden}s, the port under test, and the cutoff. */
-export interface RetrievalSuite<GoldenE = never, GoldenR = never, PortE = never, PortR = never> {
+/**
+ * A retrieval suite: a dataset of {@link RetrievalGolden}s (or a richer golden
+ * extending it), the port under test, and the cutoff.
+ */
+export interface RetrievalSuite<
+  GoldenE = never,
+  GoldenR = never,
+  PortE = never,
+  PortR = never,
+  Golden extends RetrievalGolden = RetrievalGolden,
+> {
   readonly name: string;
-  readonly dataset: Dataset.Dataset<RetrievalGolden, GoldenE, GoldenR>;
-  readonly port: RetrievalPort<PortE, PortR>;
+  readonly dataset: Dataset.Dataset<Golden, GoldenE, GoldenR>;
+  readonly port: RetrievalPort<PortE, PortR, Golden>;
   /** Page size, and the `k` every cutoff metric uses. */
   readonly k: number;
   /** Which ranking metrics to score, and any pass/fail thresholds. Default: all four, never failing. */
   readonly metrics?: Ranking.MetricsAtKOptions | undefined;
 }
 
-/** A {@link Result.SuiteResult} over retrieval goldens plus its cross-query aggregate. */
-export interface RetrievalSuiteResult extends Result.SuiteResult<RetrievalGolden> {
+/**
+ * A {@link Result.SuiteResult} over retrieval goldens plus its cross-query
+ * aggregate. Each case's `taskOutputs` holds, per trial, the ranked page the
+ * port returned (truncated to `k`) and how long the retrieval took.
+ */
+export interface RetrievalSuiteResult<
+  Golden extends RetrievalGolden = RetrievalGolden,
+> extends Result.SuiteResult<Golden, ReadonlyArray<string>> {
   /** Per-metric means across the queries that scored; see {@link Result.aggregate}. */
   readonly aggregate: Result.Aggregate;
 }
 
 /**
  * Runs a retrieval-ranking suite: every golden's query goes through the
- * port (truncated to `k` — a port that over-returns must not inflate
- * recall), and the ranked handles are scored against the golden's graded
+ * port, with the golden itself for per-case narrowing (truncated to `k` — a
+ * port that over-returns must not inflate recall), and the ranked handles are scored against the golden's graded
  * relevance by the requested {@link Ranking} metrics at `k`. Built on
  * {@link runSuite}, so trials, retry on retryable `AiError`s, caching (keyed
  * on the port's `id`) and reporters all apply; the result is the ordinary
- * per-case {@link Result.SuiteResult} plus a cross-query
- * {@link Result.aggregate}.
+ * per-case {@link Result.SuiteResult} — each case keeping its ranked page and
+ * retrieval duration per trial in `taskOutputs` — plus a cross-query
+ * {@link Result.aggregate}. The cache key hashes the whole golden, so two
+ * cases sharing a query but differing in narrowing never share a cached page.
  *
  * A query whose retrieval fails is recorded as that case's `taskFailures`,
  * is excluded from every mean, and is counted in `aggregate.failedCases` —
@@ -574,11 +633,18 @@ export interface RetrievalSuiteResult extends Result.SuiteResult<RetrievalGolden
  * measuring it under a load pattern no user produces makes any latency the
  * port records meaningless. Pass `caseConcurrency` to change that.
  */
-export const runRetrievalSuite = <GoldenE, GoldenR, PortE, PortR, ReporterR = never>(
-  suite: RetrievalSuite<GoldenE, GoldenR, PortE, PortR>,
+export const runRetrievalSuite = <
+  GoldenE,
+  GoldenR,
+  PortE,
+  PortR,
+  ReporterR = never,
+  Golden extends RetrievalGolden = RetrievalGolden,
+>(
+  suite: RetrievalSuite<GoldenE, GoldenR, PortE, PortR, Golden>,
   options: RunnerOptions<ReporterR> = {},
 ): Effect.Effect<
-  RetrievalSuiteResult,
+  RetrievalSuiteResult<Golden>,
   GoldenE,
   GoldenR | PortR | ReporterR | Cache.KeyValueStore.KeyValueStore
 > =>
@@ -586,11 +652,11 @@ export const runRetrievalSuite = <GoldenE, GoldenR, PortE, PortR, ReporterR = ne
     makeSuite({
       name: suite.name,
       dataset: suite.dataset,
-      task: makeTask<RetrievalGolden, ReadonlyArray<string>, PortE, PortR>({
+      task: makeTask<Golden, ReadonlyArray<string>, PortE, PortR>({
         id: `${suite.port.id}@k=${suite.k}`,
         run: (golden) =>
           suite.port
-            .retrieve(golden.query, { limit: suite.k })
+            .retrieve(golden.query, { limit: suite.k, golden })
             .pipe(Effect.map((ranked) => ranked.slice(0, suite.k))),
       }),
       metrics: Ranking.metricsAtK(suite.k, suite.metrics ?? {}),
