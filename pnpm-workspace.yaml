@@ -85,7 +85,7 @@ catalog:
   # The dead-code / health gate (`.fallowrc.json`; the Claude Code PreToolUse
   # hook `.claude/hooks/fallow-gate.sh` runs `fallow audit` before every agent
   # `git commit` / `git push`).
-  fallow: 3.34.1
+  fallow: 3.36.0
   # Runs docgen's compiled examples.
   tsx: ^4.23.15
   typescript: "npm:@typescript/typescript6@6.0.2"
