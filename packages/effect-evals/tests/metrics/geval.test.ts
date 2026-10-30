@@ -356,11 +356,13 @@ describe("GEval.makeRubric", () => {
   });
 
   it("rejects an empty rubric", () => {
-    expect(() => GEval.makeRubric([])).toThrow();
+    expect(() => GEval.makeRubric([])).toThrow("gEval rubric must have at least one band");
   });
 
   it("rejects a band whose min is greater than its max", () => {
-    expect(() => GEval.makeRubric([{ min: 5, max: 2, description: "inverted" }])).toThrow();
+    expect(() => GEval.makeRubric([{ min: 5, max: 2, description: "inverted" }])).toThrow(
+      "greater than max",
+    );
   });
 
   it("rejects overlapping bands", () => {

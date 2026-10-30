@@ -16,7 +16,7 @@
 
 import { defineConfig } from "vite-plus";
 import { recommended } from "@effect/tsgo/oxlint-presets";
-import effect from "@mpsuesser/oxlint-plugin-effect";
+import effect from "@enfect/oxlint";
 import { type CoverageFloor, resolveCoverageThresholds } from "./vite.package.ts";
 import { coverageFloor as cohereFloor } from "./packages/effect-ai-cohere/vite.config.ts";
 import { coverageFloor as elevenlabsFloor } from "./packages/effect-ai-elevenlabs/vite.config.ts";
@@ -64,8 +64,13 @@ export default defineConfig({
   lint: {
     ignorePatterns: ["**/dist/**", "**/docs/**", "**/coverage/**", "**/node_modules/**"],
     extends: [recommended, effect.configs.recommended],
+    // The family standard (effect-ical, effect-ext): oxlint's correctness
+    // and perf categories over the plugins below, type-aware. `suspicious`
+    // stays off until its ~680 type-aware findings are paid down (#161).
+    plugins: ["typescript", "unicorn", "oxc", "import", "promise", "vitest", "jsdoc"],
     categories: {
       correctness: "error",
+      perf: "error",
     },
     rules: {
       "eslint/no-unused-vars": [
@@ -117,6 +122,35 @@ export default defineConfig({
       "typescript/ban-ts-comment": "off",
       "unicorn/no-empty-file": "off",
       "vite-plus/prefer-vite-plus-imports": "error",
+      // Spreading into a fresh object or array inside `map` is how this
+      // family builds immutable values (a `readonly` embedding copied into a
+      // mutable result, a result widened with its aggregate); mutating in
+      // place would break the readonly types the rule's fix needs.
+      "oxc/no-map-spread": "off",
+      // `@category` groups the docgen reference (AGENTS.md → Conventions).
+      "jsdoc/check-tag-names": ["error", { definedTags: ["category"] }],
+      // Each package's `tests/helpers/effect.ts` asserts a typed failure
+      // through `expectFailureInstanceOf`, and `node:assert` is used too.
+      "vitest/expect-expect": [
+        "error",
+        {
+          assertFunctionNames: [
+            "expect",
+            "expect*",
+            "assert",
+            "assert*",
+            "expectFailureInstanceOf",
+          ],
+        },
+      ],
+      // `expect(value, message)`: Vitest's second argument labels a failure.
+      "vitest/valid-expect": ["error", { maxArgs: 2 }],
+      // Effect 4 marks much of its surface `@stability unstable` (the
+      // `effect/http*` modules, `AiError`, ...), so this fires on ~900 uses
+      // across the providers and drowns the findings that matter. The
+      // language service keeps it as an editor suggestion
+      // (tsconfig.base.json, #67).
+      "effecttsgo/unstable-api-usage": "off",
     },
     overrides: [
       // Build/test configs are evaluated by Vite and Vitest in bare Node,
@@ -169,6 +203,9 @@ export default defineConfig({
           // `tsc`'s output with `JSON.parse`, as plain Node does.
           "effect/avoid-untagged-errors": "off",
           "effect/avoid-direct-json": "off",
+          // The dist guard imports each entry in turn so its report reads in
+          // order and one failing import is attributed to its specifier.
+          "eslint/no-await-in-loop": "off",
         },
       },
       // Each package's `tests/helpers/effect.ts` IS the test harness boundary
@@ -223,10 +260,33 @@ export default defineConfig({
       // `jsonValidity` reports `JSON.parse`'s own `SyntaxError` message as its
       // reason (the user-facing point of the scorer); Schema's JSON codec
       // discards that cause for a generic "a valid JSON string" issue.
+      // Its `Effect.try` necessarily carries `JSON.parse`'s thrown value as
+      // `unknown` until `catchIf(isSyntaxError, …)` narrows it out and the
+      // remainder dies, so `any-unknown-in-error-context` cannot apply.
       {
         files: ["packages/effect-evals/src/scorers/JsonValidity.ts"],
         rules: {
           "effect/avoid-direct-json": "off",
+          "effecttsgo/any-unknown-in-error-context": "off",
+        },
+      },
+      // `Cache.hashKey` hands `crypto.subtle.digest`'s rejection on as
+      // `unknown` for one step before `Effect.orDie` turns it into a defect
+      // (SHA-256 over bytes cannot fail); a typed error would name a failure
+      // no caller can see.
+      {
+        files: ["packages/effect-evals/src/Cache.ts"],
+        rules: {
+          "effecttsgo/any-unknown-in-error-context": "off",
+        },
+      },
+      // `cli/Run` builds a user eval file's exported `layer`, whose error and
+      // services are whatever that file declares (`Layer.Layer<R, unknown>`):
+      // the CLI cannot name them, and every failure is reported, not typed.
+      {
+        files: ["packages/effect-evals/src/cli/Run.ts"],
+        rules: {
+          "effecttsgo/any-unknown-in-error-context": "off",
         },
       },
       // Type-level tests: the expect-error directives ARE the assertions
@@ -258,11 +318,12 @@ export default defineConfig({
         },
       },
     ],
-    // Type-aware linting is intentionally disabled: type checking stays the
-    // `check` tasks' job (native tsc, Effect-patched).
+    // Type-aware linting through oxlint-tsgolint (bundled with vite-plus and
+    // patched by `effect-tsgo patch --oxlint`), so `vp check` runs the
+    // type-aware rules and `@effect/tsgo`'s Effect diagnostics.
     options: {
-      typeAware: false,
-      typeCheck: false,
+      typeAware: true,
+      typeCheck: true,
     },
     jsPlugins: [
       {

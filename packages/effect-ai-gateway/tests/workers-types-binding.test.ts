@@ -123,7 +123,7 @@ const compile = () => {
   const host = ts.createCompilerHost(options);
   // `types` resolve from the package directory, where workers-types is installed.
   host.getCurrentDirectory = () => packageDir;
-  const getSourceFile = host.getSourceFile;
+  const getSourceFile = host.getSourceFile.bind(host);
   host.getSourceFile = (fileName, languageVersion, ...rest) =>
     isProbe(fileName)
       ? ts.createSourceFile(
@@ -133,7 +133,7 @@ const compile = () => {
           true,
         )
       : getSourceFile(fileName, languageVersion, ...rest);
-  const fileExists = host.fileExists;
+  const fileExists = host.fileExists.bind(host);
   host.fileExists = (fileName) => isProbe(fileName) || fileExists(fileName);
   const program = ts.createProgram({ rootNames: [acceptsFile, rejectsFile], options, host });
   const global = [...program.getOptionsDiagnostics(), ...program.getGlobalDiagnostics()];

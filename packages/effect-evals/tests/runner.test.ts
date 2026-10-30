@@ -97,7 +97,7 @@ describe("Runner.runSuite — end to end", () => {
 
     await expect(
       runTest(Runner.runSuite(suite).pipe(Effect.provide(Cache.layerMemory))),
-    ).rejects.toThrow();
+    ).rejects.toBeInstanceOf(DatasetError);
   });
 });
 

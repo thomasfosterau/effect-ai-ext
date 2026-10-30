@@ -14,7 +14,8 @@
 #   (UnsupportedTargetPackageVersionError, failing `pnpm install`) on any
 #   TypeScript / oxlint / tsgolint version its `components` table does not
 #   list. So `@effect/tsgo`, `@typescript/native`, `typescript` (the TS6
-#   alias) and `vite-plus` move as one set, with the lint plugin. Before
+#   alias) and `vite-plus` move as one set, with the lint plugin
+#   (`@enfect/oxlint`, checked against the oxlint vite-plus carries). Before
 #   merging a toolchain PR, check the pairing against the `components` table
 #   in node_modules/@effect/tsgo/dist/effect-tsgo.cjs (see the catalog notes in
 #   pnpm-workspace.yaml).
@@ -30,10 +31,26 @@
 # - `minor-and-patch`: everything else's minor and patch updates in one PR, so
 #   PR volume stays low; a major outside the lockstep sets stays individual.
 #
-# `cooldown` mirrors pnpm-workspace.yaml's `minimumReleaseAge` (1 day) so
-# Dependabot never proposes a version pnpm's own supply-chain gate would then
-# reject at install time; `@thomasfosterau/*` is exempt, as it is there.
-# Cooldown applies only to version updates: security updates open at once.
+# `cooldown`: pnpm-workspace.yaml's `minimumReleaseAge` is 480 minutes (8
+# hours), but Dependabot's cooldown takes whole days only, so it waits 1 day.
+# That is longer than pnpm's window, so a Dependabot PR never proposes a
+# version pnpm's own supply-chain gate would still reject at install time;
+# `@thomasfosterau/*` is exempt, as it is there. Cooldown applies only to
+# version updates: security updates open at once.
+#
+# Hand moves (Dependabot cannot make them; do them on the matching PR's
+# branch, then `pnpm install`):
+# - the `vite` npm alias (`npm:@voidzero-dev/vite-plus-core@<v>`, equal to
+#   `vite-plus`) and the `vitest` / `@vitest/coverage-istanbul` pins
+#   vite-plus dictates: run
+#   `pnpm dlx --package=vite-plus@<v> vp migrate --no-interactive` on the
+#   toolchain PR, then drop the `minimumReleaseAgeExclude` entries it adds;
+# - `typescript` (`npm:@typescript/typescript6@<v>`) and `@typescript/native`
+#   (`npm:typescript@<v>`): aliases, moved to a pairing `@effect/tsgo`'s
+#   `components` table supports;
+# - `@effect/platform-node-shared`, catalog/override only: equal to `effect`;
+# - the `undici` security floor under `overrides`: drop it once the
+#   resolution reaches the fix on its own.
 version: 2
 updates:
   - package-ecosystem: "npm"
@@ -65,7 +82,7 @@ updates:
           - "@typescript/native"
           - "typescript"
           - "@typescript/typescript6"
-          - "@mpsuesser/oxlint-plugin-effect"
+          - "@enfect/oxlint"
         update-types: ["major", "minor", "patch"]
       effect:
         applies-to: version-updates

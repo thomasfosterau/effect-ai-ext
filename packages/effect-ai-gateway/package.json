@@ -56,7 +56,8 @@
     "@effect/language-service": "catalog:",
     "@vitest/coverage-istanbul": "catalog:",
     "effect": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "peerDependencies": {
     "@cloudflare/workers-types": "catalog:peers",

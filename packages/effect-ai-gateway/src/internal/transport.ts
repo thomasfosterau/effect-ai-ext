@@ -178,7 +178,7 @@ export const requestViaBinding = <S extends Schema.Top>(
   binding: GatewayBinding,
   data: GatewayUniversalRequest,
   schema: S,
-  onCall?: OnGatewayCall | undefined,
+  onCall?: OnGatewayCall,
 ): Effect.Effect<S["Type"], AiError.AiError, S["DecodingServices"]> =>
   decodeResponse(
     origin,
@@ -214,7 +214,7 @@ export const requestViaUrl = <S extends Schema.Top>(
   headers: Record<string, string>,
   body: unknown,
   schema: S,
-  onCall?: OnGatewayCall | undefined,
+  onCall?: OnGatewayCall,
 ): Effect.Effect<S["Type"], AiError.AiError, S["DecodingServices"]> => {
   const request = HttpClientRequest.post(url, { body: HttpBody.jsonUnsafe(body) }).pipe(
     HttpClientRequest.setHeaders(headers),

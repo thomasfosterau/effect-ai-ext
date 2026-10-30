@@ -25,7 +25,7 @@ const EXTENSION_ONLY = [
 
 describe("effect-ai-ext barrel", () => {
   it.each(EXTENSION_ONLY)("re-exports the %s extension abstraction", (name) => {
-    expect(Ext[name], name).toBeDefined();
+    expect(Ext).toHaveProperty(name, expect.anything());
   });
 
   it.each(EffectRecord.keys(UpstreamAi))("re-exports the upstream effect/ai %s module", (name) => {
