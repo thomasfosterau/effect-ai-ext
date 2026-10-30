@@ -78,7 +78,7 @@ catalog:
   # catalog `effect`, which it lints fine against. Moves with the toolchain:
   # it is checked against the oxlint vite-plus carries.
   "@enfect/oxlint": 0.9.0
-  "@types/node": ^26.6.5
+  "@types/node": ^26.6.6
   "@typescript/native": "npm:typescript@7.0.2"
   # Must equal the vitest that vite-plus bundles (see `vitest` below); vite-plus
   # refuses to run coverage on a mismatch.
