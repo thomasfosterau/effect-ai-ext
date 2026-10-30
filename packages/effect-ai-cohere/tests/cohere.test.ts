@@ -637,7 +637,7 @@ describe("CohereLanguageModel tool calling", () => {
       LanguageModel.generateText({
         prompt: "weather?",
         toolkit: weatherToolkit,
-        toolChoice: { tool: "get_weather" },
+        toolChoice: { tool: "get_weather" } as const,
       }).pipe(Effect.provide(modelLayer(fetch)), Effect.provide(weatherHandlers)),
     );
 
@@ -652,7 +652,7 @@ describe("CohereLanguageModel tool calling", () => {
       LanguageModel.generateText({
         prompt: "weather?",
         toolkit: weatherToolkit,
-        toolChoice: { mode: "required", oneOf: ["get_weather"] },
+        toolChoice: { mode: "required", oneOf: ["get_weather"] } as const,
       }).pipe(Effect.provide(modelLayer(fetch)), Effect.provide(weatherHandlers)),
     );
 
@@ -667,7 +667,7 @@ describe("CohereLanguageModel tool calling", () => {
       LanguageModel.generateText({
         prompt: "weather?",
         toolkit: weatherToolkit,
-        toolChoice: { mode: "auto", oneOf: ["get_weather"] },
+        toolChoice: { mode: "auto", oneOf: ["get_weather"] } as const,
       }).pipe(Effect.provide(modelLayer(fetch)), Effect.provide(weatherHandlers)),
     );
 

@@ -13,8 +13,9 @@ name: CI
 # Every third-party action is pinned to a full commit SHA (the tag is a comment
 # for humans and Dependabot's `github-actions` ecosystem keeps both current).
 #
-# The `ci` job runs on the latest stable Node (`node-version: latest` in the
-# setup action), as every repository in the family does (#71). `engines.node`
+# The `ci` job runs on the latest stable Node (`node-version: "*"` with
+# `check-latest` in the setup action; never `latest`, which setup-node
+# resolves to a Node pre-release), as every repository in the family does (#71). `engines.node`
 # in the published packages is the consumer floor and is deliberately not tied
 # to it, so the `node-floor` job reruns the runtime gates (tests, build,
 # check:dist) on that floor, 22.18.0, which `latest` alone never exercises
@@ -58,14 +59,14 @@ jobs:
           restore-keys: |
             vp-task-v1-${{ runner.os }}-
       - name: Format and lint
-        run: vp check
+        run: pnpm exec vp check
       # Native TS7 type-check (`tsc`, patched by @effect/tsgo on install) of
       # every package.
       - name: Type gates
-        run: vp run --concurrency-limit 2 check
+        run: pnpm exec vp run --concurrency-limit 2 check
       # Recorded/stubbed fixtures only, no live-key or live-network tests.
       - name: Unit tests
-        run: vp run -r test:unit
+        run: pnpm exec vp run -r test:unit
       # The suites again under Istanbul, failing if any package's coverage
       # drops below its floor (`coverageFloor` in each package's
       # vite.config.ts, #100). effect-web runs no coverage step, so its
@@ -76,19 +77,19 @@ jobs:
       # so it also refreshes coverage/coverage-final.json (fallow's map),
       # though nothing in CI reads it.
       - name: Coverage floors
-        run: vp run -r test:coverage
+        run: pnpm exec vp run -r test:coverage
       - name: Build
-        run: vp run -r build
+        run: pnpm exec vp run -r build
       # Imports every built entry under real Node ESM and checks every value
       # export its declarations promise exists at runtime, then launches the
       # `effect-evals` bin from a packed tarball (`scripts/check-dist.mjs`,
       # #32, #42).
       - name: Dist import check
-        run: vp run check:dist
+        run: pnpm exec vp run check:dist
       # Type-checks AND runs every JSDoc @example against the built dist/
       # (#99).
       - name: Verify documentation examples (docgen)
-        run: vp run docgen
+        run: pnpm exec vp run docgen
       - name: Audit
         run: pnpm audit --audit-level high
 
@@ -112,8 +113,8 @@ jobs:
         with:
           node-version: 22.18.0
       - name: Unit tests
-        run: vp run -r test:unit
+        run: pnpm exec vp run -r test:unit
       - name: Build
-        run: vp run -r build
+        run: pnpm exec vp run -r build
       - name: Dist import check
-        run: vp run check:dist
+        run: pnpm exec vp run check:dist

@@ -7,6 +7,6 @@ const { createRequire } = require("node:module");
 const viaRequire = require("./b").which;
 const viaCreateRequire = createRequire(__filename)("./b").which;
 
-import("./b").then((m) => {
+void import("./b").then((m) => {
   console.log(`${viaRequire} ${viaCreateRequire} ${m.which}`);
 });

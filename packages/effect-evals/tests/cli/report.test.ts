@@ -112,10 +112,12 @@ describe("Report.writeJsonReport", () => {
     });
 
     // Should not throw — writeJsonReport's error channel is `never`.
-    await runTest(
-      writeJsonReport("out.json", passingReport).pipe(
-        Effect.provide(Layer.merge(testFs, Path.layer)),
+    await expect(
+      runTest(
+        writeJsonReport("out.json", passingReport).pipe(
+          Effect.provide(Layer.merge(testFs, Path.layer)),
+        ),
       ),
-    );
+    ).resolves.toBeUndefined();
   });
 });

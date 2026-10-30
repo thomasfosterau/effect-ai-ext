@@ -45,7 +45,7 @@
     "vite-plus",
     "@changesets/cli",
     "@vitest/coverage-istanbul",
-    "@mpsuesser/oxlint-plugin-effect",
+    "@enfect/oxlint",
     "fallow"
   ],
   "rules": {

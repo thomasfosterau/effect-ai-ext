@@ -169,7 +169,7 @@ const checkDeclarations = (dir, paths) => {
   host.getCurrentDirectory = () => dir;
   // One parse of each shared declaration file (effect's, mostly) serves
   // every package's program.
-  const getSourceFile = host.getSourceFile;
+  const getSourceFile = host.getSourceFile.bind(host);
   host.getSourceFile = (fileName, ...rest) => {
     let source = parsedSources.get(fileName);
     if (source === undefined) {
@@ -184,11 +184,11 @@ const checkDeclarations = (dir, paths) => {
   // walked: the check costs a few seconds, not a minute.
   const own = program
     .getSourceFiles()
-    .filter((source) => source.fileName.startsWith(`${distDir}/`))
-    .flatMap((source) => [
-      ...program.getSyntacticDiagnostics(source),
-      ...program.getSemanticDiagnostics(source),
-    ]);
+    .flatMap((source) =>
+      source.fileName.startsWith(`${distDir}/`)
+        ? [...program.getSyntacticDiagnostics(source), ...program.getSemanticDiagnostics(source)]
+        : [],
+    );
   return {
     files: rootNames.length,
     diagnostics: [...program.getOptionsDiagnostics(), ...program.getGlobalDiagnostics(), ...own],
@@ -263,12 +263,12 @@ export const probes = [
   };
   const host = ts.createCompilerHost(options);
   host.getCurrentDirectory = () => dir;
-  const getSourceFile = host.getSourceFile;
+  const getSourceFile = host.getSourceFile.bind(host);
   host.getSourceFile = (fileName, languageVersion, ...rest) =>
     fileName === probe
       ? ts.createSourceFile(fileName, text, languageVersion, true)
       : getSourceFile(fileName, languageVersion, ...rest);
-  const fileExists = host.fileExists;
+  const fileExists = host.fileExists.bind(host);
   host.fileExists = (fileName) => fileName === probe || fileExists(fileName);
   const program = ts.createProgram({ rootNames: [probe], options, host });
   const source = program.getSourceFile(probe);

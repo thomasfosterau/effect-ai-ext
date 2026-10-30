@@ -22,7 +22,7 @@ Hooks are managed by Vite+; the editable [.vite-hooks/pre-commit](.vite-hooks/pr
 
 ## CI expectations
 
-[ci.yml](.github/workflows/ci.yml) runs the `ci` job, whose steps are the gate list in [AGENTS.md](AGENTS.md#verification), and a `node-floor` job that reruns the unit suites, build and dist check on Node 22.18.0. [release.yml](.github/workflows/release.yml) runs changesets/action on `trunk`: it opens the version PR while unreleased changesets exist and publishes once it merges, via npm OIDC trusted publishing (see [PUBLISHING.md](PUBLISHING.md)).
+[ci.yml](.github/workflows/ci.yml) runs the `ci` job, whose steps are the gate list in [AGENTS.md](AGENTS.md#verification), and a `node-floor` job that reruns the unit suites, build and dist check on Node 22.18.0. [release.yml](.github/workflows/release.yml) runs changesets/action on `trunk`: it opens the version PR while unreleased changesets exist and publishes once it merges, via npm OIDC trusted publishing (see [PUBLISHING.md](PUBLISHING.md)). Both workflows are hardened for Dependabot PRs: no default token permissions (each job grants only what it needs, and only the release job holds `id-token: write`), every action pinned to a commit SHA, `persist-credentials: false` on checkouts that never push, `pnpm install --frozen-lockfile`, no secrets in any job a pull request can trigger, Node pinned to the latest release rather than setup-node's `latest` (which resolves to a Node pre-release), and `uvx zizmor --offline .github` clean.
 
 ## Pre-PR checklist
 

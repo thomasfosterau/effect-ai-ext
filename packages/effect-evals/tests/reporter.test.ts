@@ -169,8 +169,8 @@ describe("Reporter.json", () => {
     });
 
     // Should not throw — the reporter's error channel is `never`.
-    await runTest(
-      Reporter.json("./results.json").report(passingResult).pipe(Effect.provide(testFs)),
-    );
+    await expect(
+      runTest(Reporter.json("./results.json").report(passingResult).pipe(Effect.provide(testFs))),
+    ).resolves.toBeUndefined();
   });
 });

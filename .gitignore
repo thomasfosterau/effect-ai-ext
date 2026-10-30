@@ -159,3 +159,4 @@ packages/*/docs/
 # fallow's local cache and SARIF output.
 .fallow
 fallow.sarif
+.vitest/
