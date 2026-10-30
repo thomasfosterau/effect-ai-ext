@@ -38,7 +38,7 @@ catalogMode: strict
 
 catalog:
   "@changesets/cli": ^3.0.3
-  "@cloudflare/workers-types": ^5.20261025.1
+  "@cloudflare/workers-types": ^5.20261029.1
   # Compiles AND RUNS every JSDoc `@example` (the `docgen` task); needs `tsx`
   # and a TypeScript JS API — the TS6 alias below satisfies its peer
   # (`typescript >=5.8.2 <7`). Pinned exact, unlike effect-web's `^4.0.0`:
